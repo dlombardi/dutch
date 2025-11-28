@@ -1,0 +1,15 @@
+{
+  "name": "@evn/shared",
+  "version": "1.0.0",
+  "main": "./lib/index.ts",
+  "types": "./lib/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint lib/",
+    "test": "jest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
