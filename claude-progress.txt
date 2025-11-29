@@ -22,8 +22,8 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 4
-- Current focus: Implementing Priority 1 auth features
+- Features passing: 5
+- Current focus: Implementing Priority 1 groups features
 
 ## Feature Breakdown by Category
 - auth: 12 features
@@ -189,5 +189,40 @@ Description: Guest user session persists on the same device
     - User type remains 'guest' across sessions
 - Verified:
   - All 21 API tests pass (17 existing + 4 new persistence tests)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+---
+
+## Session: 2025-11-28 (Session 5 continued)
+Working on: groups-create-basic
+Description: User can create a new group with name and emoji
+
+### groups-create-basic - COMPLETE
+- Implemented:
+  - API: GroupsModule with controller, service, and DTOs
+  - API: POST /groups endpoint creates group with name, emoji, defaultCurrency
+  - API: GET /groups/:id endpoint retrieves group by ID
+  - API: Unique 6-character invite codes auto-generated
+  - API: Name trimming and validation via class-validator
+  - Mobile: groupsStore with createGroup, fetchGroup actions
+  - Mobile: api.ts createGroup and getGroup methods
+  - Mobile: create-group.tsx screen with emoji picker and name input
+  - Mobile: Updated (tabs)/index.tsx to use real groups store
+- Tests added:
+  - apps/api/src/groups/__tests__/groups.controller.spec.ts (11 tests)
+    - Create group with name and emoji
+    - Default emoji if not provided
+    - Custom defaultCurrency
+    - Default currency is USD
+    - Reject empty name
+    - Reject whitespace-only name
+    - Generate unique invite codes
+    - Trim whitespace from name
+    - Get group by ID
+    - Return 404 for non-existent group
+    - Multiple groups have unique invite codes
+- Verified:
+  - All 32 API tests pass (21 auth + 11 groups)
   - Mobile TypeScript compiles without errors
 - Status: Feature complete

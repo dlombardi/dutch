@@ -1,28 +1,32 @@
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Placeholder data - will be replaced with real data from stores
-const PLACEHOLDER_GROUPS: Array<{ id: string; name: string; emoji: string }> = [];
+import { useGroupsStore } from '../../stores/groupsStore';
 
 export default function GroupsScreen() {
+  const { groups } = useGroupsStore();
+
+  const handleCreateGroup = () => {
+    router.push('/create-group');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Groups</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity style={styles.addButton} onPress={handleCreateGroup}>
           <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>
 
-      {PLACEHOLDER_GROUPS.length === 0 ? (
+      {groups.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>👥</Text>
           <Text style={styles.emptyTitle}>No groups yet</Text>
           <Text style={styles.emptySubtitle}>
             Create a group to start splitting expenses with friends
           </Text>
-          <TouchableOpacity style={styles.createButton}>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateGroup}>
             <Text style={styles.createButtonText}>Create Group</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.joinButton}>
@@ -31,13 +35,16 @@ export default function GroupsScreen() {
         </View>
       ) : (
         <FlatList
-          data={PLACEHOLDER_GROUPS}
+          data={groups}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <Link href={`/group/${item.id}`} asChild>
               <TouchableOpacity style={styles.groupItem}>
                 <Text style={styles.groupEmoji}>{item.emoji}</Text>
-                <Text style={styles.groupName}>{item.name}</Text>
+                <View style={styles.groupInfo}>
+                  <Text style={styles.groupName}>{item.name}</Text>
+                  <Text style={styles.groupCurrency}>{item.defaultCurrency}</Text>
+                </View>
               </TouchableOpacity>
             </Link>
           )}
@@ -130,8 +137,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginRight: 12,
   },
+  groupInfo: {
+    flex: 1,
+  },
   groupName: {
     fontSize: 18,
     fontWeight: '500',
+  },
+  groupCurrency: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
   },
 });

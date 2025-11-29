@@ -163,7 +163,7 @@
         "Tap 'Create'",
         "New group appears in groups list"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-create-currency",

@@ -100,6 +100,47 @@ class ApiClient {
       body: JSON.stringify({ name, deviceId }),
     });
   }
+
+  // Groups endpoints
+  async createGroup(
+    name: string,
+    createdById: string,
+    emoji?: string,
+    defaultCurrency?: string
+  ): Promise<{
+    group: {
+      id: string;
+      name: string;
+      emoji: string;
+      createdById: string;
+      inviteCode: string;
+      defaultCurrency: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }> {
+    return this.request('/groups', {
+      method: 'POST',
+      body: JSON.stringify({ name, createdById, emoji, defaultCurrency }),
+    });
+  }
+
+  async getGroup(id: string): Promise<{
+    group: {
+      id: string;
+      name: string;
+      emoji: string;
+      createdById: string;
+      inviteCode: string;
+      defaultCurrency: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }> {
+    return this.request(`/groups/${id}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
