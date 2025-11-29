@@ -1230,7 +1230,7 @@
         "Reopen app offline",
         "All previous data still present"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "settings-profile-name",

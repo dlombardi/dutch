@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../lib/api';
 
 export interface Settlement {
@@ -35,23 +37,14 @@ interface SettlementsState {
   handleSettlementCreated: (settlement: Settlement) => void;
 }
 
-export const useSettlementsStore = create<SettlementsState>()((set) => ({
-  settlements: [],
-  isLoading: false,
-  error: null,
+export const useSettlementsStore = create<SettlementsState>()(
+  persist(
+    (set) => ({
+      settlements: [],
+      isLoading: false,
+      error: null,
 
-  createSettlement: async (
-    groupId,
-    fromUserId,
-    toUserId,
-    amount,
-    createdById,
-    currency,
-    method
-  ) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.createSettlement(
+      createSettlement: async (
         groupId,
         fromUserId,
         toUserId,
@@ -59,50 +52,70 @@ export const useSettlementsStore = create<SettlementsState>()((set) => ({
         createdById,
         currency,
         method
-      );
-      const newSettlement = response.settlement;
-      set((state) => ({
-        settlements: [...state.settlements, newSettlement],
-      }));
-      return newSettlement;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create settlement';
-      set({ error: errorMessage });
-      return null;
-    } finally {
-      set({ isLoading: false });
+      ) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.createSettlement(
+            groupId,
+            fromUserId,
+            toUserId,
+            amount,
+            createdById,
+            currency,
+            method
+          );
+          const newSettlement = response.settlement;
+          set((state) => ({
+            settlements: [...state.settlements, newSettlement],
+          }));
+          return newSettlement;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to create settlement';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchGroupSettlements: async (groupId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.getGroupSettlements(groupId);
+          set({ settlements: response.settlements });
+          return response.settlements;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to fetch settlements';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      clearError: () => {
+        set({ error: null });
+      },
+
+      // Real-time sync handlers
+      handleSettlementCreated: (settlement) => {
+        set((state) => {
+          // Check if settlement already exists (avoid duplicates from own actions)
+          if (state.settlements.some((s) => s.id === settlement.id)) {
+            return state;
+          }
+          return { settlements: [...state.settlements, settlement] };
+        });
+      },
+    }),
+    {
+      name: 'settlements-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        settlements: state.settlements,
+      }),
     }
-  },
-
-  fetchGroupSettlements: async (groupId) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.getGroupSettlements(groupId);
-      set({ settlements: response.settlements });
-      return response.settlements;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch settlements';
-      set({ error: errorMessage });
-      return null;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  clearError: () => {
-    set({ error: null });
-  },
-
-  // Real-time sync handlers
-  handleSettlementCreated: (settlement) => {
-    set((state) => {
-      // Check if settlement already exists (avoid duplicates from own actions)
-      if (state.settlements.some((s) => s.id === settlement.id)) {
-        return state;
-      }
-      return { settlements: [...state.settlements, settlement] };
-    });
-  },
-}));
+  )
+);

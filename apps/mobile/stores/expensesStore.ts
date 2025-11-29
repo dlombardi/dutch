@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../lib/api';
 
 export interface Expense {
@@ -60,26 +62,15 @@ interface ExpensesState {
   handleExpenseDeleted: (expenseId: string) => void;
 }
 
-export const useExpensesStore = create<ExpensesState>()((set) => ({
-  expenses: [],
-  currentExpense: null,
-  isLoading: false,
-  error: null,
+export const useExpensesStore = create<ExpensesState>()(
+  persist(
+    (set) => ({
+      expenses: [],
+      currentExpense: null,
+      isLoading: false,
+      error: null,
 
-  createExpense: async (
-    groupId,
-    amount,
-    description,
-    paidById,
-    createdById,
-    currency,
-    date,
-    splitParticipants,
-    exchangeRate
-  ) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.createExpense(
+      createExpense: async (
         groupId,
         amount,
         description,
@@ -88,140 +79,162 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
         currency,
         date,
         splitParticipants,
-        undefined, // splitType
-        undefined, // splitAmounts
         exchangeRate
-      );
-      const newExpense = response.expense;
-      set((state) => ({
-        expenses: [...state.expenses, newExpense],
-      }));
-      return newExpense;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create expense';
-      set({ error: errorMessage });
-      return null;
-    } finally {
-      set({ isLoading: false });
+      ) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.createExpense(
+            groupId,
+            amount,
+            description,
+            paidById,
+            createdById,
+            currency,
+            date,
+            splitParticipants,
+            undefined, // splitType
+            undefined, // splitAmounts
+            exchangeRate
+          );
+          const newExpense = response.expense;
+          set((state) => ({
+            expenses: [...state.expenses, newExpense],
+          }));
+          return newExpense;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to create expense';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      updateExpense: async (id, updates) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.updateExpense(id, updates);
+          const updatedExpense = response.expense;
+          set((state) => ({
+            expenses: state.expenses.map((e) =>
+              e.id === id ? updatedExpense : e
+            ),
+            currentExpense:
+              state.currentExpense?.id === id
+                ? updatedExpense
+                : state.currentExpense,
+          }));
+          return updatedExpense;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to update expense';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      deleteExpense: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          await api.deleteExpense(id);
+          set((state) => ({
+            expenses: state.expenses.filter((e) => e.id !== id),
+            currentExpense:
+              state.currentExpense?.id === id ? null : state.currentExpense,
+          }));
+          return true;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to delete expense';
+          set({ error: errorMessage });
+          return false;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchExpense: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.getExpense(id);
+          const expense = response.expense;
+          set({ currentExpense: expense });
+          return expense;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to fetch expense';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchGroupExpenses: async (groupId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.getGroupExpenses(groupId);
+          const expenses = response.expenses;
+          set({ expenses });
+          return expenses;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to fetch expenses';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      setCurrentExpense: (expense) => {
+        set({ currentExpense: expense });
+      },
+
+      clearError: () => {
+        set({ error: null });
+      },
+
+      clearExpenses: () => {
+        set({ expenses: [], currentExpense: null });
+      },
+
+      // Real-time sync handlers
+      handleExpenseCreated: (expense) => {
+        set((state) => {
+          // Check if expense already exists (avoid duplicates from own actions)
+          if (state.expenses.some((e) => e.id === expense.id)) {
+            return state;
+          }
+          return { expenses: [...state.expenses, expense] };
+        });
+      },
+
+      handleExpenseUpdated: (expense) => {
+        set((state) => ({
+          expenses: state.expenses.map((e) => (e.id === expense.id ? expense : e)),
+          currentExpense:
+            state.currentExpense?.id === expense.id ? expense : state.currentExpense,
+        }));
+      },
+
+      handleExpenseDeleted: (expenseId) => {
+        set((state) => ({
+          expenses: state.expenses.filter((e) => e.id !== expenseId),
+          currentExpense:
+            state.currentExpense?.id === expenseId ? null : state.currentExpense,
+        }));
+      },
+    }),
+    {
+      name: 'expenses-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        expenses: state.expenses,
+      }),
     }
-  },
-
-  updateExpense: async (id, updates) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.updateExpense(id, updates);
-      const updatedExpense = response.expense;
-      set((state) => ({
-        expenses: state.expenses.map((e) =>
-          e.id === id ? updatedExpense : e
-        ),
-        currentExpense:
-          state.currentExpense?.id === id
-            ? updatedExpense
-            : state.currentExpense,
-      }));
-      return updatedExpense;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update expense';
-      set({ error: errorMessage });
-      return null;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  deleteExpense: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
-      await api.deleteExpense(id);
-      set((state) => ({
-        expenses: state.expenses.filter((e) => e.id !== id),
-        currentExpense:
-          state.currentExpense?.id === id ? null : state.currentExpense,
-      }));
-      return true;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to delete expense';
-      set({ error: errorMessage });
-      return false;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  fetchExpense: async (id) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.getExpense(id);
-      const expense = response.expense;
-      set({ currentExpense: expense });
-      return expense;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch expense';
-      set({ error: errorMessage });
-      return null;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  fetchGroupExpenses: async (groupId) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await api.getGroupExpenses(groupId);
-      const expenses = response.expenses;
-      set({ expenses });
-      return expenses;
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch expenses';
-      set({ error: errorMessage });
-      return null;
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  setCurrentExpense: (expense) => {
-    set({ currentExpense: expense });
-  },
-
-  clearError: () => {
-    set({ error: null });
-  },
-
-  clearExpenses: () => {
-    set({ expenses: [], currentExpense: null });
-  },
-
-  // Real-time sync handlers
-  handleExpenseCreated: (expense) => {
-    set((state) => {
-      // Check if expense already exists (avoid duplicates from own actions)
-      if (state.expenses.some((e) => e.id === expense.id)) {
-        return state;
-      }
-      return { expenses: [...state.expenses, expense] };
-    });
-  },
-
-  handleExpenseUpdated: (expense) => {
-    set((state) => ({
-      expenses: state.expenses.map((e) => (e.id === expense.id ? expense : e)),
-      currentExpense:
-        state.currentExpense?.id === expense.id ? expense : state.currentExpense,
-    }));
-  },
-
-  handleExpenseDeleted: (expenseId) => {
-    set((state) => ({
-      expenses: state.expenses.filter((e) => e.id !== expenseId),
-      currentExpense:
-        state.currentExpense?.id === expenseId ? null : state.currentExpense,
-    }));
-  },
-}));
+  )
+);
