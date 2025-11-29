@@ -5,11 +5,6 @@
 
 set -e
 
-echo "=========================================="
-echo "  Evn - Development Environment Setup"
-echo "=========================================="
-echo ""
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,12 +12,40 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Load nvm if available and switch to Node 20
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    export NVM_DIR="$HOME/.nvm"
+    \. "$NVM_DIR/nvm.sh"
+
+    # Check if Node 20 is installed, if not install it
+    if ! nvm ls 20 &>/dev/null; then
+        echo -e "${YELLOW}Installing Node.js 20...${NC}"
+        nvm install 20
+    fi
+
+    # Switch to Node 20
+    nvm use 20 &>/dev/null
+fi
+
+echo "=========================================="
+echo "  Evn - Development Environment Setup"
+echo "=========================================="
+echo ""
+
 # Check Node version
 NODE_VERSION=$(node -v 2>/dev/null || echo "not found")
 echo -e "${BLUE}Node version:${NC} $NODE_VERSION"
 
 if [[ "$NODE_VERSION" == "not found" ]]; then
     echo -e "${RED}Error: Node.js is not installed. Please install Node.js 20.x or higher.${NC}"
+    exit 1
+fi
+
+# Verify Node version is 20+
+NODE_MAJOR=$(echo "$NODE_VERSION" | cut -d'.' -f1 | tr -d 'v')
+if [[ "$NODE_MAJOR" -lt 20 ]]; then
+    echo -e "${RED}Error: Node.js 20.x or higher is required. Current version: $NODE_VERSION${NC}"
+    echo -e "${YELLOW}If you have nvm installed, run: nvm install 20 && nvm use 20${NC}"
     exit 1
 fi
 
