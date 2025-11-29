@@ -9,14 +9,23 @@ export default function GroupsScreen() {
     router.push('/create-group');
   };
 
+  const handleJoinGroup = () => {
+    router.push('/join-group');
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
           headerRight: () => (
-            <TouchableOpacity style={styles.addButton} onPress={handleCreateGroup}>
-              <Text style={styles.addButtonText}>+</Text>
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity style={styles.joinHeaderButton} onPress={handleJoinGroup}>
+                <Text style={styles.joinHeaderButtonText}>Join</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.addButton} onPress={handleCreateGroup}>
+                <Text style={styles.addButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -31,7 +40,7 @@ export default function GroupsScreen() {
           <TouchableOpacity style={styles.createButton} onPress={handleCreateGroup}>
             <Text style={styles.createButtonText}>Create Group</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.joinButton}>
+          <TouchableOpacity style={styles.joinButton} onPress={handleJoinGroup}>
             <Text style={styles.joinButtonText}>Join with Code</Text>
           </TouchableOpacity>
         </View>
@@ -60,6 +69,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  joinHeaderButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  joinHeaderButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '500',
   },
   addButton: {
     width: 32,

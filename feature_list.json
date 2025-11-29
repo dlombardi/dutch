@@ -231,7 +231,7 @@
         "Tap 'Join'",
         "Successfully added to group"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-view-list",

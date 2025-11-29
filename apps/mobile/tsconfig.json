@@ -4,5 +4,6 @@
     "strict": true,
     "skipLibCheck": true,
     "types": ["react", "react-native"]
-  }
+  },
+  "exclude": ["**/__tests__/**", "**/*.test.ts", "**/*.test.tsx", "jest.config.js"]
 }
