@@ -8,13 +8,13 @@ export class AuthController {
 
   @Post('magic-link/request')
   @HttpCode(HttpStatus.OK)
-  async requestMagicLink(@Body() dto: RequestMagicLinkDto) {
+  requestMagicLink(@Body() dto: RequestMagicLinkDto) {
     return this.authService.requestMagicLink(dto.email);
   }
 
   @Post('magic-link/verify')
   @HttpCode(HttpStatus.OK)
-  async verifyMagicLink(@Body() dto: VerifyMagicLinkDto) {
+  verifyMagicLink(@Body() dto: VerifyMagicLinkDto) {
     return this.authService.verifyMagicLink(dto.token);
   }
 }

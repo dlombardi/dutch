@@ -27,7 +27,7 @@ export class AuthService {
   private users: Map<string, UserData> = new Map();
   private usersByEmail: Map<string, string> = new Map();
 
-  async requestMagicLink(email: string): Promise<{ message: string }> {
+  requestMagicLink(email: string): { message: string } {
     // Generate a secure random token
     const token = randomBytes(32).toString('hex');
     const tokenId = randomBytes(16).toString('hex');
@@ -58,9 +58,7 @@ export class AuthService {
     };
   }
 
-  async verifyMagicLink(
-    token: string,
-  ): Promise<{ user: UserData; accessToken: string }> {
+  verifyMagicLink(token: string): { user: UserData; accessToken: string } {
     const magicLink = this.magicLinks.get(token);
 
     if (!magicLink) {
@@ -110,5 +108,25 @@ export class AuthService {
   // Helper method to get magic link info (for testing)
   getMagicLinkByToken(token: string): MagicLinkData | undefined {
     return this.magicLinks.get(token);
+  }
+
+  // Helper method to find token by email (for testing)
+  findTokenByEmail(email: string): string | undefined {
+    for (const [token, data] of this.magicLinks.entries()) {
+      if (data.email === email && !data.used) {
+        return token;
+      }
+    }
+    return undefined;
+  }
+
+  // Helper method to find any token by email including used ones (for testing)
+  findAnyTokenByEmail(email: string): string | undefined {
+    for (const [token, data] of this.magicLinks.entries()) {
+      if (data.email === email) {
+        return token;
+      }
+    }
+    return undefined;
   }
 }

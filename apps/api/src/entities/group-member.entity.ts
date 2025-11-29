@@ -38,7 +38,9 @@ export class GroupMember {
   joinedAt: Date;
 
   // Relations
-  @ManyToOne(() => User, (user) => user.groupMemberships, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.groupMemberships, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'userId' })
   user: User;
 

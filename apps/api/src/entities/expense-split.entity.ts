@@ -31,7 +31,9 @@ export class ExpenseSplit {
   percentage?: number;
 
   // Relations
-  @ManyToOne(() => Expense, (expense) => expense.splits, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Expense, (expense) => expense.splits, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'expenseId' })
   expense: Expense;
 

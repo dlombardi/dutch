@@ -2,7 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AuthModule } from '../auth.module';
-import { AuthService } from '../auth.service';
+import { AuthService, UserData } from '../auth.service';
+
+interface VerifyResponse {
+  user: UserData;
+  accessToken: string;
+}
+
+interface MessageResponse {
+  message: string;
+}
 
 describe('AuthController (integration)', () => {
   let app: INestApplication;
@@ -31,7 +40,8 @@ describe('AuthController (integration)', () => {
         .send({ email: 'test@example.com' })
         .expect(200);
 
-      expect(response.body).toEqual({
+      const body = response.body as MessageResponse;
+      expect(body).toEqual({
         message: 'Magic link sent to your email',
       });
     });
@@ -59,14 +69,9 @@ describe('AuthController (integration)', () => {
         .send({ email: 'verify-test@example.com' })
         .expect(200);
 
-      // Find the token that was created (using service's internal method for testing)
-      // In real testing, we'd capture this from logs or use a test email service
-      const magicLinks = Array.from(
-        (authService as any).magicLinks.entries(),
-      );
-      const [token] = magicLinks.find(
-        ([, data]) => data.email === 'verify-test@example.com',
-      )!;
+      // Find the token that was created using the service helper method
+      const token = authService.findTokenByEmail('verify-test@example.com');
+      expect(token).toBeDefined();
 
       // Verify the magic link
       const response = await request(app.getHttpServer())
@@ -74,17 +79,18 @@ describe('AuthController (integration)', () => {
         .send({ token })
         .expect(200);
 
-      expect(response.body).toHaveProperty('user');
-      expect(response.body).toHaveProperty('accessToken');
-      expect(response.body.user).toMatchObject({
+      const body = response.body as VerifyResponse;
+      expect(body).toHaveProperty('user');
+      expect(body).toHaveProperty('accessToken');
+      expect(body.user).toMatchObject({
         email: 'verify-test@example.com',
         type: 'full',
         authProvider: 'magic_link',
       });
-      expect(response.body.user).toHaveProperty('id');
-      expect(response.body.user).toHaveProperty('name');
-      expect(typeof response.body.accessToken).toBe('string');
-      expect(response.body.accessToken.length).toBeGreaterThan(0);
+      expect(body.user).toHaveProperty('id');
+      expect(body.user).toHaveProperty('name');
+      expect(typeof body.accessToken).toBe('string');
+      expect(body.accessToken.length).toBeGreaterThan(0);
     });
 
     it('should reject an invalid token', async () => {
@@ -93,7 +99,8 @@ describe('AuthController (integration)', () => {
         .send({ token: 'invalid-token-that-does-not-exist' })
         .expect(400);
 
-      expect(response.body.message).toBe('Invalid magic link');
+      const body = response.body as MessageResponse;
+      expect(body.message).toBe('Invalid magic link');
     });
 
     it('should reject an already-used token', async () => {
@@ -104,12 +111,8 @@ describe('AuthController (integration)', () => {
         .expect(200);
 
       // Get the token
-      const magicLinks = Array.from(
-        (authService as any).magicLinks.entries(),
-      );
-      const [token] = magicLinks.find(
-        ([, data]) => data.email === 'used-test@example.com',
-      )!;
+      const token = authService.findTokenByEmail('used-test@example.com');
+      expect(token).toBeDefined();
 
       // Use the token once
       await request(app.getHttpServer())
@@ -123,7 +126,8 @@ describe('AuthController (integration)', () => {
         .send({ token })
         .expect(400);
 
-      expect(response.body.message).toBe('Magic link has already been used');
+      const body = response.body as MessageResponse;
+      expect(body.message).toBe('Magic link has already been used');
     });
 
     it('should return the same user for the same email', async () => {
@@ -133,12 +137,8 @@ describe('AuthController (integration)', () => {
         .send({ email: 'same-user@example.com' })
         .expect(200);
 
-      const magicLinks1 = Array.from(
-        (authService as any).magicLinks.entries(),
-      );
-      const [token1] = magicLinks1.find(
-        ([, data]) => data.email === 'same-user@example.com' && !data.used,
-      )!;
+      const token1 = authService.findTokenByEmail('same-user@example.com');
+      expect(token1).toBeDefined();
 
       // Verify first token
       const response1 = await request(app.getHttpServer())
@@ -146,7 +146,8 @@ describe('AuthController (integration)', () => {
         .send({ token: token1 })
         .expect(200);
 
-      const userId = response1.body.user.id;
+      const body1 = response1.body as VerifyResponse;
+      const userId = body1.user.id;
 
       // Request second magic link for same email
       await request(app.getHttpServer())
@@ -154,12 +155,8 @@ describe('AuthController (integration)', () => {
         .send({ email: 'same-user@example.com' })
         .expect(200);
 
-      const magicLinks2 = Array.from(
-        (authService as any).magicLinks.entries(),
-      );
-      const [token2] = magicLinks2.find(
-        ([, data]) => data.email === 'same-user@example.com' && !data.used,
-      )!;
+      const token2 = authService.findTokenByEmail('same-user@example.com');
+      expect(token2).toBeDefined();
 
       // Verify second token
       const response2 = await request(app.getHttpServer())
@@ -167,8 +164,9 @@ describe('AuthController (integration)', () => {
         .send({ token: token2 })
         .expect(200);
 
+      const body2 = response2.body as VerifyResponse;
       // Should be the same user
-      expect(response2.body.user.id).toBe(userId);
+      expect(body2.user.id).toBe(userId);
     });
 
     it('should reject empty token', async () => {
