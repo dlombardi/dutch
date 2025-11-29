@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
-import type { Group } from '../../stores/groupsStore';
+import { useGroupsStore, type Group } from '../../stores/groupsStore';
 
 // Type for create group input
 interface CreateGroupInput {
@@ -21,7 +21,7 @@ interface JoinGroupInput {
  * Mutation hook for creating a group.
  *
  * Features:
- * - Invalidates groups list on success
+ * - Updates both React Query cache and Zustand store
  * - Returns the new group for navigation
  */
 export function useCreateGroup() {
@@ -39,13 +39,17 @@ export function useCreateGroup() {
     },
 
     onSuccess: (newGroup) => {
-      // Add the new group to the groups list cache
+      // Update React Query cache
       queryClient.setQueryData<Group[]>(queryKeys.groups.list(), (old) =>
         old ? [...old, newGroup] : [newGroup]
       );
-
-      // Also set the detail cache
       queryClient.setQueryData(queryKeys.groups.detail(newGroup.id), newGroup);
+
+      // Update Zustand store (persists to AsyncStorage)
+      const { groups } = useGroupsStore.getState();
+      if (!groups.some((g) => g.id === newGroup.id)) {
+        useGroupsStore.setState({ groups: [...groups, newGroup] });
+      }
     },
   });
 }
@@ -54,7 +58,7 @@ export function useCreateGroup() {
  * Mutation hook for joining a group via invite code.
  *
  * Features:
- * - Invalidates groups list on success
+ * - Updates both React Query cache and Zustand store
  * - Returns the joined group for navigation
  */
 export function useJoinGroup() {
@@ -67,23 +71,26 @@ export function useJoinGroup() {
     },
 
     onSuccess: (joinedGroup) => {
-      // Add the joined group to the groups list cache
+      // Update React Query cache
       queryClient.setQueryData<Group[]>(queryKeys.groups.list(), (old) => {
         if (!old) return [joinedGroup];
-        // Avoid duplicates if already in list
         if (old.some((g) => g.id === joinedGroup.id)) {
           return old;
         }
         return [...old, joinedGroup];
       });
-
-      // Also set the detail cache
       queryClient.setQueryData(queryKeys.groups.detail(joinedGroup.id), joinedGroup);
 
       // Invalidate the invite code query (it's been used)
       queryClient.removeQueries({
         queryKey: queryKeys.groups.byInviteCode(joinedGroup.inviteCode),
       });
+
+      // Update Zustand store (persists to AsyncStorage)
+      const { groups } = useGroupsStore.getState();
+      if (!groups.some((g) => g.id === joinedGroup.id)) {
+        useGroupsStore.setState({ groups: [...groups, joinedGroup] });
+      }
     },
   });
 }
