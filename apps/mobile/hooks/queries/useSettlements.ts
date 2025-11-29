@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
 import type { Settlement } from '../../stores/settlementsStore';
+import { useAuthStore } from '../../stores/authStore';
 
 /**
  * Query hook to fetch settlements for a specific group.
@@ -10,8 +11,12 @@ import type { Settlement } from '../../stores/settlementsStore';
  * - Automatic caching and background refetching
  * - Request deduplication (multiple components won't trigger multiple requests)
  * - Stale-while-revalidate pattern
+ * - Waits for auth store hydration before making API calls
  */
 export function useGroupSettlements(groupId: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.settlements.byGroup(groupId ?? ''),
     queryFn: async () => {
@@ -19,7 +24,7 @@ export function useGroupSettlements(groupId: string | undefined) {
       const response = await api.getGroupSettlements(groupId);
       return response.settlements as Settlement[];
     },
-    enabled: !!groupId,
+    enabled: !!groupId && hasHydrated && isAuthenticated,
   });
 }
 

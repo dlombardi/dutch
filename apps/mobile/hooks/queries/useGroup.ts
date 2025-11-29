@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
 import type { Group, GroupMember, BalancesData } from '../../stores/groupsStore';
+import { useAuthStore } from '../../stores/authStore';
 
 /**
  * Query hook to fetch a single group by ID.
@@ -10,8 +11,12 @@ import type { Group, GroupMember, BalancesData } from '../../stores/groupsStore'
  * - Automatic caching and background refetching
  * - Request deduplication (multiple components won't trigger multiple requests)
  * - Stale-while-revalidate pattern
+ * - Waits for auth store hydration before making API calls
  */
 export function useGroup(groupId: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.groups.detail(groupId ?? ''),
     queryFn: async () => {
@@ -19,7 +24,8 @@ export function useGroup(groupId: string | undefined) {
       const response = await api.getGroup(groupId);
       return response.group as Group;
     },
-    enabled: !!groupId,
+    // Only fetch when we have a groupId AND auth is ready
+    enabled: !!groupId && hasHydrated && isAuthenticated,
   });
 }
 
@@ -27,6 +33,9 @@ export function useGroup(groupId: string | undefined) {
  * Query hook to fetch group members.
  */
 export function useGroupMembers(groupId: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.groups.members(groupId ?? ''),
     queryFn: async () => {
@@ -34,7 +43,7 @@ export function useGroupMembers(groupId: string | undefined) {
       const response = await api.getGroupMembers(groupId);
       return response.members as GroupMember[];
     },
-    enabled: !!groupId,
+    enabled: !!groupId && hasHydrated && isAuthenticated,
   });
 }
 
@@ -42,6 +51,9 @@ export function useGroupMembers(groupId: string | undefined) {
  * Query hook to fetch group balances.
  */
 export function useGroupBalances(groupId: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.groups.balances(groupId ?? ''),
     queryFn: async () => {
@@ -49,7 +61,7 @@ export function useGroupBalances(groupId: string | undefined) {
       const response = await api.getGroupBalances(groupId);
       return response as BalancesData;
     },
-    enabled: !!groupId,
+    enabled: !!groupId && hasHydrated && isAuthenticated,
   });
 }
 
@@ -57,6 +69,9 @@ export function useGroupBalances(groupId: string | undefined) {
  * Query hook to fetch a group by invite code (for join preview).
  */
 export function useGroupByInviteCode(inviteCode: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.groups.byInviteCode(inviteCode ?? ''),
     queryFn: async () => {
@@ -64,7 +79,7 @@ export function useGroupByInviteCode(inviteCode: string | undefined) {
       const response = await api.getGroupByInviteCode(inviteCode);
       return response.group as Group;
     },
-    enabled: !!inviteCode,
+    enabled: !!inviteCode && hasHydrated && isAuthenticated,
   });
 }
 

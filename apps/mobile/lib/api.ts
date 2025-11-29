@@ -57,18 +57,35 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw data as ApiError;
+    if (__DEV__) {
+      console.log(`[API] ${options.method || 'GET'} ${endpoint}`, {
+        hasToken: !!accessToken,
+        tokenPrefix: accessToken?.substring(0, 20),
+      });
     }
 
-    return data as T;
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (__DEV__) {
+          console.log(`[API] Error ${response.status}:`, data);
+        }
+        throw data as ApiError;
+      }
+
+      return data as T;
+    } catch (error) {
+      if (__DEV__) {
+        console.log(`[API] Request failed:`, error);
+      }
+      throw error;
+    }
   }
 
   // Auth endpoints

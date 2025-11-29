@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
 import type { Expense } from '../../stores/expensesStore';
+import { useAuthStore } from '../../stores/authStore';
 
 /**
  * Query hook to fetch expenses for a specific group.
@@ -10,8 +11,12 @@ import type { Expense } from '../../stores/expensesStore';
  * - Automatic caching and background refetching
  * - Request deduplication (multiple components won't trigger multiple requests)
  * - Stale-while-revalidate pattern
+ * - Waits for auth store hydration before making API calls
  */
 export function useGroupExpenses(groupId: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.expenses.byGroup(groupId ?? ''),
     queryFn: async () => {
@@ -19,7 +24,7 @@ export function useGroupExpenses(groupId: string | undefined) {
       const response = await api.getGroupExpenses(groupId);
       return response.expenses as Expense[];
     },
-    enabled: !!groupId,
+    enabled: !!groupId && hasHydrated && isAuthenticated,
   });
 }
 
@@ -27,6 +32,9 @@ export function useGroupExpenses(groupId: string | undefined) {
  * Query hook to fetch a single expense by ID.
  */
 export function useExpense(expenseId: string | undefined) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+
   return useQuery({
     queryKey: queryKeys.expenses.detail(expenseId ?? ''),
     queryFn: async () => {
@@ -34,7 +42,7 @@ export function useExpense(expenseId: string | undefined) {
       const response = await api.getExpense(expenseId);
       return response.expense as Expense;
     },
-    enabled: !!expenseId,
+    enabled: !!expenseId && hasHydrated && isAuthenticated,
   });
 }
 
