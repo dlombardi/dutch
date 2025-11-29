@@ -568,3 +568,30 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### splits-exact-amounts - COMPLETE
+- Implemented:
+  - API: CreateExpenseDto with splitType ('equal' | 'exact') and splitAmounts fields
+  - API: UpdateExpenseDto with splitType and splitAmounts fields
+  - API: ExpensesService.validateExactSplitAmounts() validates sum matches total
+  - API: Validation for negative individual amounts
+  - API: Tolerance of 0.01 for rounding differences
+  - API: Switch between equal and exact split types on update
+  - API: Preserve exact amounts when updating unrelated fields
+  - Mobile: api.ts createExpense and updateExpense support splitType/splitAmounts
+- Tests added (11 tests in expenses.controller.spec.ts):
+  - Create expense with exact split amounts
+  - Set splitParticipants from splitAmounts keys
+  - Reject exact split when amounts do not sum to total
+  - Reject exact split with negative individual amount
+  - Reject exact split with empty splitAmounts
+  - Allow exact split with small rounding difference (within 0.01)
+  - Update expense to exact split from equal split
+  - Update expense from exact split back to equal split
+  - Reject updating exact split amounts that don't match expense total
+  - Require splitAmounts when splitType is exact
+  - Preserve exact split amounts when other fields are updated
+- Verified:
+  - All 115 API tests pass (104 existing + 11 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

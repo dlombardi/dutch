@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { GroupsService } from '../groups/groups.service';
 
@@ -9,7 +9,7 @@ export interface ExpenseData {
   currency: string;
   description: string;
   paidById: string;
-  splitType: string;
+  splitType: 'equal' | 'exact';
   splitParticipants: string[];
   splitAmounts: Record<string, number>;
   date: string;
@@ -47,6 +47,32 @@ export class ExpensesService {
     return splitAmounts;
   }
 
+  private validateExactSplitAmounts(
+    totalAmount: number,
+    splitAmounts: Record<string, number>,
+  ): void {
+    const entries = Object.entries(splitAmounts);
+
+    if (entries.length === 0) {
+      throw new BadRequestException('Exact split amounts cannot be empty');
+    }
+
+    // Check for negative amounts
+    for (const [userId, amount] of entries) {
+      if (amount < 0) {
+        throw new BadRequestException(`Split amount for ${userId} cannot be negative`);
+      }
+    }
+
+    // Check sum matches total (allowing 0.01 tolerance for rounding)
+    const sum = entries.reduce((acc, [, amount]) => acc + amount, 0);
+    if (Math.abs(sum - totalAmount) > 0.01) {
+      throw new BadRequestException(
+        `Split amounts must sum to total expense amount. Expected ${totalAmount}, got ${sum.toFixed(2)}`
+      );
+    }
+  }
+
   createExpense(
     groupId: string,
     amount: number,
@@ -56,6 +82,8 @@ export class ExpensesService {
     currency?: string,
     date?: string,
     splitParticipants?: string[],
+    splitType?: 'equal' | 'exact',
+    splitAmounts?: Record<string, number>,
   ): { expense: ExpenseData } {
     // Verify group exists and get default currency
     const { group } = this.groupsService.getGroupById(groupId);
@@ -64,9 +92,22 @@ export class ExpensesService {
     const now = new Date();
     const expenseDate = date || now.toISOString().split('T')[0];
 
-    // Default to payer if no participants specified
-    const participants = splitParticipants || [paidById];
-    const splitAmounts = this.calculateEqualSplits(amount, participants);
+    let finalSplitType: 'equal' | 'exact' = splitType || 'equal';
+    let finalSplitParticipants: string[];
+    let finalSplitAmounts: Record<string, number>;
+
+    if (finalSplitType === 'exact') {
+      if (!splitAmounts || Object.keys(splitAmounts).length === 0) {
+        throw new BadRequestException('Split amounts are required for exact split type');
+      }
+      this.validateExactSplitAmounts(amount, splitAmounts);
+      finalSplitAmounts = splitAmounts;
+      finalSplitParticipants = Object.keys(splitAmounts);
+    } else {
+      // Equal split
+      finalSplitParticipants = splitParticipants || [paidById];
+      finalSplitAmounts = this.calculateEqualSplits(amount, finalSplitParticipants);
+    }
 
     const expense: ExpenseData = {
       id: expenseId,
@@ -75,9 +116,9 @@ export class ExpensesService {
       currency: currency || group.defaultCurrency,
       description,
       paidById,
-      splitType: 'equal', // default for basic expense
-      splitParticipants: participants,
-      splitAmounts,
+      splitType: finalSplitType,
+      splitParticipants: finalSplitParticipants,
+      splitAmounts: finalSplitAmounts,
       date: expenseDate,
       createdById,
       createdAt: now,
@@ -122,7 +163,9 @@ export class ExpensesService {
       description?: string;
       paidById?: string;
       date?: string;
+      splitType?: 'equal' | 'exact';
       splitParticipants?: string[];
+      splitAmounts?: Record<string, number>;
     },
   ): { expense: ExpenseData } {
     const expense = this.expenses.get(id);
@@ -130,7 +173,7 @@ export class ExpensesService {
       throw new NotFoundException('Expense not found');
     }
 
-    // Apply updates
+    // Apply basic updates
     if (updates.amount !== undefined) {
       expense.amount = updates.amount;
     }
@@ -146,16 +189,42 @@ export class ExpensesService {
     if (updates.date !== undefined) {
       expense.date = updates.date;
     }
-    if (updates.splitParticipants !== undefined) {
-      expense.splitParticipants = updates.splitParticipants;
-    }
 
-    // Recalculate splits if amount or participants changed
-    if (updates.amount !== undefined || updates.splitParticipants !== undefined) {
-      expense.splitAmounts = this.calculateEqualSplits(
-        expense.amount,
-        expense.splitParticipants,
-      );
+    // Handle split type changes
+    const newSplitType = updates.splitType || expense.splitType;
+
+    if (newSplitType === 'exact') {
+      // Changing to or updating exact split
+      if (updates.splitAmounts) {
+        this.validateExactSplitAmounts(expense.amount, updates.splitAmounts);
+        expense.splitAmounts = updates.splitAmounts;
+        expense.splitParticipants = Object.keys(updates.splitAmounts);
+        expense.splitType = 'exact';
+      } else if (updates.splitType === 'exact' && expense.splitType !== 'exact') {
+        // Trying to change to exact without providing amounts
+        throw new BadRequestException('Split amounts are required for exact split type');
+      }
+      // If just updating amount and keeping exact split, validate existing amounts
+      if (updates.amount !== undefined && expense.splitType === 'exact' && !updates.splitAmounts) {
+        this.validateExactSplitAmounts(expense.amount, expense.splitAmounts);
+      }
+    } else {
+      // Equal split
+      expense.splitType = 'equal';
+      if (updates.splitParticipants !== undefined) {
+        expense.splitParticipants = updates.splitParticipants;
+      }
+      // Recalculate splits if amount or participants changed, or if switching from exact to equal
+      if (
+        updates.amount !== undefined ||
+        updates.splitParticipants !== undefined ||
+        updates.splitType === 'equal'
+      ) {
+        expense.splitAmounts = this.calculateEqualSplits(
+          expense.amount,
+          expense.splitParticipants,
+        );
+      }
     }
 
     expense.updatedAt = new Date();

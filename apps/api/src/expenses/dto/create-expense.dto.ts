@@ -7,6 +7,9 @@ import {
   IsPositive,
   IsArray,
   ArrayMinSize,
+  IsIn,
+  IsObject,
+  ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -40,9 +43,19 @@ export class CreateExpenseDto {
   @IsOptional()
   date?: string;
 
+  @IsString()
+  @IsIn(['equal', 'exact'])
+  @IsOptional()
+  splitType?: 'equal' | 'exact';
+
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(1)
   @IsOptional()
   splitParticipants?: string[];
+
+  @ValidateIf((o: CreateExpenseDto) => o.splitType === 'exact')
+  @IsObject()
+  @IsNotEmpty()
+  splitAmounts?: Record<string, number>;
 }

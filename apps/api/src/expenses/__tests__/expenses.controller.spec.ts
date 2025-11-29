@@ -802,4 +802,284 @@ describe('ExpensesController (integration)', () => {
       expect(body.expense.splitAmounts['user-456']).toBe(50);
     });
   });
+
+  describe('Exact Amounts Split', () => {
+    it('should create expense with exact split amounts', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Dinner with exact split',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 60.00,
+            'user-456': 40.00,
+          },
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      const expense = body.expense as Expense & { splitAmounts: Record<string, number> };
+      expect(expense.splitType).toBe('exact');
+      expect(expense.splitAmounts['user-123']).toBe(60);
+      expect(expense.splitAmounts['user-456']).toBe(40);
+    });
+
+    it('should set splitParticipants from splitAmounts keys', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 90.00,
+          description: 'Three-way exact split',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 30.00,
+            'user-456': 35.00,
+            'user-789': 25.00,
+          },
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      const expense = body.expense as Expense & { splitParticipants: string[] };
+      expect(expense.splitParticipants).toEqual(
+        expect.arrayContaining(['user-123', 'user-456', 'user-789'])
+      );
+      expect(expense.splitParticipants).toHaveLength(3);
+    });
+
+    it('should reject exact split when amounts do not sum to total', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Invalid exact split',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 50.00,
+            'user-456': 30.00, // Sum is 80, not 100
+          },
+        })
+        .expect(400);
+
+      const body = response.body as ErrorResponse;
+      expect(body.message).toContain('must sum to total');
+    });
+
+    it('should reject exact split with negative individual amount', async () => {
+      await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Negative individual',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 120.00,
+            'user-456': -20.00,
+          },
+        })
+        .expect(400);
+    });
+
+    it('should reject exact split with empty splitAmounts', async () => {
+      await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Empty exact split',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {},
+        })
+        .expect(400);
+    });
+
+    it('should allow exact split with small rounding difference (within 0.01)', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Exact split with rounding',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 33.33,
+            'user-456': 33.33,
+            'user-789': 33.34,
+          },
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      const expense = body.expense as Expense & { splitAmounts: Record<string, number> };
+      const sum = Object.values(expense.splitAmounts).reduce((a, b) => a + b, 0);
+      expect(sum).toBeCloseTo(100.00, 2);
+    });
+
+    it('should update expense to exact split from equal split', async () => {
+      // Create with equal split
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Initially equal',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: ['user-123', 'user-456'],
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update to exact split
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 70.00,
+            'user-456': 30.00,
+          },
+        })
+        .expect(200);
+
+      const body = response.body as { expense: Expense & { splitAmounts: Record<string, number> } };
+      expect(body.expense.splitType).toBe('exact');
+      expect(body.expense.splitAmounts['user-123']).toBe(70);
+      expect(body.expense.splitAmounts['user-456']).toBe(30);
+    });
+
+    it('should update expense from exact split back to equal split', async () => {
+      // Create with exact split
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Initially exact',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 70.00,
+            'user-456': 30.00,
+          },
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update back to equal split
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({
+          splitType: 'equal',
+          splitParticipants: ['user-123', 'user-456'],
+        })
+        .expect(200);
+
+      const body = response.body as { expense: Expense & { splitAmounts: Record<string, number> } };
+      expect(body.expense.splitType).toBe('equal');
+      expect(body.expense.splitAmounts['user-123']).toBe(50);
+      expect(body.expense.splitAmounts['user-456']).toBe(50);
+    });
+
+    it('should reject updating exact split amounts that do not match expense total', async () => {
+      // Create with exact split
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Initially exact',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 60.00,
+            'user-456': 40.00,
+          },
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Try to update with wrong total
+      await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 50.00,
+            'user-456': 30.00, // Sum is 80, not 100
+          },
+        })
+        .expect(400);
+    });
+
+    it('should require splitAmounts when splitType is exact', async () => {
+      await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Missing splitAmounts',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          // Missing splitAmounts
+        })
+        .expect(400);
+    });
+
+    it('should preserve exact split amounts when other fields are updated', async () => {
+      // Create with exact split
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Original description',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitType: 'exact',
+          splitAmounts: {
+            'user-123': 70.00,
+            'user-456': 30.00,
+          },
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update only description
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ description: 'Updated description' })
+        .expect(200);
+
+      const body = response.body as { expense: Expense & { splitAmounts: Record<string, number> } };
+      expect(body.expense.description).toBe('Updated description');
+      expect(body.expense.splitType).toBe('exact');
+      expect(body.expense.splitAmounts['user-123']).toBe(70);
+      expect(body.expense.splitAmounts['user-456']).toBe(30);
+    });
+  });
 });

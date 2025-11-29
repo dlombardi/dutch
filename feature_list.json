@@ -607,7 +607,7 @@
         "Amounts must sum to total",
         "See warning if amounts don't match total"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "splits-percentages",
@@ -1877,7 +1877,7 @@
         "No SQL injection possible",
         "No XSS via stored content"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "currency-symbol-display",
