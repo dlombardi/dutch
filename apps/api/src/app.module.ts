@@ -5,9 +5,10 @@ import { AuthModule } from './auth/auth.module';
 import { GroupsModule } from './groups/groups.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { CurrencyModule } from './currency/currency.module';
+import { SyncModule } from './sync/sync.module';
 
 @Module({
-  imports: [AuthModule, GroupsModule, ExpensesModule, CurrencyModule],
+  imports: [AuthModule, GroupsModule, ExpensesModule, CurrencyModule, SyncModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -951,7 +951,7 @@
         "Connection indicator (if shown) is green/active",
         "Reconnects automatically if dropped"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "sync-connection-status",

@@ -668,3 +668,35 @@ Description: Exchange rates are fetched automatically and updated regularly
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+---
+
+## Session: 2025-11-29 (continued)
+Working on: sync-websocket-connection
+Description: App maintains WebSocket connection for real-time updates
+
+### sync-websocket-connection - COMPLETE
+- Implemented:
+  - API: New SyncModule with SyncGateway WebSocket handler
+  - API: WebSocket server using Socket.IO with CORS support
+  - API: Welcome message sent on client connection with socket ID
+  - API: joinGroup/leaveGroup events for room-based messaging
+  - API: Ping/pong for connection health checking
+  - API: testBroadcast event for testing group broadcasts
+  - API: broadcastToGroup() method for services to emit events
+  - Mobile: New syncStore with Zustand for WebSocket state management
+  - Mobile: Connection/disconnection based on auth state
+  - Mobile: Automatic reconnection with exponential backoff
+  - Mobile: Group subscription tracking with auto-rejoin on reconnect
+  - Mobile: Event listeners for expense/settlement/balance updates
+  - Mobile: Connection status tracking (disconnected, connecting, connected, reconnecting)
+- Tests added:
+  - 9 new tests in sync.gateway.spec.ts
+  - Connection tests (connect, welcome message, socket ID)
+  - Group subscription tests (join, leave, multiple groups)
+  - Ping/pong health check test
+  - Broadcasting tests (group broadcasts, isolation between groups)
+- Verified:
+  - All 140 API tests pass (131 existing + 9 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

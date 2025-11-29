@@ -4,16 +4,34 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
+import { useSyncStore } from '../stores/syncStore';
 
 export default function RootLayout() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
   const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const { connect, disconnect, connectionStatus } = useSyncStore();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Connect/disconnect WebSocket based on auth state
+  useEffect(() => {
+    if (!_hasHydrated) return;
+
+    if (isAuthenticated) {
+      connect();
+    } else {
+      disconnect();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      disconnect();
+    };
+  }, [isAuthenticated, _hasHydrated]);
 
   useEffect(() => {
     // Don't navigate until:
