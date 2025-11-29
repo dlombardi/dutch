@@ -10,6 +10,7 @@ import {
   IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { EXPENSE_CATEGORIES, ExpenseCategory } from './create-expense.dto';
 
 export class UpdateExpenseDto {
   @IsNumber()
@@ -25,6 +26,11 @@ export class UpdateExpenseDto {
   @IsOptional()
   @Transform(({ value }: { value: string }) => value?.trim())
   description?: string;
+
+  @IsString()
+  @IsIn(EXPENSE_CATEGORIES)
+  @IsOptional()
+  category?: ExpenseCategory;
 
   @IsString()
   @IsOptional()

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Optional } from '@n
 import { randomBytes } from 'crypto';
 import { GroupsService } from '../groups/groups.service';
 import { SyncGateway } from '../sync/sync.gateway';
+import { ExpenseCategory } from './dto/create-expense.dto';
 
 export interface ExpenseData {
   id: string;
@@ -11,6 +12,7 @@ export interface ExpenseData {
   exchangeRate: number;
   amountInGroupCurrency: number;
   description: string;
+  category?: ExpenseCategory;
   paidById: string;
   splitType: 'equal' | 'exact';
   splitParticipants: string[];
@@ -91,6 +93,7 @@ export class ExpensesService {
     splitType?: 'equal' | 'exact',
     splitAmounts?: Record<string, number>,
     exchangeRate?: number,
+    category?: ExpenseCategory,
   ): { expense: ExpenseData } {
     // Verify group exists and get default currency
     const { group } = this.groupsService.getGroupById(groupId);
@@ -144,6 +147,7 @@ export class ExpensesService {
       exchangeRate: finalExchangeRate,
       amountInGroupCurrency,
       description,
+      category,
       paidById,
       splitType: finalSplitType,
       splitParticipants: finalSplitParticipants,
@@ -195,6 +199,7 @@ export class ExpensesService {
       amount?: number;
       currency?: string;
       description?: string;
+      category?: ExpenseCategory;
       paidById?: string;
       date?: string;
       splitType?: 'equal' | 'exact';
@@ -216,6 +221,9 @@ export class ExpensesService {
     }
     if (updates.description !== undefined) {
       expense.description = updates.description;
+    }
+    if (updates.category !== undefined) {
+      expense.category = updates.category;
     }
     if (updates.paidById !== undefined) {
       expense.paidById = updates.paidById;

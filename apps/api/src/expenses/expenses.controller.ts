@@ -20,6 +20,7 @@ export class ExpensesController {
       dto.splitType,
       dto.splitAmounts,
       dto.exchangeRate,
+      dto.category,
     );
   }
 

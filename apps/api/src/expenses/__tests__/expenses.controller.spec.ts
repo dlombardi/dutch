@@ -24,6 +24,7 @@ interface Expense {
   exchangeRate: number;
   amountInGroupCurrency: number;
   description: string;
+  category?: string;
   paidById: string;
   splitType: string;
   splitParticipants: string[];
@@ -1086,6 +1087,143 @@ describe('ExpensesController (integration)', () => {
       expect(body.expense.splitType).toBe('exact');
       expect(body.expense.splitAmounts['user-123']).toBe(70);
       expect(body.expense.splitAmounts['user-456']).toBe(30);
+    });
+  });
+
+  describe('POST /expenses - category', () => {
+    it('should create an expense with a category', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 75.0,
+          description: 'Uber to airport',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          category: 'transport',
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      expect(body.expense.category).toBe('transport');
+    });
+
+    it('should create an expense without a category (optional)', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 25.0,
+          description: 'Coffee',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      expect(body.expense.category).toBeUndefined();
+    });
+
+    it('should validate category is a valid option', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.0,
+          description: 'Dinner',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          category: 'invalid_category',
+        })
+        .expect(400);
+
+      const body = response.body as ErrorResponse;
+      const messages = Array.isArray(body.message) ? body.message : [body.message];
+      expect(messages.some(m => m.includes('category must be one of the following values'))).toBe(true);
+    });
+
+    it('should accept all valid category options', async () => {
+      const validCategories = [
+        'food',
+        'transport',
+        'accommodation',
+        'activities',
+        'shopping',
+        'utilities',
+        'entertainment',
+        'health',
+        'other',
+      ];
+
+      for (const category of validCategories) {
+        const response = await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 10.0,
+            description: `Test ${category}`,
+            paidById: 'user-123',
+            createdById: 'user-123',
+            category,
+          })
+          .expect(201);
+
+        const body = response.body as CreateExpenseResponse;
+        expect(body.expense.category).toBe(category);
+      }
+    });
+  });
+
+  describe('PUT /expenses/:id - category', () => {
+    it('should update expense category', async () => {
+      // Create expense without category
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.0,
+          description: 'Groceries',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update with category
+      const updateResponse = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ category: 'food' })
+        .expect(200);
+
+      const body = updateResponse.body as { expense: Expense };
+      expect(body.expense.category).toBe('food');
+    });
+
+    it('should change expense category', async () => {
+      // Create expense with category
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 200.0,
+          description: 'Hotel',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          category: 'accommodation',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Change category
+      const updateResponse = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ category: 'activities' })
+        .expect(200);
+
+      const body = updateResponse.body as { expense: Expense };
+      expect(body.expense.category).toBe('activities');
     });
   });
 });

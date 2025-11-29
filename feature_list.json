@@ -413,7 +413,7 @@
         "Select appropriate category",
         "Category saved and shown on expense"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-view-list",
