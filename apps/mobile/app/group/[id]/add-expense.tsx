@@ -409,6 +409,24 @@ export default function AddExpenseScreen() {
             )}
           </View>
         </ScrollView>
+
+        {/* Add Expense Button */}
+        <View style={styles.footer}>
+          <TouchableOpacity
+            style={[
+              styles.addButton,
+              (!isValid || isCreating) && styles.addButtonDisabled,
+            ]}
+            onPress={handleSave}
+            disabled={!isValid || isCreating}
+          >
+            {isCreating ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.addButtonText}>Add Expense</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
 
       {/* Payer Picker Modal */}
@@ -848,6 +866,26 @@ const styles = StyleSheet.create({
   currencyOptionCheck: {
     fontSize: 18,
     color: '#007AFF',
+    fontWeight: '600',
+  },
+  footer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    backgroundColor: '#fff',
+  },
+  addButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  addButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: '600',
   },
 });
