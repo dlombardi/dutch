@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,40 @@ import { useExpensesStore } from '../../../stores/expensesStore';
 import { useGroupsStore, GroupMember } from '../../../stores/groupsStore';
 import { useAuthStore } from '../../../stores/authStore';
 
+// Common currencies with their symbols
+const CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'CAD', symbol: '$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: '$', name: 'Australian Dollar' },
+  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+  { code: 'SGD', symbol: '$', name: 'Singapore Dollar' },
+  { code: 'HKD', symbol: '$', name: 'Hong Kong Dollar' },
+  { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+  { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+  { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+  { code: 'NZD', symbol: '$', name: 'New Zealand Dollar' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+  { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+  { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+  { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+  { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
+  { code: 'TWD', symbol: 'NT$', name: 'Taiwan Dollar' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+  { code: 'PLN', symbol: 'zł', name: 'Polish Zloty' },
+  { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna' },
+  { code: 'ILS', symbol: '₪', name: 'Israeli Shekel' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+];
+
 export default function AddExpenseScreen() {
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -30,8 +64,11 @@ export default function AddExpenseScreen() {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [paidById, setPaidById] = useState<string | null>(null);
+  const [currency, setCurrency] = useState<string | null>(null);
   const [showPayerPicker, setShowPayerPicker] = useState(false);
   const [showSplitPicker, setShowSplitPicker] = useState(false);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
   const [splitParticipants, setSplitParticipants] = useState<string[]>([]);
 
   // Fetch group members and set default payer
@@ -54,6 +91,33 @@ export default function AddExpenseScreen() {
       setSplitParticipants(currentGroupMembers.map((m) => m.userId));
     }
   }, [currentGroupMembers, splitParticipants.length]);
+
+  // Default currency to group's default
+  useEffect(() => {
+    if (currentGroup && !currency) {
+      setCurrency(currentGroup.defaultCurrency);
+    }
+  }, [currentGroup, currency]);
+
+  // Filter currencies based on search
+  const filteredCurrencies = useMemo(() => {
+    if (!currencySearch.trim()) {
+      return CURRENCIES;
+    }
+    const search = currencySearch.toLowerCase();
+    return CURRENCIES.filter(
+      (c) =>
+        c.code.toLowerCase().includes(search) ||
+        c.name.toLowerCase().includes(search) ||
+        c.symbol.includes(search)
+    );
+  }, [currencySearch]);
+
+  // Get current currency info
+  const currentCurrency = useMemo(() => {
+    const code = currency || currentGroup?.defaultCurrency || 'USD';
+    return CURRENCIES.find((c) => c.code === code) || { code, symbol: code, name: code };
+  }, [currency, currentGroup?.defaultCurrency]);
 
   // Calculate per-person amount for preview
   const getPerPersonAmount = useCallback(() => {
@@ -94,7 +158,7 @@ export default function AddExpenseScreen() {
       description.trim(),
       paidById, // paidById - selected payer
       user.id, // createdById - current user created
-      undefined, // currency - use default
+      currency || undefined, // currency - selected or default
       undefined, // date - use default
       splitParticipants.length > 0 ? splitParticipants : undefined
     );
@@ -102,7 +166,13 @@ export default function AddExpenseScreen() {
     if (expense) {
       router.back();
     }
-  }, [groupId, user, paidById, amount, description, createExpense, router]);
+  }, [groupId, user, paidById, amount, description, currency, createExpense, router]);
+
+  const handleSelectCurrency = useCallback((code: string) => {
+    setCurrency(code);
+    setShowCurrencyPicker(false);
+    setCurrencySearch('');
+  }, []);
 
   const handleSelectPayer = useCallback((memberId: string) => {
     setPaidById(memberId);
@@ -176,15 +246,15 @@ export default function AddExpenseScreen() {
             </View>
           )}
 
-          {/* Amount Input */}
+          {/* Amount Input with Currency Selector */}
           <View style={styles.amountContainer}>
-            <Text style={styles.currencySymbol}>
-              {currentGroup?.defaultCurrency === 'USD'
-                ? '$'
-                : currentGroup?.defaultCurrency === 'EUR'
-                  ? '€'
-                  : currentGroup?.defaultCurrency || '$'}
-            </Text>
+            <TouchableOpacity
+              style={styles.currencyButton}
+              onPress={() => setShowCurrencyPicker(true)}
+            >
+              <Text style={styles.currencySymbol}>{currentCurrency.symbol}</Text>
+              <Text style={styles.currencyCode}>{currentCurrency.code}</Text>
+            </TouchableOpacity>
             <TextInput
               style={styles.amountInput}
               value={amount}
@@ -240,11 +310,7 @@ export default function AddExpenseScreen() {
             {parseFloat(amount) > 0 && splitParticipants.length > 0 && (
               <View style={styles.perPersonPreview}>
                 <Text style={styles.perPersonText}>
-                  {currentGroup?.defaultCurrency === 'USD'
-                    ? '$'
-                    : currentGroup?.defaultCurrency === 'EUR'
-                      ? '€'
-                      : currentGroup?.defaultCurrency || '$'}
+                  {currentCurrency.symbol}
                   {getPerPersonAmount().toFixed(2)} per person
                 </Text>
               </View>
@@ -360,6 +426,68 @@ export default function AddExpenseScreen() {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* Currency Picker Modal */}
+      <Modal
+        visible={showCurrencyPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowCurrencyPicker(false);
+          setCurrencySearch('');
+        }}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Currency</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCurrencyPicker(false);
+                setCurrencySearch('');
+              }}
+            >
+              <Text style={styles.modalClose}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              value={currencySearch}
+              onChangeText={setCurrencySearch}
+              placeholder="Search currencies..."
+              placeholderTextColor="#999"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          <FlatList
+            data={filteredCurrencies}
+            keyExtractor={(item) => item.code}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.currencyOption}
+                onPress={() => handleSelectCurrency(item.code)}
+              >
+                <View style={styles.currencyInfo}>
+                  <Text style={styles.currencyOptionSymbol}>{item.symbol}</Text>
+                  <View style={styles.currencyTextContainer}>
+                    <Text style={styles.currencyOptionCode}>{item.code}</Text>
+                    <Text style={styles.currencyOptionName}>{item.name}</Text>
+                  </View>
+                </View>
+                {currency === item.code && (
+                  <Text style={styles.currencyOptionCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyMembersList}>
+                <Text style={styles.emptyMembersText}>No currencies found</Text>
+              </View>
+            }
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -405,11 +533,22 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 16,
   },
-  currencySymbol: {
-    fontSize: 48,
-    fontWeight: '300',
-    color: '#666',
+  currencyButton: {
+    alignItems: 'center',
     marginRight: 8,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  currencySymbol: {
+    fontSize: 32,
+    fontWeight: '400',
+    color: '#1a1a1a',
+  },
+  currencyCode: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   amountInput: {
     fontSize: 64,
@@ -529,5 +668,55 @@ const styles = StyleSheet.create({
   },
   memberOptionNameInactive: {
     color: '#999',
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  searchInput: {
+    fontSize: 16,
+    color: '#1a1a1a',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  currencyOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  currencyInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currencyOptionSymbol: {
+    fontSize: 24,
+    width: 40,
+    textAlign: 'center',
+    color: '#1a1a1a',
+    marginRight: 12,
+  },
+  currencyTextContainer: {
+    flexDirection: 'column',
+  },
+  currencyOptionCode: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  currencyOptionName: {
+    fontSize: 14,
+    color: '#666',
+  },
+  currencyOptionCheck: {
+    fontSize: 18,
+    color: '#007AFF',
+    fontWeight: '600',
   },
 });

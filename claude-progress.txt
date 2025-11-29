@@ -595,3 +595,22 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### currency-multi-support - COMPLETE
+- Implemented:
+  - Mobile: Currency selector in add-expense.tsx
+  - Mobile: Tappable currency button next to amount input
+  - Mobile: Modal with searchable list of 30 common currencies
+  - Mobile: Currency defaults to group's default currency
+  - Mobile: Selected currency passed to createExpense API call
+  - Mobile: Per-person preview uses selected currency symbol
+  - API: Already supports custom currency per expense (no changes needed)
+- Features:
+  - Currency button shows symbol and code
+  - Search currencies by code, name, or symbol
+  - Visual checkmark on selected currency
+  - Currency list includes USD, EUR, GBP, JPY, and 26 other common currencies
+- Verified:
+  - All 115 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

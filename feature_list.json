@@ -385,7 +385,7 @@
         "Save expense",
         "Verify total time under 10 seconds"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-select-payer",
@@ -688,7 +688,7 @@
         "Enter amount in selected currency",
         "Expense saved with original currency"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "currency-auto-convert",
@@ -1838,7 +1838,7 @@
         "No plain HTTP requests",
         "Certificate validation enforced"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "security-session-management",
