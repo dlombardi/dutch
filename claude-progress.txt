@@ -500,3 +500,25 @@ Description: User can select who paid for the expense
 - At least one participant required (can't remove last one)
 - Status: Feature complete
 
+### balances-view-simplified - COMPLETE
+- Implemented:
+  - API: GET /groups/:id/balances endpoint
+  - API: BalancesService with pairwise debt calculation
+  - API: Net balances to avoid showing circular debts
+  - API: memberBalances showing each user's overall balance
+  - Mobile: fetchGroupBalances in groupsStore
+  - Mobile: Balance summary shows user's total balance (+/- amount)
+  - Mobile: Balances tab shows "who pays whom" list
+  - Mobile: Color coding (green for positive, orange for negative)
+- Tests added (6 tests in balances.controller.spec.ts):
+  - Return empty balances for group with no expenses
+  - Calculate simple balance between two people
+  - Calculate balances with three people
+  - Net out balances when people pay each other back
+  - Handle case where balances net to zero
+  - Return 404 for non-existent group
+- Verified:
+  - All 85 API tests pass (79 existing + 6 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

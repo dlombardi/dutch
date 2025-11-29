@@ -11,7 +11,8 @@ import {
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { useGroupsStore, GroupMember } from '../../stores/groupsStore';
+import { useGroupsStore, GroupMember, Balance } from '../../stores/groupsStore';
+import { useAuthStore } from '../../stores/authStore';
 import { useExpensesStore, Expense } from '../../stores/expensesStore';
 
 type Tab = 'expenses' | 'balances' | 'members';
@@ -23,11 +24,14 @@ export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('expenses');
+  const { user } = useAuthStore();
   const {
     currentGroup,
     currentGroupMembers,
+    currentGroupBalances,
     fetchGroup,
     fetchGroupMembers,
+    fetchGroupBalances,
     isLoading,
     error,
   } = useGroupsStore();
@@ -42,8 +46,35 @@ export default function GroupDetailScreen() {
       fetchGroup(id);
       fetchGroupMembers(id);
       fetchGroupExpenses(id);
+      fetchGroupBalances(id);
     }
-  }, [id, fetchGroup, fetchGroupMembers, fetchGroupExpenses]);
+  }, [id, fetchGroup, fetchGroupMembers, fetchGroupExpenses, fetchGroupBalances]);
+
+  // Get user's balance from memberBalances
+  const getUserBalance = useCallback(() => {
+    if (!user || !currentGroupBalances) return 0;
+    return currentGroupBalances.memberBalances[user.id] || 0;
+  }, [user, currentGroupBalances]);
+
+  const getBalanceText = useCallback((balance: number) => {
+    if (balance > 0) return 'you are owed';
+    if (balance < 0) return 'you owe';
+    return 'All settled up!';
+  }, []);
+
+  const getCurrencySymbol = useCallback((currency: string) => {
+    switch (currency) {
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      default: return currency;
+    }
+  }, []);
+
+  const getUserDisplayName = useCallback((userId: string) => {
+    if (userId === user?.id) return 'You';
+    return `User ${userId.slice(0, 8)}...`;
+  }, [user]);
 
   const handleAddExpense = useCallback(() => {
     if (id) {
@@ -119,10 +150,20 @@ export default function GroupDetailScreen() {
       {/* Balance Summary */}
       <View style={styles.balanceSummary}>
         <Text style={styles.balanceLabel}>Your balance</Text>
-        <Text style={styles.balanceAmount}>
-          {group.defaultCurrency === 'USD' ? '$' : group.defaultCurrency === 'EUR' ? '€' : group.defaultCurrency}0.00
+        <Text style={[
+          styles.balanceAmount,
+          getUserBalance() > 0 && styles.balancePositive,
+          getUserBalance() < 0 && styles.balanceNegative,
+        ]}>
+          {getUserBalance() < 0 ? '-' : ''}{getCurrencySymbol(group.defaultCurrency)}{Math.abs(getUserBalance()).toFixed(2)}
         </Text>
-        <Text style={styles.balanceHint}>All settled up!</Text>
+        <Text style={[
+          styles.balanceHint,
+          getUserBalance() > 0 && styles.balanceHintPositive,
+          getUserBalance() < 0 && styles.balanceHintNegative,
+        ]}>
+          {getBalanceText(getUserBalance())}
+        </Text>
       </View>
 
       {/* Tabs */}
@@ -198,13 +239,44 @@ export default function GroupDetailScreen() {
           </ScrollView>
         )}
         {activeTab === 'balances' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>✨</Text>
-            <Text style={styles.emptyTitle}>All settled up!</Text>
-            <Text style={styles.emptySubtitle}>
-              No outstanding balances in this group
-            </Text>
-          </View>
+          <ScrollView style={styles.balancesList}>
+            {!currentGroupBalances || currentGroupBalances.balances.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>✨</Text>
+                <Text style={styles.emptyTitle}>All settled up!</Text>
+                <Text style={styles.emptySubtitle}>
+                  No outstanding balances in this group
+                </Text>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.balancesHeader}>Who pays whom</Text>
+                {currentGroupBalances.balances.map((balance, index) => (
+                  <View key={`${balance.from}-${balance.to}-${index}`} style={styles.balanceItem}>
+                    <View style={styles.balanceParties}>
+                      <View style={styles.balanceAvatar}>
+                        <Text style={styles.balanceAvatarText}>
+                          {balance.from.substring(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+                      <View style={styles.balanceDetails}>
+                        <Text style={styles.balanceFrom}>
+                          {getUserDisplayName(balance.from)}
+                        </Text>
+                        <Text style={styles.balanceArrow}>owes</Text>
+                        <Text style={styles.balanceTo}>
+                          {getUserDisplayName(balance.to)}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.balanceItemAmount}>
+                      {getCurrencySymbol(balance.currency)}{balance.amount.toFixed(2)}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
         )}
         {activeTab === 'members' && (
           <ScrollView style={styles.membersList}>
@@ -303,6 +375,82 @@ const styles = StyleSheet.create({
   balanceHint: {
     fontSize: 14,
     color: '#4CAF50',
+  },
+  balancePositive: {
+    color: '#4CAF50',
+  },
+  balanceNegative: {
+    color: '#FF5722',
+  },
+  balanceHintPositive: {
+    color: '#4CAF50',
+  },
+  balanceHintNegative: {
+    color: '#FF5722',
+  },
+  balancesList: {
+    flex: 1,
+  },
+  balancesHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    padding: 16,
+    paddingBottom: 8,
+    textTransform: 'uppercase',
+  },
+  balanceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  balanceParties: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  balanceAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF5722',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  balanceAvatarText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  balanceDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  balanceFrom: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  balanceArrow: {
+    fontSize: 14,
+    color: '#666',
+    marginHorizontal: 6,
+  },
+  balanceTo: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  balanceItemAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FF5722',
   },
   tabs: {
     flexDirection: 'row',

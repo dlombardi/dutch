@@ -20,11 +20,24 @@ export interface GroupMember {
   joinedAt: string;
 }
 
+export interface Balance {
+  from: string;
+  to: string;
+  amount: number;
+  currency: string;
+}
+
+export interface BalancesData {
+  balances: Balance[];
+  memberBalances: Record<string, number>;
+}
+
 interface GroupsState {
   groups: Group[];
   currentGroup: Group | null;
   previewGroup: Group | null;
   currentGroupMembers: GroupMember[];
+  currentGroupBalances: BalancesData | null;
   isLoading: boolean;
   error: string | null;
 
@@ -38,6 +51,7 @@ interface GroupsState {
   fetchGroup: (id: string) => Promise<Group | null>;
   fetchGroupByInviteCode: (inviteCode: string) => Promise<Group | null>;
   fetchGroupMembers: (groupId: string) => Promise<GroupMember[] | null>;
+  fetchGroupBalances: (groupId: string) => Promise<BalancesData | null>;
   joinGroup: (inviteCode: string, userId: string) => Promise<Group | null>;
   setCurrentGroup: (group: Group | null) => void;
   clearError: () => void;
@@ -50,6 +64,7 @@ export const useGroupsStore = create<GroupsState>()(
       currentGroup: null,
       previewGroup: null,
       currentGroupMembers: [],
+      currentGroupBalances: null,
       isLoading: false,
       error: null,
 
@@ -133,6 +148,22 @@ export const useGroupsStore = create<GroupsState>()(
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch members';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchGroupBalances: async (groupId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.getGroupBalances(groupId);
+          set({ currentGroupBalances: response });
+          return response;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to fetch balances';
           set({ error: errorMessage });
           return null;
         } finally {

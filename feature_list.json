@@ -780,7 +780,7 @@
         "Minimum number of transactions shown",
         "Clear indication of amounts owed"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "balances-debt-simplification",

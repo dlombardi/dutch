@@ -1,11 +1,15 @@
 import { Controller, Post, Get, Body, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { GroupsService } from './groups.service';
+import { BalancesService } from './balances.service';
 import { CreateGroupDto, JoinGroupDto } from './dto';
 
 @Controller('groups')
 export class GroupsController {
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly groupsService: GroupsService,
+    private readonly balancesService: BalancesService,
+  ) {}
 
   @Post()
   createGroup(@Body() dto: CreateGroupDto) {
@@ -40,6 +44,11 @@ export class GroupsController {
   @Get(':id/members')
   getGroupMembers(@Param('id') id: string) {
     return this.groupsService.getGroupMembersById(id);
+  }
+
+  @Get(':id/balances')
+  getGroupBalances(@Param('id') id: string) {
+    return this.balancesService.getGroupBalances(id);
   }
 
   @Get(':id')

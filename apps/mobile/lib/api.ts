@@ -197,6 +197,20 @@ class ApiClient {
     });
   }
 
+  async getGroupBalances(groupId: string): Promise<{
+    balances: {
+      from: string;
+      to: string;
+      amount: number;
+      currency: string;
+    }[];
+    memberBalances: Record<string, number>;
+  }> {
+    return this.request(`/groups/${groupId}/balances`, {
+      method: 'GET',
+    });
+  }
+
   // Expenses endpoints
   async createExpense(
     groupId: string,
