@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { GroupsService } from '../groups/groups.service';
+import { SyncGateway } from '../sync/sync.gateway';
 
 export interface SettlementData {
   id: string;
@@ -20,7 +21,10 @@ export class SettlementsService {
   private settlements: Map<string, SettlementData> = new Map();
   private groupSettlements: Map<string, string[]> = new Map(); // groupId -> settlementIds
 
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly groupsService: GroupsService,
+    @Optional() private readonly syncGateway?: SyncGateway,
+  ) {}
 
   createSettlement(
     groupId: string,
@@ -55,6 +59,11 @@ export class SettlementsService {
     const groupSettlementIds = this.groupSettlements.get(groupId) || [];
     groupSettlementIds.push(settlementId);
     this.groupSettlements.set(groupId, groupSettlementIds);
+
+    // Broadcast settlement:created event to group members
+    if (this.syncGateway) {
+      this.syncGateway.broadcastToGroup(groupId, 'settlement:created', { settlement });
+    }
 
     return { settlement };
   }

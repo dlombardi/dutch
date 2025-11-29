@@ -914,7 +914,7 @@
         "Expense appears for User B within 2 seconds",
         "No manual refresh needed"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "sync-realtime-edits",
@@ -926,7 +926,7 @@
         "User B sees updated expense immediately",
         "Balances recalculate in real-time"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "sync-realtime-settlements",
@@ -938,7 +938,7 @@
         "User B sees updated balances immediately",
         "Settlement appears in history for both"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "sync-websocket-connection",

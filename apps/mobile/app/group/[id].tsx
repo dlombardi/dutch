@@ -17,6 +17,7 @@ import { useGroupsStore, GroupMember, Balance } from '../../stores/groupsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useExpensesStore, Expense } from '../../stores/expensesStore';
 import { useSettlementsStore } from '../../stores/settlementsStore';
+import { useSyncStore } from '../../stores/syncStore';
 
 type Tab = 'expenses' | 'balances' | 'members';
 
@@ -45,9 +46,26 @@ export default function GroupDetailScreen() {
     expenses,
     fetchGroupExpenses,
     isLoading: expensesLoading,
+    handleExpenseCreated,
+    handleExpenseUpdated,
+    handleExpenseDeleted,
   } = useExpensesStore();
-  const { createSettlement, isLoading: settlementsLoading } = useSettlementsStore();
+  const {
+    createSettlement,
+    isLoading: settlementsLoading,
+    handleSettlementCreated,
+  } = useSettlementsStore();
+  const {
+    joinGroup: joinSyncGroup,
+    leaveGroup: leaveSyncGroup,
+    onExpenseCreated,
+    onExpenseUpdated,
+    onExpenseDeleted,
+    onSettlementCreated,
+    connectionStatus,
+  } = useSyncStore();
 
+  // Fetch data on mount
   useEffect(() => {
     if (id) {
       fetchGroup(id);
@@ -56,6 +74,53 @@ export default function GroupDetailScreen() {
       fetchGroupBalances(id);
     }
   }, [id, fetchGroup, fetchGroupMembers, fetchGroupExpenses, fetchGroupBalances]);
+
+  // Subscribe to real-time updates when connected
+  useEffect(() => {
+    if (!id || connectionStatus !== 'connected') return;
+
+    // Join the group room for real-time updates
+    joinSyncGroup(id);
+
+    // Set up event listeners
+    const unsubExpenseCreated = onExpenseCreated((data) => {
+      if (data.expense.groupId === id) {
+        handleExpenseCreated(data.expense);
+        // Refresh balances when a new expense is added
+        fetchGroupBalances(id);
+      }
+    });
+
+    const unsubExpenseUpdated = onExpenseUpdated((data) => {
+      if (data.expense.groupId === id) {
+        handleExpenseUpdated(data.expense);
+        fetchGroupBalances(id);
+      }
+    });
+
+    const unsubExpenseDeleted = onExpenseDeleted((data) => {
+      if (data.groupId === id) {
+        handleExpenseDeleted(data.expenseId);
+        fetchGroupBalances(id);
+      }
+    });
+
+    const unsubSettlementCreated = onSettlementCreated((data) => {
+      if (data.settlement.groupId === id) {
+        handleSettlementCreated(data.settlement);
+        fetchGroupBalances(id);
+      }
+    });
+
+    // Cleanup: leave group and remove listeners
+    return () => {
+      leaveSyncGroup(id);
+      unsubExpenseCreated();
+      unsubExpenseUpdated();
+      unsubExpenseDeleted();
+      unsubSettlementCreated();
+    };
+  }, [id, connectionStatus]);
 
   // Get user's balance from memberBalances
   const getUserBalance = useCallback(() => {

@@ -53,6 +53,11 @@ interface ExpensesState {
   setCurrentExpense: (expense: Expense | null) => void;
   clearError: () => void;
   clearExpenses: () => void;
+
+  // Real-time sync handlers
+  handleExpenseCreated: (expense: Expense) => void;
+  handleExpenseUpdated: (expense: Expense) => void;
+  handleExpenseDeleted: (expenseId: string) => void;
 }
 
 export const useExpensesStore = create<ExpensesState>()((set) => ({
@@ -191,5 +196,32 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
 
   clearExpenses: () => {
     set({ expenses: [], currentExpense: null });
+  },
+
+  // Real-time sync handlers
+  handleExpenseCreated: (expense) => {
+    set((state) => {
+      // Check if expense already exists (avoid duplicates from own actions)
+      if (state.expenses.some((e) => e.id === expense.id)) {
+        return state;
+      }
+      return { expenses: [...state.expenses, expense] };
+    });
+  },
+
+  handleExpenseUpdated: (expense) => {
+    set((state) => ({
+      expenses: state.expenses.map((e) => (e.id === expense.id ? expense : e)),
+      currentExpense:
+        state.currentExpense?.id === expense.id ? expense : state.currentExpense,
+    }));
+  },
+
+  handleExpenseDeleted: (expenseId) => {
+    set((state) => ({
+      expenses: state.expenses.filter((e) => e.id !== expenseId),
+      currentExpense:
+        state.currentExpense?.id === expenseId ? null : state.currentExpense,
+    }));
   },
 }));

@@ -30,6 +30,9 @@ interface SettlementsState {
   ) => Promise<Settlement | null>;
   fetchGroupSettlements: (groupId: string) => Promise<Settlement[] | null>;
   clearError: () => void;
+
+  // Real-time sync handlers
+  handleSettlementCreated: (settlement: Settlement) => void;
 }
 
 export const useSettlementsStore = create<SettlementsState>()((set) => ({
@@ -90,5 +93,16 @@ export const useSettlementsStore = create<SettlementsState>()((set) => ({
 
   clearError: () => {
     set({ error: null });
+  },
+
+  // Real-time sync handlers
+  handleSettlementCreated: (settlement) => {
+    set((state) => {
+      // Check if settlement already exists (avoid duplicates from own actions)
+      if (state.settlements.some((s) => s.id === settlement.id)) {
+        return state;
+      }
+      return { settlements: [...state.settlements, settlement] };
+    });
   },
 }));

@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { GroupsService } from '../groups/groups.service';
+import { SyncGateway } from '../sync/sync.gateway';
 
 export interface ExpenseData {
   id: string;
@@ -26,7 +27,10 @@ export class ExpensesService {
   private expenses: Map<string, ExpenseData> = new Map();
   private groupExpenses: Map<string, string[]> = new Map(); // groupId -> expenseIds
 
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly groupsService: GroupsService,
+    @Optional() private readonly syncGateway?: SyncGateway,
+  ) {}
 
   private calculateEqualSplits(
     amount: number,
@@ -157,6 +161,11 @@ export class ExpensesService {
     groupExpenseIds.push(expenseId);
     this.groupExpenses.set(groupId, groupExpenseIds);
 
+    // Broadcast expense:created event to group members
+    if (this.syncGateway) {
+      this.syncGateway.broadcastToGroup(groupId, 'expense:created', { expense });
+    }
+
     return { expense };
   }
 
@@ -255,6 +264,12 @@ export class ExpensesService {
     expense.updatedAt = new Date();
 
     this.expenses.set(id, expense);
+
+    // Broadcast expense:updated event to group members
+    if (this.syncGateway) {
+      this.syncGateway.broadcastToGroup(expense.groupId, 'expense:updated', { expense });
+    }
+
     return { expense };
   }
 
@@ -264,17 +279,24 @@ export class ExpensesService {
       throw new NotFoundException('Expense not found');
     }
 
+    const groupId = expense.groupId;
+
     // Remove from expenses map
     this.expenses.delete(id);
 
     // Remove from group's expense list
-    const groupExpenseIds = this.groupExpenses.get(expense.groupId);
+    const groupExpenseIds = this.groupExpenses.get(groupId);
     if (groupExpenseIds) {
       const index = groupExpenseIds.indexOf(id);
       if (index > -1) {
         groupExpenseIds.splice(index, 1);
       }
-      this.groupExpenses.set(expense.groupId, groupExpenseIds);
+      this.groupExpenses.set(groupId, groupExpenseIds);
+    }
+
+    // Broadcast expense:deleted event to group members
+    if (this.syncGateway) {
+      this.syncGateway.broadcastToGroup(groupId, 'expense:deleted', { expenseId: id, groupId });
     }
 
     return { message: 'Expense deleted successfully' };

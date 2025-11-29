@@ -21,9 +21,13 @@ interface Expense {
   groupId: string;
   amount: number;
   currency: string;
+  exchangeRate: number;
+  amountInGroupCurrency: number;
   description: string;
   paidById: string;
   splitType: string;
+  splitParticipants: string[];
+  splitAmounts: Record<string, number>;
   date: string;
   createdById: string;
   createdAt: string;

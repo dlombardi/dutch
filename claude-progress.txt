@@ -700,3 +700,22 @@ Description: App maintains WebSocket connection for real-time updates
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### sync-realtime-expenses - COMPLETE
+### sync-realtime-edits - COMPLETE
+### sync-realtime-settlements - COMPLETE
+- Implemented:
+  - API: Integrated SyncGateway with ExpensesService
+  - API: Broadcasts expense:created, expense:updated, expense:deleted events
+  - API: Integrated SyncGateway with SettlementsService
+  - API: Broadcasts settlement:created event
+  - Mobile: Added handleExpenseCreated, handleExpenseUpdated, handleExpenseDeleted to expensesStore
+  - Mobile: Added handleSettlementCreated to settlementsStore
+  - Mobile: Group detail page subscribes to real-time events when viewing a group
+  - Mobile: Automatically joins group room on WebSocket connection
+  - Mobile: Refreshes balances when expenses/settlements change
+  - Mobile: Cleans up listeners and leaves group room on unmount
+- Verified:
+  - All 140 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Features complete
+
