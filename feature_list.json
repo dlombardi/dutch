@@ -136,7 +136,7 @@
         "Returned to welcome/login screen",
         "Session cleared from device"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-session-refresh",
