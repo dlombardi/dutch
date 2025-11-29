@@ -552,4 +552,105 @@ describe('ExpensesController (integration)', () => {
       expect(body.expense.description).toBe('Updated');
     });
   });
+
+  describe('DELETE /expenses/:id', () => {
+    it('should delete an expense', async () => {
+      // Create an expense first
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'To be deleted',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Delete the expense
+      await request(httpServer)
+        .delete(`/expenses/${createdExpense.id}`)
+        .expect(200);
+
+      // Verify it's gone
+      await request(httpServer)
+        .get(`/expenses/${createdExpense.id}`)
+        .expect(404);
+    });
+
+    it('should return success message on delete', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'To be deleted',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      const response = await request(httpServer)
+        .delete(`/expenses/${createdExpense.id}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toBe('Expense deleted successfully');
+    });
+
+    it('should return 404 for non-existent expense', async () => {
+      await request(httpServer)
+        .delete('/expenses/non-existent-id')
+        .expect(404);
+    });
+
+    it('should remove expense from group expenses list', async () => {
+      // Create two expenses
+      const createResponse1 = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Expense 1',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 75.00,
+          description: 'Expense 2',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const expenseToDelete = (createResponse1.body as CreateExpenseResponse).expense;
+
+      // Verify we have 2 expenses
+      let groupExpenses = await request(httpServer)
+        .get(`/groups/${testGroup.id}/expenses`)
+        .expect(200);
+      expect((groupExpenses.body as { expenses: Expense[] }).expenses).toHaveLength(2);
+
+      // Delete one expense
+      await request(httpServer)
+        .delete(`/expenses/${expenseToDelete.id}`)
+        .expect(200);
+
+      // Verify we now have 1 expense
+      groupExpenses = await request(httpServer)
+        .get(`/groups/${testGroup.id}/expenses`)
+        .expect(200);
+      expect((groupExpenses.body as { expenses: Expense[] }).expenses).toHaveLength(1);
+      expect((groupExpenses.body as { expenses: Expense[] }).expenses[0].description).toBe('Expense 2');
+    });
+  });
 });

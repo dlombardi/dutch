@@ -41,6 +41,7 @@ interface ExpensesState {
       date?: string;
     }
   ) => Promise<Expense | null>;
+  deleteExpense: (id: string) => Promise<boolean>;
   fetchExpense: (id: string) => Promise<Expense | null>;
   fetchGroupExpenses: (groupId: string) => Promise<Expense[] | null>;
   setCurrentExpense: (expense: Expense | null) => void;
@@ -109,6 +110,26 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
         error instanceof Error ? error.message : 'Failed to update expense';
       set({ error: errorMessage });
       return null;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteExpense: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.deleteExpense(id);
+      set((state) => ({
+        expenses: state.expenses.filter((e) => e.id !== id),
+        currentExpense:
+          state.currentExpense?.id === id ? null : state.currentExpense,
+      }));
+      return true;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete expense';
+      set({ error: errorMessage });
+      return false;
     } finally {
       set({ isLoading: false });
     }

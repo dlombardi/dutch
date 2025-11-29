@@ -304,6 +304,12 @@ class ApiClient {
       body: JSON.stringify(updates),
     });
   }
+
+  async deleteExpense(id: string): Promise<{ message: string }> {
+    return this.request(`/expenses/${id}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

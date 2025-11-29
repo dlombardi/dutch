@@ -447,3 +447,23 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### expenses-delete - COMPLETE
+- Implemented:
+  - API: DELETE /expenses/:id endpoint
+  - API: ExpensesService.deleteExpense() method
+  - API: Removes expense from expenses map and group's expense list
+  - API: Returns 404 for non-existent expenses
+  - Mobile: api.ts deleteExpense method
+  - Mobile: expensesStore.deleteExpense action
+  - Mobile: Alert confirmation dialog before delete
+  - Mobile: Navigation back after successful delete
+- Tests added (4 tests in expenses.controller.spec.ts):
+  - Delete an expense successfully
+  - Return success message on delete
+  - Return 404 for non-existent expense
+  - Remove expense from group expenses list
+- Verified:
+  - All 72 API tests pass (68 existing + 4 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

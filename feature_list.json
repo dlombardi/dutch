@@ -469,7 +469,7 @@
         "Expense removed from list",
         "Balances recalculated"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-add-notes",

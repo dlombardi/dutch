@@ -121,4 +121,26 @@ export class ExpensesService {
     this.expenses.set(id, expense);
     return { expense };
   }
+
+  deleteExpense(id: string): { message: string } {
+    const expense = this.expenses.get(id);
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    // Remove from expenses map
+    this.expenses.delete(id);
+
+    // Remove from group's expense list
+    const groupExpenseIds = this.groupExpenses.get(expense.groupId);
+    if (groupExpenseIds) {
+      const index = groupExpenseIds.indexOf(id);
+      if (index > -1) {
+        groupExpenseIds.splice(index, 1);
+      }
+      this.groupExpenses.set(expense.groupId, groupExpenseIds);
+    }
+
+    return { message: 'Expense deleted successfully' };
+  }
 }

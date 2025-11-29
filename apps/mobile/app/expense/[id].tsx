@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +18,8 @@ export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { currentExpense, fetchExpense, isLoading, error } = useExpensesStore();
+  const { currentExpense, fetchExpense, deleteExpense, isLoading, error } =
+    useExpensesStore();
   const { currentGroup, currentGroupMembers, fetchGroup, fetchGroupMembers } =
     useGroupsStore();
 
@@ -26,6 +28,28 @@ export default function ExpenseDetailScreen() {
       router.push(`/expense/${id}/edit`);
     }
   }, [id, router]);
+
+  const handleDelete = useCallback(() => {
+    if (!id || !currentExpense) return;
+
+    Alert.alert(
+      'Delete Expense',
+      `Are you sure you want to delete "${currentExpense.description}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const success = await deleteExpense(id);
+            if (success) {
+              router.back();
+            }
+          },
+        },
+      ]
+    );
+  }, [id, currentExpense, deleteExpense, router]);
 
   useEffect(() => {
     if (id) {
@@ -229,7 +253,7 @@ export default function ExpenseDetailScreen() {
 
       {/* Delete button */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.deleteButton}>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
           <Text style={styles.deleteButtonText}>Delete Expense</Text>
         </TouchableOpacity>
       </View>
