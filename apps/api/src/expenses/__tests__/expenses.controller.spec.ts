@@ -653,4 +653,153 @@ describe('ExpensesController (integration)', () => {
       expect((groupExpenses.body as { expenses: Expense[] }).expenses[0].description).toBe('Expense 2');
     });
   });
+
+  describe('Equal Splits', () => {
+    it('should create expense with splitParticipants', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Dinner for three',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: ['user-123', 'user-456', 'user-789'],
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      expect(body.expense.splitType).toBe('equal');
+      expect(body.expense).toHaveProperty('splitParticipants');
+      expect((body.expense as Expense & { splitParticipants: string[] }).splitParticipants).toEqual(['user-123', 'user-456', 'user-789']);
+    });
+
+    it('should calculate equal split amounts per person', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 90.00,
+          description: 'Split three ways',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: ['user-123', 'user-456', 'user-789'],
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      const expense = body.expense as Expense & { splitParticipants: string[]; splitAmounts: Record<string, number> };
+      expect(expense.splitAmounts).toBeDefined();
+      expect(expense.splitAmounts['user-123']).toBe(30);
+      expect(expense.splitAmounts['user-456']).toBe(30);
+      expect(expense.splitAmounts['user-789']).toBe(30);
+    });
+
+    it('should handle rounding in split amounts (total preserved)', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 100.00,
+          description: 'Split three ways with rounding',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: ['user-123', 'user-456', 'user-789'],
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      const expense = body.expense as Expense & { splitParticipants: string[]; splitAmounts: Record<string, number> };
+      expect(expense.splitAmounts).toBeDefined();
+      // Sum should equal total amount
+      const sum = Object.values(expense.splitAmounts).reduce((a, b) => a + b, 0);
+      expect(sum).toBeCloseTo(100.00, 2);
+    });
+
+    it('should default splitParticipants to payer if not provided', async () => {
+      const response = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Solo expense',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const body = response.body as CreateExpenseResponse;
+      const expense = body.expense as Expense & { splitParticipants: string[] };
+      expect(expense.splitParticipants).toEqual(['user-123']);
+    });
+
+    it('should reject empty splitParticipants array', async () => {
+      await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'No participants',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: [],
+        })
+        .expect(400);
+    });
+
+    it('should update split participants via PUT', async () => {
+      // Create expense with 3 participants
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 90.00,
+          description: 'Original split',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: ['user-123', 'user-456', 'user-789'],
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update to only 2 participants
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ splitParticipants: ['user-123', 'user-456'] })
+        .expect(200);
+
+      const body = response.body as { expense: Expense & { splitParticipants: string[]; splitAmounts: Record<string, number> } };
+      expect(body.expense.splitParticipants).toEqual(['user-123', 'user-456']);
+      expect(body.expense.splitAmounts['user-123']).toBe(45);
+      expect(body.expense.splitAmounts['user-456']).toBe(45);
+    });
+
+    it('should recalculate splits when amount is updated', async () => {
+      // Create expense
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 60.00,
+          description: 'Will be updated',
+          paidById: 'user-123',
+          createdById: 'user-123',
+          splitParticipants: ['user-123', 'user-456'],
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update amount
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ amount: 100.00 })
+        .expect(200);
+
+      const body = response.body as { expense: Expense & { splitAmounts: Record<string, number> } };
+      expect(body.expense.splitAmounts['user-123']).toBe(50);
+      expect(body.expense.splitAmounts['user-456']).toBe(50);
+    });
+  });
 });

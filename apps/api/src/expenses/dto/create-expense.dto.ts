@@ -5,6 +5,8 @@ import {
   IsOptional,
   IsDateString,
   IsPositive,
+  IsArray,
+  ArrayMinSize,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -37,4 +39,10 @@ export class CreateExpenseDto {
   @IsDateString()
   @IsOptional()
   date?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1)
+  @IsOptional()
+  splitParticipants?: string[];
 }

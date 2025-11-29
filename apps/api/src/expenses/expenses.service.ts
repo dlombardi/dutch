@@ -10,6 +10,8 @@ export interface ExpenseData {
   description: string;
   paidById: string;
   splitType: string;
+  splitParticipants: string[];
+  splitAmounts: Record<string, number>;
   date: string;
   createdById: string;
   createdAt: Date;
@@ -24,6 +26,27 @@ export class ExpensesService {
 
   constructor(private readonly groupsService: GroupsService) {}
 
+  private calculateEqualSplits(
+    amount: number,
+    participants: string[],
+  ): Record<string, number> {
+    const splitAmounts: Record<string, number> = {};
+    const baseAmount = Math.floor((amount * 100) / participants.length) / 100;
+    const totalBase = baseAmount * participants.length;
+    const remainder = Math.round((amount - totalBase) * 100) / 100;
+
+    participants.forEach((userId, index) => {
+      // Give the remainder to the first participant to preserve total
+      if (index === 0 && remainder > 0) {
+        splitAmounts[userId] = Math.round((baseAmount + remainder) * 100) / 100;
+      } else {
+        splitAmounts[userId] = baseAmount;
+      }
+    });
+
+    return splitAmounts;
+  }
+
   createExpense(
     groupId: string,
     amount: number,
@@ -32,6 +55,7 @@ export class ExpensesService {
     createdById: string,
     currency?: string,
     date?: string,
+    splitParticipants?: string[],
   ): { expense: ExpenseData } {
     // Verify group exists and get default currency
     const { group } = this.groupsService.getGroupById(groupId);
@@ -39,6 +63,10 @@ export class ExpensesService {
     const expenseId = randomBytes(16).toString('hex');
     const now = new Date();
     const expenseDate = date || now.toISOString().split('T')[0];
+
+    // Default to payer if no participants specified
+    const participants = splitParticipants || [paidById];
+    const splitAmounts = this.calculateEqualSplits(amount, participants);
 
     const expense: ExpenseData = {
       id: expenseId,
@@ -48,6 +76,8 @@ export class ExpensesService {
       description,
       paidById,
       splitType: 'equal', // default for basic expense
+      splitParticipants: participants,
+      splitAmounts,
       date: expenseDate,
       createdById,
       createdAt: now,
@@ -92,6 +122,7 @@ export class ExpensesService {
       description?: string;
       paidById?: string;
       date?: string;
+      splitParticipants?: string[];
     },
   ): { expense: ExpenseData } {
     const expense = this.expenses.get(id);
@@ -114,6 +145,17 @@ export class ExpensesService {
     }
     if (updates.date !== undefined) {
       expense.date = updates.date;
+    }
+    if (updates.splitParticipants !== undefined) {
+      expense.splitParticipants = updates.splitParticipants;
+    }
+
+    // Recalculate splits if amount or participants changed
+    if (updates.amount !== undefined || updates.splitParticipants !== undefined) {
+      expense.splitAmounts = this.calculateEqualSplits(
+        expense.amount,
+        expense.splitParticipants,
+      );
     }
 
     expense.updatedAt = new Date();

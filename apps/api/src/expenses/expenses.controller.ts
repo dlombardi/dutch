@@ -16,6 +16,7 @@ export class ExpensesController {
       dto.createdById,
       dto.currency,
       dto.date,
+      dto.splitParticipants,
     );
   }
 
