@@ -715,7 +715,7 @@
         "Rates refresh periodically",
         "User doesn't need to manually enter rates"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "currency-manual-rate",

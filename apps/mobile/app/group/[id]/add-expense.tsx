@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useExpensesStore } from '../../../stores/expensesStore';
 import { useGroupsStore, GroupMember } from '../../../stores/groupsStore';
 import { useAuthStore } from '../../../stores/authStore';
+import { api } from '../../../lib/api';
 
 // Common currencies with their symbols
 const CURRENCIES = [
@@ -66,6 +67,8 @@ export default function AddExpenseScreen() {
   const [paidById, setPaidById] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
   const [exchangeRate, setExchangeRate] = useState<string>('');
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [rateAutoFetched, setRateAutoFetched] = useState(false);
   const [showPayerPicker, setShowPayerPicker] = useState(false);
   const [showSplitPicker, setShowSplitPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
@@ -99,6 +102,33 @@ export default function AddExpenseScreen() {
       setCurrency(currentGroup.defaultCurrency);
     }
   }, [currentGroup, currency]);
+
+  // Auto-fetch exchange rate when foreign currency is selected
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      if (!currency || !currentGroup?.defaultCurrency) return;
+      if (currency === currentGroup.defaultCurrency) {
+        setExchangeRate('');
+        setRateAutoFetched(false);
+        return;
+      }
+
+      setIsFetchingRate(true);
+      try {
+        const result = await api.getExchangeRate(currency, currentGroup.defaultCurrency);
+        setExchangeRate(result.rate.toString());
+        setRateAutoFetched(true);
+      } catch (err) {
+        console.warn('Failed to fetch exchange rate:', err);
+        // Don't clear the exchange rate if fetch fails - let user enter manually
+        setRateAutoFetched(false);
+      } finally {
+        setIsFetchingRate(false);
+      }
+    };
+
+    fetchExchangeRate();
+  }, [currency, currentGroup?.defaultCurrency]);
 
   // Filter currencies based on search
   const filteredCurrencies = useMemo(() => {
@@ -304,17 +334,33 @@ export default function AddExpenseScreen() {
           {/* Exchange Rate Input - shown when currency differs from group default */}
           {needsExchangeRate && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>
-                Exchange Rate (1 {currentCurrency.code} = ? {groupCurrency.code})
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={exchangeRate}
-                onChangeText={setExchangeRate}
-                placeholder="Enter exchange rate"
-                placeholderTextColor="#999"
-                keyboardType="decimal-pad"
-              />
+              <View style={styles.labelRow}>
+                <Text style={styles.label}>
+                  Exchange Rate (1 {currentCurrency.code} = ? {groupCurrency.code})
+                </Text>
+                {isFetchingRate && (
+                  <ActivityIndicator size="small" color="#007AFF" style={styles.rateLoader} />
+                )}
+              </View>
+              <View style={styles.rateInputRow}>
+                <TextInput
+                  style={[styles.input, styles.rateInput]}
+                  value={exchangeRate}
+                  onChangeText={(text) => {
+                    setExchangeRate(text);
+                    setRateAutoFetched(false); // User manually editing
+                  }}
+                  placeholder={isFetchingRate ? "Fetching rate..." : "Enter exchange rate"}
+                  placeholderTextColor="#999"
+                  keyboardType="decimal-pad"
+                  editable={!isFetchingRate}
+                />
+                {rateAutoFetched && (
+                  <View style={styles.autoFetchBadge}>
+                    <Text style={styles.autoFetchText}>Auto</Text>
+                  </View>
+                )}
+              </View>
               {parseFloat(amount) > 0 && parseFloat(exchangeRate) > 0 && (
                 <View style={styles.conversionPreview}>
                   <Text style={styles.conversionText}>
@@ -642,6 +688,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#007AFF',
     fontWeight: '500',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  rateLoader: {
+    marginLeft: 8,
+  },
+  rateInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rateInput: {
+    flex: 1,
+  },
+  autoFetchBadge: {
+    backgroundColor: '#34C759',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  autoFetchText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   pickerButton: {
     flexDirection: 'row',

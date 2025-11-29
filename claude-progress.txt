@@ -638,3 +638,33 @@ Description: Balances show in group's default currency with auto conversion
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+
+
+---
+
+## Session: 2025-11-29 (continued)
+Working on: currency-exchange-rates
+Description: Exchange rates are fetched automatically and updated regularly
+
+
+### currency-exchange-rates - COMPLETE
+- Implemented:
+  - API: New CurrencyModule with ExchangeRatesService and controller
+  - API: /exchange-rates endpoint with base and target currency support
+  - API: Mock exchange rates for 40 currencies (would use real API in production)
+  - API: 15-minute cache for rate data
+  - API: Cross-rate calculation for any currency pair
+  - API: Validation for invalid currency codes
+  - Mobile: Updated API client with getExchangeRate and getExchangeRates methods
+  - Mobile: Auto-fetch exchange rate when selecting foreign currency
+  - Mobile: Loading indicator while fetching rate
+  - Mobile: "Auto" badge shows when rate was auto-fetched
+  - Mobile: User can still manually override the rate
+- Tests added:
+  - 9 new tests in exchange-rates.controller.spec.ts
+  - Tests for base/target rates, validation, caching, cross-rates
+- Verified:
+  - All 131 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

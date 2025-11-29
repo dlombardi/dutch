@@ -405,6 +405,31 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  // Exchange rate endpoints
+  async getExchangeRate(
+    base: string,
+    target: string
+  ): Promise<{
+    base: string;
+    target: string;
+    rate: number;
+    timestamp: string;
+  }> {
+    return this.request(`/exchange-rates?base=${encodeURIComponent(base)}&target=${encodeURIComponent(target)}`, {
+      method: 'GET',
+    });
+  }
+
+  async getExchangeRates(base: string = 'USD'): Promise<{
+    base: string;
+    rates: Record<string, number>;
+    timestamp: string;
+  }> {
+    return this.request(`/exchange-rates?base=${encodeURIComponent(base)}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);
