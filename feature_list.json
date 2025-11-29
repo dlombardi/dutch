@@ -15,7 +15,7 @@
         "See confirmation that email was sent",
         "Receive email with magic link within 30 seconds"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-magic-link-verify",

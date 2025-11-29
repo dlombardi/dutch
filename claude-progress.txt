@@ -22,8 +22,8 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 0
-- Current focus: Initial scaffolding complete, ready for feature implementation
+- Features passing: 1
+- Current focus: Implementing Priority 1 auth features
 
 ## Feature Breakdown by Category
 - auth: 12 features
@@ -80,3 +80,27 @@
 3. Implement auth-guest-name-entry (Priority 1)
 4. Implement groups-create-basic (Priority 1)
 5. Set up database and run initial migrations
+
+---
+
+## Session: 2025-11-28 (Session 2)
+Working on: auth-magic-link-request
+Description: User can request a magic link by entering their email address
+
+### auth-magic-link-request - COMPLETE
+- Implemented:
+  - NestJS auth module with AuthService and AuthController
+  - Magic link entity for storing tokens
+  - POST /auth/magic-link/request endpoint
+  - POST /auth/magic-link/verify endpoint
+  - Mobile sign-in screen with email input
+  - Magic link sent confirmation screen
+  - Auth store with API integration
+  - Root layout with auth flow protection
+- Verified:
+  - API endpoint returns success message
+  - Email validation works (rejects invalid emails)
+  - Magic link token is generated and logged
+  - Token verification returns user and accessToken
+- Commit: (pending)
+- Notes: Using in-memory storage for now, will migrate to TypeORM later
