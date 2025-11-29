@@ -35,6 +35,7 @@ interface AuthState {
   magicLinkSent: boolean;
   magicLinkEmail: string | null;
   error: string | null;
+  _hasHydrated: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
@@ -45,6 +46,7 @@ interface AuthState {
   logout: () => void;
   clearError: () => void;
   resetMagicLinkState: () => void;
+  setHasHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -57,6 +59,9 @@ export const useAuthStore = create<AuthState>()(
       magicLinkSent: false,
       magicLinkEmail: null,
       error: null,
+      _hasHydrated: false,
+
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
 
       setUser: (user) => {
         set({ user, isAuthenticated: !!user });
@@ -197,6 +202,8 @@ export const useAuthStore = create<AuthState>()(
         if (state?.accessToken) {
           api.setAccessToken(state.accessToken);
         }
+        // Mark store as hydrated
+        useAuthStore.getState().setHasHydrated(true);
       },
     }
   )

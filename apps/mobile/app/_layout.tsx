@@ -1,22 +1,29 @@
-import { useEffect } from 'react';
-import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Slot, router, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
 
-function useProtectedRoute() {
+export default function RootLayout() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    // Don't do anything until router is ready
-    if (!navigationState?.key) return;
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Don't navigate until:
+    // 1. Component is mounted
+    // 2. Router is ready
+    // 3. Auth store has rehydrated from storage
+    if (!isMounted || !navigationState?.key || !_hasHydrated) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const segmentArray = [...segments];
-    const inAuthVerify =
-      segmentArray[0] === 'auth' && segmentArray[1] === 'verify';
+    const inAuthVerify = segments[0] === 'auth' && segments[1] === 'verify';
 
     // Allow access to auth/verify route (for magic link deep links)
     if (inAuthVerify) {
@@ -24,34 +31,27 @@ function useProtectedRoute() {
     }
 
     if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to sign in if not authenticated and not already in auth group
       router.replace('/(auth)/sign-in');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to main app if authenticated but in auth group
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, segments, navigationState?.key]);
-}
+  }, [isAuthenticated, segments, navigationState?.key, isMounted, _hasHydrated]);
 
-export default function RootLayout() {
-  useProtectedRoute();
+  // Show loading while waiting for hydration
+  if (!_hasHydrated) {
+    return (
+      <SafeAreaProvider>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="auth/verify"
-          options={{
-            headerShown: false,
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen name="group/[id]" options={{ title: 'Group' }} />
-        <Stack.Screen name="expense/[id]" options={{ title: 'Expense' }} />
-      </Stack>
+      <Slot />
     </SafeAreaProvider>
   );
 }
