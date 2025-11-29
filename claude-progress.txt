@@ -22,7 +22,7 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 1
+- Features passing: 2
 - Current focus: Implementing Priority 1 auth features
 
 ## Feature Breakdown by Category
@@ -102,5 +102,39 @@ Description: User can request a magic link by entering their email address
   - Email validation works (rejects invalid emails)
   - Magic link token is generated and logged
   - Token verification returns user and accessToken
-- Commit: (pending)
+- Commit: 9c98a71
 - Notes: Using in-memory storage for now, will migrate to TypeORM later
+
+### auth-magic-link-verify - INCOMPLETE
+- Backend endpoint implemented: POST /auth/magic-link/verify works
+- Mobile verifyMagicLink() store function exists
+- MISSING: Deep linking URL scheme not configured in app.json
+- MISSING: No code to handle incoming magic link URLs
+- MISSING: No screen to process magic link tokens from URLs
+- Status: Only API side complete, mobile deep linking flow not implemented
+
+---
+
+## Session: 2025-11-28 (Session 3)
+Working on: auth-magic-link-verify
+Description: User can authenticate by clicking the magic link in their email
+
+### auth-magic-link-verify - COMPLETE
+- Implemented:
+  - Deep linking URL scheme configured in app.json (scheme: "evn")
+  - Created auth/verify.tsx screen to handle magic link tokens
+  - Updated root layout to allow auth/verify route without authentication
+  - Deep link URL format: evn://auth/verify?token=xxx
+- Tests added:
+  - apps/api/src/auth/__tests__/auth.controller.spec.ts (8 tests)
+    - Valid token verification returns user + accessToken
+    - Invalid token rejection
+    - Already-used token rejection
+    - Same user returned for same email
+    - Empty token rejection
+- Verified:
+  - API endpoint verifies tokens correctly
+  - Mobile app has deep link configuration
+  - Session persists via AsyncStorage (zustand persist middleware)
+- Commit: 2ccc00f
+- Notes: Full E2E testing requires running on device/simulator to test deep links

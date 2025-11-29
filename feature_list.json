@@ -28,7 +28,7 @@
         "User is redirected to main groups screen",
         "Session persists across app restarts"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-magic-link-expiry",

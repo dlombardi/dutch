@@ -14,6 +14,12 @@ function useProtectedRoute() {
     if (!navigationState?.key) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inAuthVerify = segments[0] === 'auth' && segments[1] === 'verify';
+
+    // Allow access to auth/verify route (for magic link deep links)
+    if (inAuthVerify) {
+      return;
+    }
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to sign in if not authenticated and not already in auth group
@@ -34,6 +40,13 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="auth/verify"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+          }}
+        />
         <Stack.Screen name="group/[id]" options={{ title: 'Group' }} />
         <Stack.Screen name="expense/[id]" options={{ title: 'Expense' }} />
       </Stack>
