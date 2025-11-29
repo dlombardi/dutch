@@ -22,7 +22,7 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 12
+- Features passing: 14
 - Current focus: Implementing Priority 1 features
 
 ## Feature Breakdown by Category
@@ -338,5 +338,38 @@ Description: User can see list of all group members
 - Verified:
   - All 42 API tests pass (39 existing + 3 new)
   - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+
+---
+
+Working on: expenses-create-basic
+Description: User can create a basic expense with amount and description
+
+### expenses-create-basic - COMPLETE
+- Implemented:
+  - API: POST /expenses endpoint with validation
+  - API: GET /expenses/:id endpoint
+  - API: GET /groups/:groupId/expenses endpoint
+  - API: ExpensesModule with controller, service, DTOs
+  - API: Validates group exists, defaults currency to group default
+  - Mobile: api.ts createExpense, getExpense, getGroupExpenses methods
+  - Mobile: expensesStore with createExpense, fetchExpense, fetchGroupExpenses actions
+  - Mobile: Add expense screen at /group/[id]/add-expense
+  - Mobile: Expense list UI in group detail screen
+  - Mobile: FAB navigates to add expense screen
+- Tests added (in expenses.controller.spec.ts):
+  - POST /expenses - 12 tests covering basic creation, validation, defaults
+  - GET /expenses/:id - 2 tests
+  - GET /groups/:groupId/expenses - 3 tests
+- Verified:
+  - All 59 API tests pass (42 existing + 17 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+### expenses-view-list - COMPLETE (already implemented)
+- This feature was implemented as part of expenses-create-basic
+- Expenses list displays in group detail expenses tab
+- Shows description, date, amount, and currency
 - Status: Feature complete
 

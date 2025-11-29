@@ -370,7 +370,7 @@
         "Tap 'Save'",
         "Expense appears in group's expense list"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-create-quick",
@@ -427,7 +427,7 @@
         "Expenses sorted by date (newest first)",
         "Can scroll through all expenses"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-view-detail",

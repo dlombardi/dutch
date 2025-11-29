@@ -196,6 +196,84 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  // Expenses endpoints
+  async createExpense(
+    groupId: string,
+    amount: number,
+    description: string,
+    paidById: string,
+    createdById: string,
+    currency?: string,
+    date?: string
+  ): Promise<{
+    expense: {
+      id: string;
+      groupId: string;
+      amount: number;
+      currency: string;
+      description: string;
+      paidById: string;
+      splitType: string;
+      date: string;
+      createdById: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }> {
+    return this.request('/expenses', {
+      method: 'POST',
+      body: JSON.stringify({
+        groupId,
+        amount,
+        description,
+        paidById,
+        createdById,
+        currency,
+        date,
+      }),
+    });
+  }
+
+  async getExpense(id: string): Promise<{
+    expense: {
+      id: string;
+      groupId: string;
+      amount: number;
+      currency: string;
+      description: string;
+      paidById: string;
+      splitType: string;
+      date: string;
+      createdById: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }> {
+    return this.request(`/expenses/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async getGroupExpenses(groupId: string): Promise<{
+    expenses: {
+      id: string;
+      groupId: string;
+      amount: number;
+      currency: string;
+      description: string;
+      paidById: string;
+      splitType: string;
+      date: string;
+      createdById: string;
+      createdAt: string;
+      updatedAt: string;
+    }[];
+  }> {
+    return this.request(`/groups/${groupId}/expenses`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

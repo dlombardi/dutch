@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { useGroupsStore, GroupMember } from '../../stores/groupsStore';
+import { useExpensesStore, Expense } from '../../stores/expensesStore';
 
 type Tab = 'expenses' | 'balances' | 'members';
 
@@ -20,6 +21,7 @@ const WEB_URL = 'https://evn.app'; // Production web URL
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('expenses');
   const {
     currentGroup,
@@ -29,13 +31,25 @@ export default function GroupDetailScreen() {
     isLoading,
     error,
   } = useGroupsStore();
+  const {
+    expenses,
+    fetchGroupExpenses,
+    isLoading: expensesLoading,
+  } = useExpensesStore();
 
   useEffect(() => {
     if (id) {
       fetchGroup(id);
       fetchGroupMembers(id);
+      fetchGroupExpenses(id);
     }
-  }, [id, fetchGroup, fetchGroupMembers]);
+  }, [id, fetchGroup, fetchGroupMembers, fetchGroupExpenses]);
+
+  const handleAddExpense = useCallback(() => {
+    if (id) {
+      router.push(`/group/${id}/add-expense`);
+    }
+  }, [id, router]);
 
   const handleShareInvite = useCallback(async () => {
     if (!currentGroup) return;
@@ -135,13 +149,42 @@ export default function GroupDetailScreen() {
       {/* Content */}
       <View style={styles.content}>
         {activeTab === 'expenses' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>💸</Text>
-            <Text style={styles.emptyTitle}>No expenses yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Add your first expense to start tracking
-            </Text>
-          </View>
+          <ScrollView style={styles.expensesList}>
+            {expensesLoading && expenses.length === 0 ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#007AFF" />
+              </View>
+            ) : expenses.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>💸</Text>
+                <Text style={styles.emptyTitle}>No expenses yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  Add your first expense to start tracking
+                </Text>
+              </View>
+            ) : (
+              expenses.map((expense) => (
+                <View key={expense.id} style={styles.expenseItem}>
+                  <View style={styles.expenseInfo}>
+                    <Text style={styles.expenseDescription}>
+                      {expense.description}
+                    </Text>
+                    <Text style={styles.expenseDate}>
+                      {new Date(expense.date).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={styles.expenseAmount}>
+                    {expense.currency === 'USD'
+                      ? '$'
+                      : expense.currency === 'EUR'
+                        ? '€'
+                        : expense.currency}
+                    {expense.amount.toFixed(2)}
+                  </Text>
+                </View>
+              ))
+            )}
+          </ScrollView>
         )}
         {activeTab === 'balances' && (
           <View style={styles.emptyState}>
@@ -193,7 +236,7 @@ export default function GroupDetailScreen() {
       </View>
 
       {/* Add Expense FAB */}
-      <TouchableOpacity style={styles.fab}>
+      <TouchableOpacity style={styles.fab} onPress={handleAddExpense}>
         <Text style={styles.fabText}>+ Add Expense</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -357,5 +400,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#007AFF',
     fontWeight: '600',
+  },
+  expensesList: {
+    flex: 1,
+  },
+  expenseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  expenseInfo: {
+    flex: 1,
+  },
+  expenseDescription: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1a1a1a',
+  },
+  expenseDate: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  expenseAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
   },
 });
