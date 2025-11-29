@@ -399,7 +399,7 @@
         "Select the member who paid",
         "Selection saved with expense"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-select-category",

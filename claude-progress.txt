@@ -373,3 +373,30 @@ Description: User can create a basic expense with amount and description
 - Shows description, date, amount, and currency
 - Status: Feature complete
 
+---
+
+## Session: 2025-11-28 (Continued)
+Working on: expenses-select-payer
+Description: User can select who paid for the expense
+
+### expenses-select-payer - COMPLETE
+- Implemented:
+  - Mobile: Updated add-expense.tsx with payer selector UI
+  - Mobile: TouchableOpacity "Paid by" field that opens picker modal
+  - Mobile: Modal with FlatList showing all group members
+  - Mobile: Selected payer shows checkmark, displays "You" for current user
+  - Mobile: fetchGroupMembers called on screen load
+  - Mobile: Default payer set to current user
+  - Mobile: paidById passed to createExpense API call
+  - API: Already supports paidById field (no changes needed)
+- Features:
+  - Tappable "Paid by" row with chevron
+  - Modal header with "Who paid?" title and Done button
+  - Member list with avatars (2-letter initials)
+  - Checkmark indicator on selected member
+  - Empty state for no members
+- Verified:
+  - All 59 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
