@@ -702,7 +702,7 @@
         "EUR expense converted to USD for balance calculation",
         "Conversion rate shown"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "currency-exchange-rates",

@@ -65,6 +65,7 @@ export default function AddExpenseScreen() {
   const [description, setDescription] = useState('');
   const [paidById, setPaidById] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<string>('');
   const [showPayerPicker, setShowPayerPicker] = useState(false);
   const [showSplitPicker, setShowSplitPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
@@ -119,6 +120,17 @@ export default function AddExpenseScreen() {
     return CURRENCIES.find((c) => c.code === code) || { code, symbol: code, name: code };
   }, [currency, currentGroup?.defaultCurrency]);
 
+  // Check if exchange rate is needed (different currency from group default)
+  const needsExchangeRate = useMemo(() => {
+    return currency && currentGroup?.defaultCurrency && currency !== currentGroup.defaultCurrency;
+  }, [currency, currentGroup?.defaultCurrency]);
+
+  // Get group's default currency info
+  const groupCurrency = useMemo(() => {
+    const code = currentGroup?.defaultCurrency || 'USD';
+    return CURRENCIES.find((c) => c.code === code) || { code, symbol: code, name: code };
+  }, [currentGroup?.defaultCurrency]);
+
   // Calculate per-person amount for preview
   const getPerPersonAmount = useCallback(() => {
     const numericAmount = parseFloat(amount);
@@ -152,6 +164,15 @@ export default function AddExpenseScreen() {
       return;
     }
 
+    // If exchange rate is needed, validate it
+    let numericExchangeRate: number | undefined;
+    if (needsExchangeRate) {
+      numericExchangeRate = parseFloat(exchangeRate);
+      if (isNaN(numericExchangeRate) || numericExchangeRate <= 0) {
+        return; // Exchange rate required for foreign currency
+      }
+    }
+
     const expense = await createExpense(
       groupId,
       numericAmount,
@@ -160,13 +181,14 @@ export default function AddExpenseScreen() {
       user.id, // createdById - current user created
       currency || undefined, // currency - selected or default
       undefined, // date - use default
-      splitParticipants.length > 0 ? splitParticipants : undefined
+      splitParticipants.length > 0 ? splitParticipants : undefined,
+      numericExchangeRate
     );
 
     if (expense) {
       router.back();
     }
-  }, [groupId, user, paidById, amount, description, currency, createExpense, router]);
+  }, [groupId, user, paidById, amount, description, currency, exchangeRate, needsExchangeRate, createExpense, router, splitParticipants]);
 
   const handleSelectCurrency = useCallback((code: string) => {
     setCurrency(code);
@@ -201,7 +223,8 @@ export default function AddExpenseScreen() {
     amount.trim() !== '' &&
     !isNaN(parseFloat(amount)) &&
     parseFloat(amount) > 0 &&
-    description.trim() !== '';
+    description.trim() !== '' &&
+    (!needsExchangeRate || (exchangeRate.trim() !== '' && !isNaN(parseFloat(exchangeRate)) && parseFloat(exchangeRate) > 0));
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -277,6 +300,30 @@ export default function AddExpenseScreen() {
               placeholderTextColor="#999"
             />
           </View>
+
+          {/* Exchange Rate Input - shown when currency differs from group default */}
+          {needsExchangeRate && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>
+                Exchange Rate (1 {currentCurrency.code} = ? {groupCurrency.code})
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={exchangeRate}
+                onChangeText={setExchangeRate}
+                placeholder="Enter exchange rate"
+                placeholderTextColor="#999"
+                keyboardType="decimal-pad"
+              />
+              {parseFloat(amount) > 0 && parseFloat(exchangeRate) > 0 && (
+                <View style={styles.conversionPreview}>
+                  <Text style={styles.conversionText}>
+                    {currentCurrency.symbol}{parseFloat(amount).toFixed(2)} {currentCurrency.code} = {groupCurrency.symbol}{(parseFloat(amount) * parseFloat(exchangeRate)).toFixed(2)} {groupCurrency.code}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Paid By Selector */}
           <View style={styles.inputGroup}>
@@ -583,6 +630,18 @@ const styles = StyleSheet.create({
   perPersonText: {
     fontSize: 14,
     color: '#666',
+  },
+  conversionPreview: {
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#e8f4ff',
+    borderRadius: 8,
+  },
+  conversionText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
   },
   pickerButton: {
     flexDirection: 'row',

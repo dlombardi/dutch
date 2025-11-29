@@ -6,6 +6,8 @@ export interface Expense {
   groupId: string;
   amount: number;
   currency: string;
+  exchangeRate: number;
+  amountInGroupCurrency: number;
   description: string;
   paidById: string;
   splitType: string;
@@ -32,7 +34,8 @@ interface ExpensesState {
     createdById: string,
     currency?: string,
     date?: string,
-    splitParticipants?: string[]
+    splitParticipants?: string[],
+    exchangeRate?: number
   ) => Promise<Expense | null>;
   updateExpense: (
     id: string,
@@ -66,7 +69,8 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
     createdById,
     currency,
     date,
-    splitParticipants
+    splitParticipants,
+    exchangeRate
   ) => {
     set({ isLoading: true, error: null });
     try {
@@ -78,7 +82,10 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
         createdById,
         currency,
         date,
-        splitParticipants
+        splitParticipants,
+        undefined, // splitType
+        undefined, // splitAmounts
+        exchangeRate
       );
       const newExpense = response.expense;
       set((state) => ({

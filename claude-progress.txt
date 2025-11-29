@@ -614,3 +614,27 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+---
+
+## Session: 2025-11-29
+Working on: currency-auto-convert
+Description: Balances show in group's default currency with auto conversion
+
+### currency-auto-convert - COMPLETE
+- Implemented:
+  - API: Added exchangeRate field to expense DTO and service
+  - API: Validate exchange rate for foreign currency expenses (required when currency differs from group default)
+  - API: Auto-set exchangeRate to 1.0 when expense currency matches group default
+  - API: Calculate and store amountInGroupCurrency on expense creation
+  - API: Balance calculation now converts expenses to group currency using exchange rate
+  - Mobile: Added exchangeRate parameter to API client and stores
+  - Mobile: Added exchange rate input in add-expense screen (shown when currency differs from group default)
+  - Mobile: Shows real-time conversion preview when entering exchange rate
+- Tests added:
+  - 7 new multi-currency conversion tests in balances.controller.spec.ts
+  - Updated existing expense test to include exchange rate
+- Verified:
+  - All 122 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
