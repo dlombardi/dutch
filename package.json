@@ -11,6 +11,7 @@
     "check-types": "turbo run check-types",
     "mobile": "cd apps/mobile && npm run start",
     "mobile:ios": "cd apps/mobile && npm run ios",
+    "mobile:web": "cd apps/mobile && npm run web",
     "mobile:android": "cd apps/mobile && npm run android",
     "api": "cd apps/api && npm run start:dev",
     "web": "cd apps/web && npm run dev",
