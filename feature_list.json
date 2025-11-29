@@ -42,7 +42,7 @@
         "See error message that link has expired",
         "Be prompted to request a new link"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-guest-name-entry",

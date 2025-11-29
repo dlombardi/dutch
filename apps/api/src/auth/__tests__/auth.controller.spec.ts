@@ -178,5 +178,58 @@ describe('AuthController (integration)', () => {
         .send({ token: '' })
         .expect(400);
     });
+
+    it('should reject an expired magic link token', async () => {
+      // Request a magic link
+      await request(httpServer)
+        .post('/auth/magic-link/request')
+        .send({ email: 'expired-test@example.com' })
+        .expect(200);
+
+      // Get the token
+      const token = authService.findTokenByEmail('expired-test@example.com');
+      expect(token).toBeDefined();
+
+      // Manually expire the token by modifying its expiresAt
+      const magicLink = authService.getMagicLinkByToken(token!);
+      expect(magicLink).toBeDefined();
+      // Set expiresAt to the past (1 hour ago)
+      magicLink!.expiresAt = new Date(Date.now() - 60 * 60 * 1000);
+
+      // Try to verify the expired token
+      const response = await request(httpServer)
+        .post('/auth/magic-link/verify')
+        .send({ token })
+        .expect(400);
+
+      const body = response.body as MessageResponse;
+      expect(body.message).toBe('Magic link has expired');
+    });
+
+    it('should verify a magic link that is still within 15 minute window', async () => {
+      // Request a magic link
+      await request(httpServer)
+        .post('/auth/magic-link/request')
+        .send({ email: 'valid-time-test@example.com' })
+        .expect(200);
+
+      // Get the token
+      const token = authService.findTokenByEmail('valid-time-test@example.com');
+      expect(token).toBeDefined();
+
+      // Verify the token is still valid (we just created it)
+      const magicLink = authService.getMagicLinkByToken(token!);
+      expect(magicLink).toBeDefined();
+      expect(magicLink!.expiresAt.getTime()).toBeGreaterThan(Date.now());
+
+      // Verify the magic link works
+      const response = await request(httpServer)
+        .post('/auth/magic-link/verify')
+        .send({ token })
+        .expect(200);
+
+      const body = response.body as VerifyResponse;
+      expect(body.user.email).toBe('valid-time-test@example.com');
+    });
   });
 });
