@@ -21,6 +21,12 @@ export default function ExpenseDetailScreen() {
   const { currentGroup, currentGroupMembers, fetchGroup, fetchGroupMembers } =
     useGroupsStore();
 
+  const handleEdit = useCallback(() => {
+    if (id) {
+      router.push(`/expense/${id}/edit`);
+    }
+  }, [id, router]);
+
   useEffect(() => {
     if (id) {
       fetchExpense(id);
@@ -109,7 +115,7 @@ export default function ExpenseDetailScreen() {
         options={{
           title: 'Expense Details',
           headerRight: () => (
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleEdit}>
               <Text style={styles.editButton}>Edit</Text>
             </TouchableOpacity>
           ),

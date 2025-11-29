@@ -1,6 +1,6 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param } from '@nestjs/common';
 import { ExpensesService } from './expenses.service';
-import { CreateExpenseDto } from './dto';
+import { CreateExpenseDto, UpdateExpenseDto } from './dto';
 
 @Controller()
 export class ExpensesController {
@@ -22,6 +22,11 @@ export class ExpensesController {
   @Get('expenses/:id')
   getExpense(@Param('id') id: string) {
     return this.expensesService.getExpenseById(id);
+  }
+
+  @Put('expenses/:id')
+  updateExpense(@Param('id') id: string, @Body() dto: UpdateExpenseDto) {
+    return this.expensesService.updateExpense(id, dto);
   }
 
   @Get('groups/:groupId/expenses')

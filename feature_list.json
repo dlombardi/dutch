@@ -455,7 +455,7 @@
         "Save changes",
         "Balances recalculated automatically"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-delete",

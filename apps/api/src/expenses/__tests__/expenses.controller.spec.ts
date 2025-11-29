@@ -351,4 +351,205 @@ describe('ExpensesController (integration)', () => {
         .expect(404);
     });
   });
+
+  describe('PUT /expenses/:id', () => {
+    it('should update expense amount', async () => {
+      // Create an expense first
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Original expense',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      // Update the amount
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ amount: 75.00 })
+        .expect(200);
+
+      const body = response.body as { expense: Expense };
+      expect(body.expense.amount).toBe(75);
+      expect(body.expense.description).toBe('Original expense');
+    });
+
+    it('should update expense description', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Original',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ description: 'Updated description' })
+        .expect(200);
+
+      const body = response.body as { expense: Expense };
+      expect(body.expense.description).toBe('Updated description');
+      expect(body.expense.amount).toBe(50);
+    });
+
+    it('should update expense paidById', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Test',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ paidById: 'user-456' })
+        .expect(200);
+
+      const body = response.body as { expense: Expense };
+      expect(body.expense.paidById).toBe('user-456');
+    });
+
+    it('should update multiple fields at once', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Original',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({
+          amount: 100.00,
+          description: 'Updated',
+          paidById: 'user-456',
+        })
+        .expect(200);
+
+      const body = response.body as { expense: Expense };
+      expect(body.expense.amount).toBe(100);
+      expect(body.expense.description).toBe('Updated');
+      expect(body.expense.paidById).toBe('user-456');
+    });
+
+    it('should update updatedAt timestamp', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Test',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+      const originalUpdatedAt = createdExpense.updatedAt;
+
+      // Wait a tiny bit to ensure timestamp changes
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ amount: 75.00 })
+        .expect(200);
+
+      const body = response.body as { expense: Expense };
+      expect(body.expense.updatedAt).not.toBe(originalUpdatedAt);
+    });
+
+    it('should return 404 for non-existent expense', async () => {
+      await request(httpServer)
+        .put('/expenses/non-existent-id')
+        .send({ amount: 75.00 })
+        .expect(404);
+    });
+
+    it('should reject negative amount', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Test',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ amount: -50.00 })
+        .expect(400);
+    });
+
+    it('should reject zero amount', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Test',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ amount: 0 })
+        .expect(400);
+    });
+
+    it('should trim whitespace from description', async () => {
+      const createResponse = await request(httpServer)
+        .post('/expenses')
+        .send({
+          groupId: testGroup.id,
+          amount: 50.00,
+          description: 'Original',
+          paidById: 'user-123',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdExpense = (createResponse.body as CreateExpenseResponse).expense;
+
+      const response = await request(httpServer)
+        .put(`/expenses/${createdExpense.id}`)
+        .send({ description: '  Updated  ' })
+        .expect(200);
+
+      const body = response.body as { expense: Expense };
+      expect(body.expense.description).toBe('Updated');
+    });
+  });
 });

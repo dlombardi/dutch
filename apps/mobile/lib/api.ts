@@ -274,6 +274,36 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  async updateExpense(
+    id: string,
+    updates: {
+      amount?: number;
+      currency?: string;
+      description?: string;
+      paidById?: string;
+      date?: string;
+    }
+  ): Promise<{
+    expense: {
+      id: string;
+      groupId: string;
+      amount: number;
+      currency: string;
+      description: string;
+      paidById: string;
+      splitType: string;
+      date: string;
+      createdById: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }> {
+    return this.request(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

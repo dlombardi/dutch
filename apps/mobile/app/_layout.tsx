@@ -23,7 +23,7 @@ export default function RootLayout() {
     if (!isMounted || !navigationState?.key || !_hasHydrated) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const inAuthVerify = segments[0] === 'auth' && segments[1] === 'verify';
+    const inAuthVerify = segments[0] === 'auth' && (segments as string[])[1] === 'verify';
 
     // Allow access to auth/verify route (for magic link deep links)
     if (inAuthVerify) {

@@ -83,4 +83,42 @@ export class ExpensesService {
 
     return { expenses };
   }
+
+  updateExpense(
+    id: string,
+    updates: {
+      amount?: number;
+      currency?: string;
+      description?: string;
+      paidById?: string;
+      date?: string;
+    },
+  ): { expense: ExpenseData } {
+    const expense = this.expenses.get(id);
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    // Apply updates
+    if (updates.amount !== undefined) {
+      expense.amount = updates.amount;
+    }
+    if (updates.currency !== undefined) {
+      expense.currency = updates.currency;
+    }
+    if (updates.description !== undefined) {
+      expense.description = updates.description;
+    }
+    if (updates.paidById !== undefined) {
+      expense.paidById = updates.paidById;
+    }
+    if (updates.date !== undefined) {
+      expense.date = updates.date;
+    }
+
+    expense.updatedAt = new Date();
+
+    this.expenses.set(id, expense);
+    return { expense };
+  }
 }

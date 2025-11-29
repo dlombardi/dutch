@@ -31,6 +31,16 @@ interface ExpensesState {
     currency?: string,
     date?: string
   ) => Promise<Expense | null>;
+  updateExpense: (
+    id: string,
+    updates: {
+      amount?: number;
+      currency?: string;
+      description?: string;
+      paidById?: string;
+      date?: string;
+    }
+  ) => Promise<Expense | null>;
   fetchExpense: (id: string) => Promise<Expense | null>;
   fetchGroupExpenses: (groupId: string) => Promise<Expense[] | null>;
   setCurrentExpense: (expense: Expense | null) => void;
@@ -72,6 +82,31 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create expense';
+      set({ error: errorMessage });
+      return null;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  updateExpense: async (id, updates) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.updateExpense(id, updates);
+      const updatedExpense = response.expense;
+      set((state) => ({
+        expenses: state.expenses.map((e) =>
+          e.id === id ? updatedExpense : e
+        ),
+        currentExpense:
+          state.currentExpense?.id === id
+            ? updatedExpense
+            : state.currentExpense,
+      }));
+      return updatedExpense;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update expense';
       set({ error: errorMessage });
       return null;
     } finally {
