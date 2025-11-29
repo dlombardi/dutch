@@ -335,6 +335,60 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  // Settlements endpoints
+  async createSettlement(
+    groupId: string,
+    fromUserId: string,
+    toUserId: string,
+    amount: number,
+    createdById: string,
+    currency?: string,
+    method?: string
+  ): Promise<{
+    settlement: {
+      id: string;
+      groupId: string;
+      fromUserId: string;
+      toUserId: string;
+      amount: number;
+      currency: string;
+      method: string;
+      createdById: string;
+      createdAt: string;
+    };
+  }> {
+    return this.request('/settlements', {
+      method: 'POST',
+      body: JSON.stringify({
+        groupId,
+        fromUserId,
+        toUserId,
+        amount,
+        createdById,
+        currency,
+        method,
+      }),
+    });
+  }
+
+  async getGroupSettlements(groupId: string): Promise<{
+    settlements: {
+      id: string;
+      groupId: string;
+      fromUserId: string;
+      toUserId: string;
+      amount: number;
+      currency: string;
+      method: string;
+      createdById: string;
+      createdAt: string;
+    }[];
+  }> {
+    return this.request(`/groups/${groupId}/settlements`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

@@ -821,7 +821,7 @@
         "Select payment method used",
         "Payment recorded, balances updated"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "settlements-partial-payment",

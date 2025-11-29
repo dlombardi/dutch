@@ -545,3 +545,26 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### settlements-record-payment - COMPLETE
+- Implemented:
+  - API: SettlementsModule with controller, service, DTOs
+  - API: POST /settlements endpoint to record settlement payments
+  - API: GET /groups/:id/settlements endpoint to list settlements
+  - API: CreateSettlementDto with validation (positive amount, different users)
+  - API: Settlements reduce debt in balance calculations
+  - API: BalancesService updated to factor in settlements
+  - Mobile: settlementsStore with createSettlement and fetchGroupSettlements
+  - Mobile: api.ts createSettlement and getGroupSettlements methods
+  - Mobile: "Settle" button on each balance item in Balances tab
+  - Mobile: Settlement modal with amount input and confirmation
+  - Mobile: Balances refresh after settlement recorded
+- Tests added (16 tests in settlements.controller.spec.ts):
+  - POST /settlements: Record payment, custom currency, payment method
+  - Validation: Reject negative/zero amount, missing fields, same user
+  - GET settlements: Empty list, list with settlements, 404 for non-existent group
+  - Balance integration: Full settlement zeroes balance, partial settlement reduces debt
+- Verified:
+  - All 104 API tests pass (88 existing + 16 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

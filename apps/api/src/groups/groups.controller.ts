@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Param, Res } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Res, Inject, forwardRef } from '@nestjs/common';
 import type { Response } from 'express';
 import { GroupsService } from './groups.service';
 import { BalancesService } from './balances.service';
+import { SettlementsService } from '../settlements/settlements.service';
 import { CreateGroupDto, JoinGroupDto } from './dto';
 
 @Controller('groups')
@@ -9,6 +10,8 @@ export class GroupsController {
   constructor(
     private readonly groupsService: GroupsService,
     private readonly balancesService: BalancesService,
+    @Inject(forwardRef(() => SettlementsService))
+    private readonly settlementsService: SettlementsService,
   ) {}
 
   @Post()
@@ -49,6 +52,11 @@ export class GroupsController {
   @Get(':id/balances')
   getGroupBalances(@Param('id') id: string) {
     return this.balancesService.getGroupBalances(id);
+  }
+
+  @Get(':id/settlements')
+  getGroupSettlements(@Param('id') id: string) {
+    return this.settlementsService.getSettlementsByGroupId(id);
   }
 
   @Get(':id')

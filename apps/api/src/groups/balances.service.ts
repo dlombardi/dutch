@@ -1,6 +1,7 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { ExpensesService } from '../expenses/expenses.service';
+import { SettlementsService } from '../settlements/settlements.service';
 
 export interface Balance {
   from: string;
@@ -20,6 +21,8 @@ export class BalancesService {
     private readonly groupsService: GroupsService,
     @Inject(forwardRef(() => ExpensesService))
     private readonly expensesService: ExpensesService,
+    @Inject(forwardRef(() => SettlementsService))
+    private readonly settlementsService: SettlementsService,
   ) {}
 
   getGroupBalances(groupId: string): BalancesResult {
@@ -29,10 +32,14 @@ export class BalancesService {
     // Get all expenses for the group
     const { expenses } = this.expensesService.getExpensesByGroupId(groupId);
 
+    // Get all settlements for the group
+    const { settlements } = this.settlementsService.getSettlementsByGroupId(groupId);
+
     // Step 1: Calculate net balance for each person
     // Positive = owed money, Negative = owes money
     const netBalances: Map<string, number> = new Map();
 
+    // Process expenses
     for (const expense of expenses) {
       const { paidById, splitAmounts } = expense;
 
@@ -51,6 +58,21 @@ export class BalancesService {
           );
         }
       }
+    }
+
+    // Process settlements (settlements reduce debt)
+    for (const settlement of settlements) {
+      const { fromUserId, toUserId, amount } = settlement;
+      // fromUserId paid toUserId, so fromUserId's balance increases (less debt)
+      netBalances.set(
+        fromUserId,
+        (netBalances.get(fromUserId) || 0) + amount,
+      );
+      // toUserId received payment, so their balance decreases (owed less)
+      netBalances.set(
+        toUserId,
+        (netBalances.get(toUserId) || 0) - amount,
+      );
     }
 
     // Step 2: Simplify debts using greedy algorithm

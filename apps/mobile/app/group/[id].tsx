@@ -7,6 +7,8 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +16,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useGroupsStore, GroupMember, Balance } from '../../stores/groupsStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useExpensesStore, Expense } from '../../stores/expensesStore';
+import { useSettlementsStore } from '../../stores/settlementsStore';
 
 type Tab = 'expenses' | 'balances' | 'members';
 
@@ -24,6 +27,9 @@ export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('expenses');
+  const [settleModalVisible, setSettleModalVisible] = useState(false);
+  const [selectedBalance, setSelectedBalance] = useState<Balance | null>(null);
+  const [settleAmount, setSettleAmount] = useState('');
   const { user } = useAuthStore();
   const {
     currentGroup,
@@ -40,6 +46,7 @@ export default function GroupDetailScreen() {
     fetchGroupExpenses,
     isLoading: expensesLoading,
   } = useExpensesStore();
+  const { createSettlement, isLoading: settlementsLoading } = useSettlementsStore();
 
   useEffect(() => {
     if (id) {
@@ -106,6 +113,43 @@ export default function GroupDetailScreen() {
       }
     }
   }, [currentGroup]);
+
+  const handleSettleUp = useCallback((balance: Balance) => {
+    setSelectedBalance(balance);
+    setSettleAmount(balance.amount.toFixed(2));
+    setSettleModalVisible(true);
+  }, []);
+
+  const handleConfirmSettlement = useCallback(async () => {
+    if (!selectedBalance || !user || !id) return;
+
+    const amount = parseFloat(settleAmount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid amount');
+      return;
+    }
+
+    const result = await createSettlement(
+      id,
+      selectedBalance.from,
+      selectedBalance.to,
+      amount,
+      user.id,
+      selectedBalance.currency,
+      'cash'
+    );
+
+    if (result) {
+      setSettleModalVisible(false);
+      setSelectedBalance(null);
+      setSettleAmount('');
+      // Refresh balances
+      fetchGroupBalances(id);
+      Alert.alert('Success', 'Settlement recorded!');
+    } else {
+      Alert.alert('Error', 'Failed to record settlement');
+    }
+  }, [selectedBalance, user, id, settleAmount, createSettlement, fetchGroupBalances]);
 
   if (isLoading && !currentGroup) {
     return (
@@ -269,9 +313,17 @@ export default function GroupDetailScreen() {
                         </Text>
                       </View>
                     </View>
-                    <Text style={styles.balanceItemAmount}>
-                      {getCurrencySymbol(balance.currency)}{balance.amount.toFixed(2)}
-                    </Text>
+                    <View style={styles.balanceActions}>
+                      <Text style={styles.balanceItemAmount}>
+                        {getCurrencySymbol(balance.currency)}{balance.amount.toFixed(2)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.settleButton}
+                        onPress={() => handleSettleUp(balance)}
+                      >
+                        <Text style={styles.settleButtonText}>Settle</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ))}
               </>
@@ -322,6 +374,66 @@ export default function GroupDetailScreen() {
       <TouchableOpacity style={styles.fab} onPress={handleAddExpense}>
         <Text style={styles.fabText}>+ Add Expense</Text>
       </TouchableOpacity>
+
+      {/* Settle Up Modal */}
+      <Modal
+        visible={settleModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSettleModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Record Payment</Text>
+              <TouchableOpacity onPress={() => setSettleModalVisible(false)}>
+                <Text style={styles.modalCancel}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+
+            {selectedBalance && (
+              <View style={styles.settleDetails}>
+                <Text style={styles.settleDescription}>
+                  {getUserDisplayName(selectedBalance.from)} pays{' '}
+                  {getUserDisplayName(selectedBalance.to)}
+                </Text>
+                <View style={styles.settleAmountRow}>
+                  <Text style={styles.settleCurrency}>
+                    {getCurrencySymbol(selectedBalance.currency)}
+                  </Text>
+                  <TextInput
+                    style={styles.settleAmountInput}
+                    value={settleAmount}
+                    onChangeText={setSettleAmount}
+                    keyboardType="decimal-pad"
+                    placeholder="0.00"
+                    placeholderTextColor="#999"
+                  />
+                </View>
+                <Text style={styles.settleHint}>
+                  Full amount owed: {getCurrencySymbol(selectedBalance.currency)}
+                  {selectedBalance.amount.toFixed(2)}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[
+                styles.confirmButton,
+                settlementsLoading && styles.confirmButtonDisabled,
+              ]}
+              onPress={handleConfirmSettlement}
+              disabled={settlementsLoading}
+            >
+              {settlementsLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Confirm Payment</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -447,10 +559,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a1a',
   },
+  balanceActions: {
+    alignItems: 'flex-end',
+  },
   balanceItemAmount: {
     fontSize: 18,
     fontWeight: '600',
     color: '#FF5722',
+  },
+  settleButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 6,
+  },
+  settleButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   tabs: {
     flexDirection: 'row',
@@ -588,5 +715,77 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1a1a1a',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  modalCancel: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  settleDetails: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  settleDescription: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  settleAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  settleCurrency: {
+    fontSize: 36,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginRight: 4,
+  },
+  settleAmountInput: {
+    fontSize: 36,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    minWidth: 120,
+    textAlign: 'center',
+  },
+  settleHint: {
+    fontSize: 14,
+    color: '#999',
+  },
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#a5d6a7',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });

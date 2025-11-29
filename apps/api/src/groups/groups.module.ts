@@ -3,9 +3,10 @@ import { GroupsController } from './groups.controller';
 import { GroupsService } from './groups.service';
 import { BalancesService } from './balances.service';
 import { ExpensesModule } from '../expenses/expenses.module';
+import { SettlementsModule } from '../settlements/settlements.module';
 
 @Module({
-  imports: [forwardRef(() => ExpensesModule)],
+  imports: [forwardRef(() => ExpensesModule), forwardRef(() => SettlementsModule)],
   controllers: [GroupsController],
   providers: [GroupsService, BalancesService],
   exports: [GroupsService],
