@@ -1,6 +1,7 @@
 // Expense splitting and debt simplification calculations
 
 import type { ExpenseSplit, Balance, SimplifiedDebt } from '../types';
+import { PRECISION, UI } from '../constants';
 
 /**
  * Calculate equal split amounts for an expense
@@ -139,9 +140,9 @@ export function simplifyDebts(
   const debtors: Array<{ userId: string; amount: number }> = [];
 
   balances.forEach((balance) => {
-    if (balance.amount > 0.01) {
+    if (balance.amount > PRECISION.BALANCE_THRESHOLD) {
       creditors.push({ userId: balance.userId, amount: balance.amount });
-    } else if (balance.amount < -0.01) {
+    } else if (balance.amount < -PRECISION.BALANCE_THRESHOLD) {
       debtors.push({ userId: balance.userId, amount: -balance.amount });
     }
   });
@@ -151,7 +152,7 @@ export function simplifyDebts(
   debtors.sort((a, b) => b.amount - a.amount);
 
   const simplifiedDebts: SimplifiedDebt[] = [];
-  const currency = balances[0]?.currency || 'USD';
+  const currency = balances[0]?.currency || UI.DEFAULT_CURRENCY;
 
   let creditorIndex = 0;
   let debtorIndex = 0;
@@ -162,7 +163,7 @@ export function simplifyDebts(
 
     const amount = Math.min(creditor.amount, debtor.amount);
 
-    if (amount > 0.01) {
+    if (amount > PRECISION.BALANCE_THRESHOLD) {
       simplifiedDebts.push({
         fromUserId: debtor.userId,
         fromUserName: userNames[debtor.userId] || 'Unknown',
@@ -176,52 +177,12 @@ export function simplifyDebts(
     creditor.amount -= amount;
     debtor.amount -= amount;
 
-    if (creditor.amount < 0.01) creditorIndex++;
-    if (debtor.amount < 0.01) debtorIndex++;
+    if (creditor.amount < PRECISION.BALANCE_THRESHOLD) creditorIndex++;
+    if (debtor.amount < PRECISION.BALANCE_THRESHOLD) debtorIndex++;
   }
 
   return simplifiedDebts;
 }
 
-/**
- * Format currency amount for display
- */
-export function formatCurrency(
-  amount: number,
-  currency: string,
-  locale: string = 'en-US',
-): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-  }).format(amount);
-}
-
-/**
- * Get currency symbol
- */
-export function getCurrencySymbol(currency: string): string {
-  const symbols: Record<string, string> = {
-    USD: '$',
-    EUR: '\u20AC',
-    GBP: '\u00A3',
-    JPY: '\u00A5',
-    CAD: 'CA$',
-    AUD: 'A$',
-    CHF: 'CHF',
-    CNY: '\u00A5',
-    INR: '\u20B9',
-    MXN: 'MX$',
-    BRL: 'R$',
-    KRW: '\u20A9',
-    SGD: 'S$',
-    HKD: 'HK$',
-    NOK: 'kr',
-    SEK: 'kr',
-    DKK: 'kr',
-    NZD: 'NZ$',
-    ZAR: 'R',
-    THB: '\u0E3F',
-  };
-  return symbols[currency] || currency;
-}
+// Note: formatCurrency and getCurrencySymbol are now exported from @evn/shared/currencies
+// They remain available from @evn/shared via re-export for backward compatibility

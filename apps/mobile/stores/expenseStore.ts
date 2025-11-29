@@ -1,9 +1,10 @@
 import { create } from 'zustand';
+import type { SplitType, ExpenseCategory } from '@evn/shared';
 
-export type SplitType = 'equal' | 'exact' | 'percentage' | 'shares';
-export type ExpenseCategory = 'food' | 'transport' | 'accommodation' | 'activity' | 'shopping' | 'other';
+// Re-export shared types for convenience
+export type { SplitType, ExpenseCategory } from '@evn/shared';
 
-export interface ExpenseSplit {
+export interface ExpenseSplitWithName {
   userId: string;
   name: string;
   amount: number;
@@ -11,7 +12,7 @@ export interface ExpenseSplit {
   percentage?: number;
 }
 
-export interface Expense {
+export interface ExpenseWithSync {
   id: string;
   groupId: string;
   description: string;
@@ -23,7 +24,7 @@ export interface Expense {
     name: string;
   };
   splitType: SplitType;
-  splits: ExpenseSplit[];
+  splits: ExpenseSplitWithName[];
   date: string;
   notes?: string;
   photoUrl?: string;
@@ -36,16 +37,20 @@ export interface Expense {
   syncStatus: 'synced' | 'pending' | 'error';
 }
 
+// Type aliases for backward compatibility
+export type Expense = ExpenseWithSync;
+export type ExpenseSplit = ExpenseSplitWithName;
+
 interface ExpenseState {
-  expenses: Record<string, Expense[]>; // Keyed by groupId
-  currentExpense: Expense | null;
+  expenses: Record<string, ExpenseWithSync[]>; // Keyed by groupId
+  currentExpense: ExpenseWithSync | null;
   isLoading: boolean;
 
   // Actions
-  setExpenses: (groupId: string, expenses: Expense[]) => void;
-  setCurrentExpense: (expense: Expense | null) => void;
-  createExpense: (expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => Promise<Expense>;
-  updateExpense: (expenseId: string, updates: Partial<Expense>) => Promise<void>;
+  setExpenses: (groupId: string, expenses: ExpenseWithSync[]) => void;
+  setCurrentExpense: (expense: ExpenseWithSync | null) => void;
+  createExpense: (expense: Omit<ExpenseWithSync, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) => Promise<ExpenseWithSync>;
+  updateExpense: (expenseId: string, updates: Partial<ExpenseWithSync>) => Promise<void>;
   deleteExpense: (expenseId: string, groupId: string) => Promise<void>;
   fetchExpenses: (groupId: string) => Promise<void>;
 }
@@ -66,7 +71,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     set({ isLoading: true });
     try {
       // TODO: Call API to create expense
-      const newExpense: Expense = {
+      const newExpense: ExpenseWithSync = {
         ...expenseData,
         id: `expense_${Date.now()}`,
         createdAt: new Date().toISOString(),

@@ -24,6 +24,7 @@ export class GroupsService {
   // In-memory storage for now (will be replaced with TypeORM later)
   private groups: Map<string, GroupData> = new Map();
   private inviteCodes: Set<string> = new Set();
+  private inviteCodeToGroupId: Map<string, string> = new Map(); // O(1) lookup by invite code
   private memberships: Map<string, GroupMembership[]> = new Map(); // groupId -> memberships
 
   createGroup(
@@ -48,6 +49,7 @@ export class GroupsService {
 
     this.groups.set(groupId, group);
     this.inviteCodes.add(inviteCode);
+    this.inviteCodeToGroupId.set(inviteCode, groupId);
 
     // Add creator as admin member
     const creatorMembership: GroupMembership = {
@@ -70,12 +72,15 @@ export class GroupsService {
   }
 
   getGroupByInviteCode(inviteCode: string): { group: GroupData } {
-    for (const group of this.groups.values()) {
-      if (group.inviteCode === inviteCode) {
-        return { group };
-      }
+    const groupId = this.inviteCodeToGroupId.get(inviteCode);
+    if (!groupId) {
+      throw new NotFoundException('Invalid invite code');
     }
-    throw new NotFoundException('Invalid invite code');
+    const group = this.groups.get(groupId);
+    if (!group) {
+      throw new NotFoundException('Invalid invite code');
+    }
+    return { group };
   }
 
   joinGroup(

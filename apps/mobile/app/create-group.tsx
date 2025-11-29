@@ -16,70 +16,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useGroupsStore } from '../stores/groupsStore';
 import { useAuthStore } from '../stores/authStore';
+import { CURRENCIES, searchCurrencies, getDefaultCurrency, type Currency } from '@evn/shared';
+import { VALIDATION } from '@evn/shared';
 
 const POPULAR_EMOJIS = ['🏖️', '✈️', '🏠', '🍕', '🎉', '🚗', '⚽', '🎬', '🛒', '💼'];
-
-interface Currency {
-  code: string;
-  name: string;
-  symbol: string;
-}
-
-const CURRENCIES: Currency[] = [
-  { code: 'USD', name: 'US Dollar', symbol: '$' },
-  { code: 'EUR', name: 'Euro', symbol: '€' },
-  { code: 'GBP', name: 'British Pound', symbol: '£' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'CA$' },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-  { code: 'MXN', name: 'Mexican Peso', symbol: 'MX$' },
-  { code: 'BRL', name: 'Brazilian Real', symbol: 'R$' },
-  { code: 'KRW', name: 'South Korean Won', symbol: '₩' },
-  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$' },
-  { code: 'HKD', name: 'Hong Kong Dollar', symbol: 'HK$' },
-  { code: 'NOK', name: 'Norwegian Krone', symbol: 'kr' },
-  { code: 'SEK', name: 'Swedish Krona', symbol: 'kr' },
-  { code: 'DKK', name: 'Danish Krone', symbol: 'kr' },
-  { code: 'NZD', name: 'New Zealand Dollar', symbol: 'NZ$' },
-  { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
-  { code: 'THB', name: 'Thai Baht', symbol: '฿' },
-  { code: 'PHP', name: 'Philippine Peso', symbol: '₱' },
-  { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp' },
-  { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM' },
-  { code: 'PLN', name: 'Polish Zloty', symbol: 'zł' },
-  { code: 'CZK', name: 'Czech Koruna', symbol: 'Kč' },
-  { code: 'HUF', name: 'Hungarian Forint', symbol: 'Ft' },
-  { code: 'ILS', name: 'Israeli Shekel', symbol: '₪' },
-  { code: 'TRY', name: 'Turkish Lira', symbol: '₺' },
-  { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ' },
-  { code: 'SAR', name: 'Saudi Riyal', symbol: '﷼' },
-];
 
 export default function CreateGroupScreen() {
   const [name, setName] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('👥');
-  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(CURRENCIES[0]);
+  const [selectedCurrency, setSelectedCurrency] = useState<Currency>(getDefaultCurrency());
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
   const { createGroup, isLoading, error, clearError } = useGroupsStore();
   const { user } = useAuthStore();
 
   const filteredCurrencies = useMemo(() => {
-    if (!currencySearch.trim()) return CURRENCIES;
-    const search = currencySearch.toLowerCase();
-    return CURRENCIES.filter(
-      (c) =>
-        c.code.toLowerCase().includes(search) ||
-        c.name.toLowerCase().includes(search) ||
-        c.symbol.toLowerCase().includes(search)
-    );
+    return searchCurrencies(currencySearch);
   }, [currencySearch]);
 
   const isValidName = (value: string) => {
-    return value.trim().length >= 1;
+    return value.trim().length >= VALIDATION.MIN_GROUP_NAME_LENGTH;
   };
 
   const handleCreateGroup = async () => {
