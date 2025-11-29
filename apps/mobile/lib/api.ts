@@ -205,7 +205,8 @@ class ApiClient {
     paidById: string,
     createdById: string,
     currency?: string,
-    date?: string
+    date?: string,
+    splitParticipants?: string[]
   ): Promise<{
     expense: {
       id: string;
@@ -215,6 +216,8 @@ class ApiClient {
       description: string;
       paidById: string;
       splitType: string;
+      splitParticipants: string[];
+      splitAmounts: Record<string, number>;
       date: string;
       createdById: string;
       createdAt: string;
@@ -231,6 +234,7 @@ class ApiClient {
         createdById,
         currency,
         date,
+        splitParticipants,
       }),
     });
   }
@@ -244,6 +248,8 @@ class ApiClient {
       description: string;
       paidById: string;
       splitType: string;
+      splitParticipants: string[];
+      splitAmounts: Record<string, number>;
       date: string;
       createdById: string;
       createdAt: string;
@@ -264,6 +270,8 @@ class ApiClient {
       description: string;
       paidById: string;
       splitType: string;
+      splitParticipants: string[];
+      splitAmounts: Record<string, number>;
       date: string;
       createdById: string;
       createdAt: string;
@@ -283,6 +291,7 @@ class ApiClient {
       description?: string;
       paidById?: string;
       date?: string;
+      splitParticipants?: string[];
     }
   ): Promise<{
     expense: {
@@ -293,6 +302,8 @@ class ApiClient {
       description: string;
       paidById: string;
       splitType: string;
+      splitParticipants: string[];
+      splitAmounts: Record<string, number>;
       date: string;
       createdById: string;
       createdAt: string;

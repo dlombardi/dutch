@@ -579,7 +579,7 @@
         "Amount divided equally",
         "See per-person amount before saving"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "splits-exclude-members",
@@ -593,7 +593,7 @@
         "Split recalculates for included members only",
         "Expense shows who was excluded"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "splits-exact-amounts",

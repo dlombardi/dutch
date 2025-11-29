@@ -467,3 +467,36 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### splits-equal - COMPLETE
+- Implemented:
+  - API: splitParticipants and splitAmounts fields on expenses
+  - API: calculateEqualSplits helper for proper rounding
+  - API: Default splitParticipants to payer if not provided
+  - API: Recalculate splits when amount or participants change
+  - API: ArrayMinSize validation to require at least 1 participant
+  - Mobile: api.ts updated with splitParticipants parameter
+  - Mobile: expensesStore updated with splitParticipants support
+  - Mobile: Split participants picker modal in add-expense screen
+  - Mobile: Per-person amount preview display
+  - Mobile: All members selected by default
+- Tests added (7 tests in expenses.controller.spec.ts):
+  - Create expense with splitParticipants
+  - Calculate equal split amounts per person
+  - Handle rounding in split amounts (total preserved)
+  - Default splitParticipants to payer if not provided
+  - Reject empty splitParticipants array
+  - Update split participants via PUT
+  - Recalculate splits when amount is updated
+- Verified:
+  - All 79 API tests pass (72 existing + 7 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+### splits-exclude-members - COMPLETE
+- Already implemented as part of splits-equal
+- Users can tap to toggle members in/out of the split
+- Excluded members shown with inactive styling
+- Split recalculates automatically when participants change
+- At least one participant required (can't remove last one)
+- Status: Feature complete
+

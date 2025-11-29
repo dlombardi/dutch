@@ -9,6 +9,8 @@ export interface Expense {
   description: string;
   paidById: string;
   splitType: string;
+  splitParticipants: string[];
+  splitAmounts: Record<string, number>;
   date: string;
   createdById: string;
   createdAt: string;
@@ -29,7 +31,8 @@ interface ExpensesState {
     paidById: string,
     createdById: string,
     currency?: string,
-    date?: string
+    date?: string,
+    splitParticipants?: string[]
   ) => Promise<Expense | null>;
   updateExpense: (
     id: string,
@@ -62,7 +65,8 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
     paidById,
     createdById,
     currency,
-    date
+    date,
+    splitParticipants
   ) => {
     set({ isLoading: true, error: null });
     try {
@@ -73,7 +77,8 @@ export const useExpensesStore = create<ExpensesState>()((set) => ({
         paidById,
         createdById,
         currency,
-        date
+        date,
+        splitParticipants
       );
       const newExpense = response.expense;
       set((state) => ({

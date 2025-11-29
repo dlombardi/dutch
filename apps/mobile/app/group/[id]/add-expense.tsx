@@ -31,6 +31,8 @@ export default function AddExpenseScreen() {
   const [description, setDescription] = useState('');
   const [paidById, setPaidById] = useState<string | null>(null);
   const [showPayerPicker, setShowPayerPicker] = useState(false);
+  const [showSplitPicker, setShowSplitPicker] = useState(false);
+  const [splitParticipants, setSplitParticipants] = useState<string[]>([]);
 
   // Fetch group members and set default payer
   useEffect(() => {
@@ -45,6 +47,34 @@ export default function AddExpenseScreen() {
       setPaidById(user.id);
     }
   }, [user, paidById]);
+
+  // Default all group members as split participants
+  useEffect(() => {
+    if (currentGroupMembers.length > 0 && splitParticipants.length === 0) {
+      setSplitParticipants(currentGroupMembers.map((m) => m.userId));
+    }
+  }, [currentGroupMembers, splitParticipants.length]);
+
+  // Calculate per-person amount for preview
+  const getPerPersonAmount = useCallback(() => {
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0 || splitParticipants.length === 0) {
+      return 0;
+    }
+    return numericAmount / splitParticipants.length;
+  }, [amount, splitParticipants]);
+
+  const toggleParticipant = useCallback((userId: string) => {
+    setSplitParticipants((prev) => {
+      if (prev.includes(userId)) {
+        // Don't allow removing the last participant
+        if (prev.length === 1) return prev;
+        return prev.filter((id) => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!groupId || !user || !paidById) return;
@@ -63,7 +93,10 @@ export default function AddExpenseScreen() {
       numericAmount,
       description.trim(),
       paidById, // paidById - selected payer
-      user.id // createdById - current user created
+      user.id, // createdById - current user created
+      undefined, // currency - use default
+      undefined, // date - use default
+      splitParticipants.length > 0 ? splitParticipants : undefined
     );
 
     if (expense) {
@@ -189,14 +222,33 @@ export default function AddExpenseScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Split (simplified - always equal) */}
+          {/* Split Participants Selector */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Split</Text>
-            <View style={styles.staticValue}>
-              <Text style={styles.staticValueText}>
-                Split equally among all members
+            <Text style={styles.label}>Split equally among</Text>
+            <TouchableOpacity
+              style={styles.pickerButton}
+              onPress={() => setShowSplitPicker(true)}
+            >
+              <Text style={styles.pickerButtonText}>
+                {splitParticipants.length === currentGroupMembers.length
+                  ? 'All members'
+                  : `${splitParticipants.length} ${splitParticipants.length === 1 ? 'person' : 'people'}`}
               </Text>
-            </View>
+              <Text style={styles.pickerChevron}>›</Text>
+            </TouchableOpacity>
+            {/* Per-person amount preview */}
+            {parseFloat(amount) > 0 && splitParticipants.length > 0 && (
+              <View style={styles.perPersonPreview}>
+                <Text style={styles.perPersonText}>
+                  {currentGroup?.defaultCurrency === 'USD'
+                    ? '$'
+                    : currentGroup?.defaultCurrency === 'EUR'
+                      ? '€'
+                      : currentGroup?.defaultCurrency || '$'}
+                  {getPerPersonAmount().toFixed(2)} per person
+                </Text>
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -232,6 +284,70 @@ export default function AddExpenseScreen() {
                   {item.userId === user?.id ? 'You' : `User ${item.userId.slice(0, 8)}...`}
                 </Text>
                 {paidById === item.userId && (
+                  <Text style={styles.memberOptionCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyMembersList}>
+                <Text style={styles.emptyMembersText}>No members found</Text>
+              </View>
+            }
+          />
+        </SafeAreaView>
+      </Modal>
+
+      {/* Split Participants Picker Modal */}
+      <Modal
+        visible={showSplitPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSplitPicker(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Split with</Text>
+            <TouchableOpacity onPress={() => setShowSplitPicker(false)}>
+              <Text style={styles.modalClose}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={currentGroupMembers}
+            keyExtractor={(item) => item.userId}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.memberOption}
+                onPress={() => toggleParticipant(item.userId)}
+              >
+                <View
+                  style={[
+                    styles.memberOptionAvatar,
+                    !splitParticipants.includes(item.userId) &&
+                      styles.memberOptionAvatarInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.memberOptionAvatarText,
+                      !splitParticipants.includes(item.userId) &&
+                        styles.memberOptionAvatarTextInactive,
+                    ]}
+                  >
+                    {item.userId.substring(0, 2).toUpperCase()}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.memberOptionName,
+                    !splitParticipants.includes(item.userId) &&
+                      styles.memberOptionNameInactive,
+                  ]}
+                >
+                  {item.userId === user?.id
+                    ? 'You'
+                    : `User ${item.userId.slice(0, 8)}...`}
+                </Text>
+                {splitParticipants.includes(item.userId) && (
                   <Text style={styles.memberOptionCheck}>✓</Text>
                 )}
               </TouchableOpacity>
@@ -318,12 +434,16 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     paddingVertical: 8,
   },
-  staticValue: {
+  perPersonPreview: {
+    marginTop: 8,
     paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f8f8f8',
+    borderRadius: 8,
   },
-  staticValueText: {
-    fontSize: 16,
-    color: '#1a1a1a',
+  perPersonText: {
+    fontSize: 14,
+    color: '#666',
   },
   pickerButton: {
     flexDirection: 'row',
@@ -400,5 +520,14 @@ const styles = StyleSheet.create({
   emptyMembersText: {
     fontSize: 16,
     color: '#666',
+  },
+  memberOptionAvatarInactive: {
+    backgroundColor: '#e0e0e0',
+  },
+  memberOptionAvatarTextInactive: {
+    color: '#999',
+  },
+  memberOptionNameInactive: {
+    color: '#999',
   },
 });
