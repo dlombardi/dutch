@@ -69,7 +69,7 @@
         "Still recognized as same guest user",
         "Can still see and interact with group"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-guest-upgrade-prompt",

@@ -22,7 +22,7 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 3
+- Features passing: 4
 - Current focus: Implementing Priority 1 auth features
 
 ## Feature Breakdown by Category
@@ -166,5 +166,28 @@ Description: Guest user can join a group by entering only their name
     - Whitespace trimming on name
 - Verified:
   - All 17 API tests pass (9 magic link + 8 guest auth)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+---
+
+## Session: 2025-11-28 (Session 5)
+Working on: auth-guest-device-persistence
+Description: Guest user session persists on the same device
+
+### auth-guest-device-persistence - COMPLETE
+- Implemented:
+  - API: Same device ID returns same user (already working from previous session)
+  - Mobile: Added onRehydrateStorage callback to restore accessToken to API client
+  - Session data (user, accessToken, isAuthenticated) persisted via zustand persist
+  - Device ID persisted via AsyncStorage
+- Tests added:
+  - apps/api/src/auth/__tests__/guest-persistence.controller.spec.ts (4 tests)
+    - Same user returned when re-authenticating with same device ID
+    - User data preserved across multiple sessions
+    - New access token issued each session while preserving identity
+    - User type remains 'guest' across sessions
+- Verified:
+  - All 21 API tests pass (17 existing + 4 new persistence tests)
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
