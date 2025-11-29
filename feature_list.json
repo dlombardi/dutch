@@ -177,7 +177,7 @@
         "Currency shown as group default",
         "New expenses default to this currency"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-invite-code-generate",
@@ -190,7 +190,7 @@
         "Code is short and human-readable (e.g., 6 chars)",
         "Code is unique across all groups"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-invite-link-share",
