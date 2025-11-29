@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { GroupsService } from './groups.service';
-import { ExpensesService, ExpenseData } from '../expenses/expenses.service';
+import { ExpensesService } from '../expenses/expenses.service';
 
 export interface Balance {
   from: string;
@@ -29,76 +29,92 @@ export class BalancesService {
     // Get all expenses for the group
     const { expenses } = this.expensesService.getExpensesByGroupId(groupId);
 
-    // Calculate what each person owes each other person
-    // Key: "from->to", Value: amount from owes to
-    const pairwiseDebts: Map<string, number> = new Map();
+    // Step 1: Calculate net balance for each person
+    // Positive = owed money, Negative = owes money
+    const netBalances: Map<string, number> = new Map();
 
     for (const expense of expenses) {
       const { paidById, splitAmounts } = expense;
 
-      // For each person in the split (except the payer), they owe the payer
+      // The payer is owed the total amount minus their share
       for (const [userId, amountOwed] of Object.entries(splitAmounts)) {
         if (userId !== paidById) {
-          const key = `${userId}->${paidById}`;
-          const reverseKey = `${paidById}->${userId}`;
-
-          // Check if there's already a reverse debt
-          const existingReverse = pairwiseDebts.get(reverseKey) || 0;
-
-          if (existingReverse > 0) {
-            // Net out the debts
-            if (amountOwed > existingReverse) {
-              pairwiseDebts.delete(reverseKey);
-              pairwiseDebts.set(key, amountOwed - existingReverse);
-            } else if (amountOwed < existingReverse) {
-              pairwiseDebts.set(reverseKey, existingReverse - amountOwed);
-            } else {
-              // They cancel out
-              pairwiseDebts.delete(reverseKey);
-            }
-          } else {
-            // Add to existing debt or create new
-            const existing = pairwiseDebts.get(key) || 0;
-            pairwiseDebts.set(key, existing + amountOwed);
-          }
+          // userId owes money (decrease their balance)
+          netBalances.set(
+            userId,
+            (netBalances.get(userId) || 0) - amountOwed,
+          );
+          // paidById is owed money (increase their balance)
+          netBalances.set(
+            paidById,
+            (netBalances.get(paidById) || 0) + amountOwed,
+          );
         }
       }
     }
 
-    // Convert to balances array
-    const balances: Balance[] = [];
-    for (const [key, amount] of pairwiseDebts.entries()) {
-      if (amount > 0) {
-        const [from, to] = key.split('->');
-        balances.push({
-          from,
-          to,
-          amount: Math.round(amount * 100) / 100, // Round to 2 decimal places
+    // Step 2: Simplify debts using greedy algorithm
+    // Separate into debtors (negative balance) and creditors (positive balance)
+    const debtors: Array<{ userId: string; amount: number }> = [];
+    const creditors: Array<{ userId: string; amount: number }> = [];
+
+    for (const [userId, balance] of netBalances.entries()) {
+      const roundedBalance = Math.round(balance * 100) / 100;
+      if (roundedBalance < 0) {
+        debtors.push({ userId, amount: Math.abs(roundedBalance) });
+      } else if (roundedBalance > 0) {
+        creditors.push({ userId, amount: roundedBalance });
+      }
+    }
+
+    // Sort by amount (largest first) for more efficient simplification
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    // Create simplified transactions
+    const simplifiedBalances: Balance[] = [];
+    let debtorIndex = 0;
+    let creditorIndex = 0;
+
+    while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+      const debtor = debtors[debtorIndex];
+      const creditor = creditors[creditorIndex];
+
+      // The payment amount is the minimum of what debtor owes and what creditor is owed
+      const paymentAmount = Math.min(debtor.amount, creditor.amount);
+
+      if (paymentAmount > 0.005) {
+        // Only add if more than half a cent
+        simplifiedBalances.push({
+          from: debtor.userId,
+          to: creditor.userId,
+          amount: Math.round(paymentAmount * 100) / 100,
           currency: group.defaultCurrency,
         });
       }
-    }
 
-    // Calculate net balance for each member
-    const memberBalances: Record<string, number> = {};
-    for (const balance of balances) {
-      // "from" owes money (negative)
-      memberBalances[balance.from] =
-        (memberBalances[balance.from] || 0) - balance.amount;
-      // "to" is owed money (positive)
-      memberBalances[balance.to] =
-        (memberBalances[balance.to] || 0) + balance.amount;
-    }
+      // Update remaining amounts
+      debtor.amount -= paymentAmount;
+      creditor.amount -= paymentAmount;
 
-    // Round member balances
-    for (const userId of Object.keys(memberBalances)) {
-      memberBalances[userId] = Math.round(memberBalances[userId] * 100) / 100;
-      // Remove zero balances
-      if (memberBalances[userId] === 0) {
-        delete memberBalances[userId];
+      // Move to next debtor/creditor if their balance is settled
+      if (debtor.amount < 0.005) {
+        debtorIndex++;
+      }
+      if (creditor.amount < 0.005) {
+        creditorIndex++;
       }
     }
 
-    return { balances, memberBalances };
+    // Build memberBalances from net balances
+    const memberBalances: Record<string, number> = {};
+    for (const [userId, balance] of netBalances.entries()) {
+      const roundedBalance = Math.round(balance * 100) / 100;
+      if (roundedBalance !== 0) {
+        memberBalances[userId] = roundedBalance;
+      }
+    }
+
+    return { balances: simplifiedBalances, memberBalances };
   }
 }

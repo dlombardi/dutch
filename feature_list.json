@@ -793,7 +793,7 @@
         "Debts consolidated into minimum transactions",
         "e.g., A owes B, B owes C -> A pays C directly"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "balances-individual-view",

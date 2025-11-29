@@ -522,3 +522,26 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### balances-debt-simplification - COMPLETE
+- Implemented:
+  - API: Refactored BalancesService to use debt simplification algorithm
+  - API: Calculate net balances for each person first
+  - API: Separate debtors (negative balance) from creditors (positive balance)
+  - API: Greedy algorithm matches debtors to creditors minimizing transactions
+  - API: Chain debts (A→B→C) simplified to direct payment (A→C)
+  - API: Circular debts (A→B→C→A) cancel out automatically
+- Algorithm:
+  1. Calculate net balance per person from all expenses
+  2. Separate into debtors (negative) and creditors (positive)
+  3. Sort by amount (largest first)
+  4. Greedy matching: debtor pays creditor min(debit, credit)
+  5. Result: minimum transactions to settle up
+- Tests added (3 tests in balances.controller.spec.ts):
+  - Simplify chain debt: A owes B, B owes C → A owes C
+  - Minimize transactions in complex scenarios
+  - Handle circular debt simplification (cancel out)
+- Verified:
+  - All 88 API tests pass (85 existing + 3 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
