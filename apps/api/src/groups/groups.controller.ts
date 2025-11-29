@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, Param, Res } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { GroupsService } from './groups.service';
 import { CreateGroupDto, JoinGroupDto } from './dto';
 
