@@ -22,7 +22,7 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 7
+- Features passing: 8
 - Current focus: Implementing Priority 1 groups features
 
 ## Feature Breakdown by Category
@@ -245,6 +245,28 @@ Description: User can create a new group with name and emoji
   - Modal with scrollable list and search bar
   - Visual checkmark on selected currency
   - Hint text explains currency usage for expenses
+- Verified:
+  - All 32 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+---
+
+## Session: 2025-11-28 (Session 6)
+Working on: groups-invite-link-share
+Description: User can share invite link via system share sheet
+
+### groups-invite-link-share - COMPLETE
+- Implemented:
+  - Mobile: Updated group/[id].tsx to use real groupsStore data
+  - Mobile: Added "Invite" button in header that opens system share sheet
+  - Mobile: Share message includes group name and invite link (https://evn.app/join/{inviteCode})
+  - Mobile: Added loading and error states for group detail screen
+  - Mobile: Currency symbol displayed based on group's defaultCurrency
+- Features:
+  - Uses React Native's built-in Share API
+  - Share sheet includes title and formatted message
+  - Error handling for share failures
 - Verified:
   - All 32 API tests pass
   - Mobile TypeScript compiles without errors

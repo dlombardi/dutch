@@ -204,7 +204,7 @@
         "Can share via Messages, WhatsApp, email, etc.",
         "Link includes group name in preview"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-invite-link-join",

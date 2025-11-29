@@ -1,21 +1,72 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { useLocalSearchParams, Link, Stack } from 'expo-router';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Share,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useGroupsStore } from '../../stores/groupsStore';
 
 type Tab = 'expenses' | 'balances' | 'activity';
+
+const APP_URL_SCHEME = 'evn://';
+const WEB_URL = 'https://evn.app'; // Production web URL
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('expenses');
+  const { currentGroup, fetchGroup, isLoading, error } = useGroupsStore();
 
-  // Placeholder data - will be replaced with real data from stores
-  const group = {
-    id,
-    name: 'Trip to Paris',
-    emoji: '🗼',
-    currency: 'EUR',
-  };
+  useEffect(() => {
+    if (id) {
+      fetchGroup(id);
+    }
+  }, [id, fetchGroup]);
+
+  const handleShareInvite = useCallback(async () => {
+    if (!currentGroup) return;
+
+    const inviteLink = `${WEB_URL}/join/${currentGroup.inviteCode}`;
+    const message = `Join my group "${currentGroup.name}" on Evn!\n\n${inviteLink}`;
+
+    try {
+      await Share.share({
+        message,
+        title: `Join ${currentGroup.name} on Evn`,
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'User did not share') {
+        Alert.alert('Error', 'Failed to open share sheet');
+      }
+    }
+  }, [currentGroup]);
+
+  if (isLoading && !currentGroup) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !currentGroup) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || 'Group not found'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const group = currentGroup;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -23,9 +74,14 @@ export default function GroupDetailScreen() {
         options={{
           title: `${group.emoji} ${group.name}`,
           headerRight: () => (
-            <TouchableOpacity>
-              <Text style={styles.headerButton}>Settings</Text>
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity onPress={handleShareInvite} style={styles.headerInviteButton}>
+                <Text style={styles.headerButton}>Invite</Text>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Text style={styles.headerButton}>Settings</Text>
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -33,7 +89,9 @@ export default function GroupDetailScreen() {
       {/* Balance Summary */}
       <View style={styles.balanceSummary}>
         <Text style={styles.balanceLabel}>Your balance</Text>
-        <Text style={styles.balanceAmount}>€0.00</Text>
+        <Text style={styles.balanceAmount}>
+          {group.defaultCurrency === 'USD' ? '$' : group.defaultCurrency === 'EUR' ? '€' : group.defaultCurrency}0.00
+        </Text>
         <Text style={styles.balanceHint}>All settled up!</Text>
       </View>
 
@@ -108,6 +166,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff3b30',
+    textAlign: 'center',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  headerInviteButton: {
+    marginRight: 8,
   },
   headerButton: {
     color: '#007AFF',
