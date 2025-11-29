@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
+import { Server } from 'http';
 import { AuthModule } from '../auth.module';
 import { AuthService, UserData } from '../auth.service';
 
@@ -15,6 +16,7 @@ interface MessageResponse {
 
 describe('AuthController (integration)', () => {
   let app: INestApplication;
+  let httpServer: Server;
   let authService: AuthService;
 
   beforeEach(async () => {
@@ -26,6 +28,7 @@ describe('AuthController (integration)', () => {
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
 
+    httpServer = app.getHttpServer() as Server;
     authService = moduleFixture.get<AuthService>(AuthService);
   });
 
@@ -35,7 +38,7 @@ describe('AuthController (integration)', () => {
 
   describe('POST /auth/magic-link/request', () => {
     it('should accept a valid email and return success message', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: 'test@example.com' })
         .expect(200);
@@ -47,14 +50,14 @@ describe('AuthController (integration)', () => {
     });
 
     it('should reject an invalid email', async () => {
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: 'not-an-email' })
         .expect(400);
     });
 
     it('should reject empty email', async () => {
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: '' })
         .expect(400);
@@ -64,7 +67,7 @@ describe('AuthController (integration)', () => {
   describe('POST /auth/magic-link/verify', () => {
     it('should verify a valid magic link token and return user with accessToken', async () => {
       // First, request a magic link
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: 'verify-test@example.com' })
         .expect(200);
@@ -74,7 +77,7 @@ describe('AuthController (integration)', () => {
       expect(token).toBeDefined();
 
       // Verify the magic link
-      const response = await request(app.getHttpServer())
+      const response = await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token })
         .expect(200);
@@ -94,7 +97,7 @@ describe('AuthController (integration)', () => {
     });
 
     it('should reject an invalid token', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token: 'invalid-token-that-does-not-exist' })
         .expect(400);
@@ -105,7 +108,7 @@ describe('AuthController (integration)', () => {
 
     it('should reject an already-used token', async () => {
       // Request a magic link
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: 'used-test@example.com' })
         .expect(200);
@@ -115,13 +118,13 @@ describe('AuthController (integration)', () => {
       expect(token).toBeDefined();
 
       // Use the token once
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token })
         .expect(200);
 
       // Try to use it again
-      const response = await request(app.getHttpServer())
+      const response = await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token })
         .expect(400);
@@ -132,7 +135,7 @@ describe('AuthController (integration)', () => {
 
     it('should return the same user for the same email', async () => {
       // Request first magic link
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: 'same-user@example.com' })
         .expect(200);
@@ -141,7 +144,7 @@ describe('AuthController (integration)', () => {
       expect(token1).toBeDefined();
 
       // Verify first token
-      const response1 = await request(app.getHttpServer())
+      const response1 = await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token: token1 })
         .expect(200);
@@ -150,7 +153,7 @@ describe('AuthController (integration)', () => {
       const userId = body1.user.id;
 
       // Request second magic link for same email
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/request')
         .send({ email: 'same-user@example.com' })
         .expect(200);
@@ -159,7 +162,7 @@ describe('AuthController (integration)', () => {
       expect(token2).toBeDefined();
 
       // Verify second token
-      const response2 = await request(app.getHttpServer())
+      const response2 = await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token: token2 })
         .expect(200);
@@ -170,7 +173,7 @@ describe('AuthController (integration)', () => {
     });
 
     it('should reject empty token', async () => {
-      await request(app.getHttpServer())
+      await request(httpServer)
         .post('/auth/magic-link/verify')
         .send({ token: '' })
         .expect(400);
