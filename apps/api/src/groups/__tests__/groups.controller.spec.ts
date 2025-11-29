@@ -221,4 +221,128 @@ describe('GroupsController (integration)', () => {
         .expect(404);
     });
   });
+
+  describe('GET /groups/invite/:code', () => {
+    it('should retrieve a group by invite code', async () => {
+      // First create a group
+      const createResponse = await request(httpServer)
+        .post('/groups')
+        .send({
+          name: 'Invite Test Group',
+          emoji: '🎯',
+          createdById: 'user-123',
+        })
+        .expect(201);
+
+      const createdGroup = (createResponse.body as CreateGroupResponse).group;
+
+      // Then retrieve it by invite code
+      const response = await request(httpServer)
+        .get(`/groups/invite/${createdGroup.inviteCode}`)
+        .expect(200);
+
+      const body = response.body as { group: Group };
+      expect(body.group.id).toBe(createdGroup.id);
+      expect(body.group.name).toBe('Invite Test Group');
+      expect(body.group.emoji).toBe('🎯');
+    });
+
+    it('should return 404 for invalid invite code', async () => {
+      await request(httpServer)
+        .get('/groups/invite/INVALID')
+        .expect(404);
+    });
+  });
+
+  describe('POST /groups/join', () => {
+    it('should add a member to a group by invite code', async () => {
+      // First create a group
+      const createResponse = await request(httpServer)
+        .post('/groups')
+        .send({
+          name: 'Join Test Group',
+          emoji: '🤝',
+          createdById: 'creator-123',
+        })
+        .expect(201);
+
+      const createdGroup = (createResponse.body as CreateGroupResponse).group;
+
+      // Join the group
+      const joinResponse = await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: createdGroup.inviteCode,
+          userId: 'new-member-456',
+        })
+        .expect(201);
+
+      const body = joinResponse.body as { group: Group; membership: { userId: string; role: string } };
+      expect(body.group.id).toBe(createdGroup.id);
+      expect(body.membership.userId).toBe('new-member-456');
+      expect(body.membership.role).toBe('member');
+    });
+
+    it('should return 404 for invalid invite code when joining', async () => {
+      await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: 'INVALID',
+          userId: 'user-123',
+        })
+        .expect(404);
+    });
+
+    it('should reject missing invite code', async () => {
+      await request(httpServer)
+        .post('/groups/join')
+        .send({
+          userId: 'user-123',
+        })
+        .expect(400);
+    });
+
+    it('should reject missing user ID', async () => {
+      await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: 'ABC123',
+        })
+        .expect(400);
+    });
+
+    it('should allow the same user to be added only once', async () => {
+      // First create a group
+      const createResponse = await request(httpServer)
+        .post('/groups')
+        .send({
+          name: 'Duplicate Test Group',
+          createdById: 'creator-123',
+        })
+        .expect(201);
+
+      const createdGroup = (createResponse.body as CreateGroupResponse).group;
+
+      // Join the group first time
+      await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: createdGroup.inviteCode,
+          userId: 'duplicate-user-123',
+        })
+        .expect(201);
+
+      // Try to join again - should return existing membership
+      const secondJoin = await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: createdGroup.inviteCode,
+          userId: 'duplicate-user-123',
+        })
+        .expect(200);
+
+      const body = secondJoin.body as { group: Group; membership: { userId: string; role: string } };
+      expect(body.membership.userId).toBe('duplicate-user-123');
+    });
+  });
 });

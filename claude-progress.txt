@@ -22,8 +22,8 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 10
-- Current focus: Implementing Priority 1 groups features
+- Features passing: 11
+- Current focus: Implementing Priority 1 features
 
 ## Feature Breakdown by Category
 - auth: 12 features
@@ -283,3 +283,35 @@ Description: User can share invite link via system share sheet
 - Group detail shows name/emoji in header, balance summary, and tabs
 - "List of expenses" will populate when expenses feature is implemented
 - Status: Feature complete
+
+### groups-invite-link-join - COMPLETE
+- Implemented:
+  - API: GET /groups/invite/:code endpoint to preview group by invite code
+  - API: POST /groups/join endpoint to join group with invite code and userId
+  - API: GroupMembership tracking (role: admin/member, joinedAt)
+  - API: Group creator automatically added as admin member
+  - API: Returns 201 for new member, 200 for existing member (idempotent)
+  - Mobile: groupsStore with fetchGroupByInviteCode and joinGroup actions
+  - Mobile: previewGroup state for showing group preview before joining
+  - Mobile: api.ts getGroupByInviteCode and joinGroup methods
+  - Mobile: join/[code].tsx screen with group preview and join button
+- Tests added (in groups.controller.spec.ts):
+  - GET /groups/invite/:code - retrieves group by invite code
+  - GET /groups/invite/:code - returns 404 for invalid code
+  - POST /groups/join - adds member to group by invite code
+  - POST /groups/join - returns 404 for invalid invite code
+  - POST /groups/join - rejects missing invite code
+  - POST /groups/join - rejects missing user ID
+  - POST /groups/join - allows same user only once (idempotent)
+- Verified:
+  - All 18 groups tests pass (11 existing + 7 new)
+  - All 39 API tests pass total
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
+---
+
+## Current State Summary
+- Features passing: 11
+- Priority 1 remaining: 17
+- Focus: Groups features complete, ready for expenses or remaining auth features

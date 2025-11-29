@@ -17,6 +17,7 @@ export interface Group {
 interface GroupsState {
   groups: Group[];
   currentGroup: Group | null;
+  previewGroup: Group | null;
   isLoading: boolean;
   error: string | null;
 
@@ -28,6 +29,8 @@ interface GroupsState {
     defaultCurrency?: string
   ) => Promise<Group | null>;
   fetchGroup: (id: string) => Promise<Group | null>;
+  fetchGroupByInviteCode: (inviteCode: string) => Promise<Group | null>;
+  joinGroup: (inviteCode: string, userId: string) => Promise<Group | null>;
   setCurrentGroup: (group: Group | null) => void;
   clearError: () => void;
 }
@@ -37,6 +40,7 @@ export const useGroupsStore = create<GroupsState>()(
     (set, get) => ({
       groups: [],
       currentGroup: null,
+      previewGroup: null,
       isLoading: false,
       error: null,
 
@@ -86,6 +90,55 @@ export const useGroupsStore = create<GroupsState>()(
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch group';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchGroupByInviteCode: async (inviteCode) => {
+        set({ isLoading: true, error: null, previewGroup: null });
+        try {
+          const response = await api.getGroupByInviteCode(inviteCode);
+          const group = response.group;
+          set({ previewGroup: group });
+          return group;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Invalid invite code';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      joinGroup: async (inviteCode, userId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.joinGroup(inviteCode, userId);
+          const group = response.group;
+
+          // Add group to local list if not already present
+          set((state) => {
+            const existingIndex = state.groups.findIndex(
+              (g) => g.id === group.id
+            );
+            if (existingIndex === -1) {
+              return {
+                groups: [...state.groups, group],
+                currentGroup: group,
+                previewGroup: null,
+              };
+            }
+            return { currentGroup: group, previewGroup: null };
+          });
+
+          return group;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to join group';
           set({ error: errorMessage });
           return null;
         } finally {

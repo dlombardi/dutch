@@ -218,7 +218,7 @@
         "Authenticate (guest or full account)",
         "Successfully added to group"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-invite-code-manual",

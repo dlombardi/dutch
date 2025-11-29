@@ -141,6 +141,49 @@ class ApiClient {
       method: 'GET',
     });
   }
+
+  async getGroupByInviteCode(inviteCode: string): Promise<{
+    group: {
+      id: string;
+      name: string;
+      emoji: string;
+      createdById: string;
+      inviteCode: string;
+      defaultCurrency: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+  }> {
+    return this.request(`/groups/invite/${inviteCode}`, {
+      method: 'GET',
+    });
+  }
+
+  async joinGroup(
+    inviteCode: string,
+    userId: string
+  ): Promise<{
+    group: {
+      id: string;
+      name: string;
+      emoji: string;
+      createdById: string;
+      inviteCode: string;
+      defaultCurrency: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+    membership: {
+      userId: string;
+      role: 'admin' | 'member';
+      joinedAt: string;
+    };
+  }> {
+    return this.request('/groups/join', {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode, userId }),
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

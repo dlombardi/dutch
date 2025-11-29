@@ -12,11 +12,19 @@ export interface GroupData {
   updatedAt: Date;
 }
 
+export interface GroupMembership {
+  groupId: string;
+  userId: string;
+  role: 'admin' | 'member';
+  joinedAt: Date;
+}
+
 @Injectable()
 export class GroupsService {
   // In-memory storage for now (will be replaced with TypeORM later)
   private groups: Map<string, GroupData> = new Map();
   private inviteCodes: Set<string> = new Set();
+  private memberships: Map<string, GroupMembership[]> = new Map(); // groupId -> memberships
 
   createGroup(
     name: string,
@@ -41,6 +49,15 @@ export class GroupsService {
     this.groups.set(groupId, group);
     this.inviteCodes.add(inviteCode);
 
+    // Add creator as admin member
+    const creatorMembership: GroupMembership = {
+      groupId,
+      userId: createdById,
+      role: 'admin',
+      joinedAt: new Date(),
+    };
+    this.memberships.set(groupId, [creatorMembership]);
+
     return { group };
   }
 
@@ -52,13 +69,47 @@ export class GroupsService {
     return { group };
   }
 
-  getGroupByInviteCode(inviteCode: string): { group: GroupData } | null {
+  getGroupByInviteCode(inviteCode: string): { group: GroupData } {
     for (const group of this.groups.values()) {
       if (group.inviteCode === inviteCode) {
         return { group };
       }
     }
-    return null;
+    throw new NotFoundException('Invalid invite code');
+  }
+
+  joinGroup(
+    inviteCode: string,
+    userId: string,
+  ): { group: GroupData; membership: GroupMembership; isNewMember: boolean } {
+    const { group } = this.getGroupByInviteCode(inviteCode);
+
+    // Check if user is already a member
+    const existingMemberships = this.memberships.get(group.id) || [];
+    const existingMembership = existingMemberships.find(
+      (m) => m.userId === userId,
+    );
+
+    if (existingMembership) {
+      return { group, membership: existingMembership, isNewMember: false };
+    }
+
+    // Add new member
+    const membership: GroupMembership = {
+      groupId: group.id,
+      userId,
+      role: 'member',
+      joinedAt: new Date(),
+    };
+
+    existingMemberships.push(membership);
+    this.memberships.set(group.id, existingMemberships);
+
+    return { group, membership, isNewMember: true };
+  }
+
+  getGroupMembers(groupId: string): GroupMembership[] {
+    return this.memberships.get(groupId) || [];
   }
 
   private generateUniqueInviteCode(): string {
