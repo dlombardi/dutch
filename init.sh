@@ -31,6 +31,27 @@ NPM_VERSION=$(npm -v 2>/dev/null || echo "not found")
 echo -e "${BLUE}npm version:${NC} $NPM_VERSION"
 echo ""
 
+# Function to kill processes on specific ports
+kill_port() {
+    local port=$1
+    local pid=$(lsof -ti :$port 2>/dev/null)
+    if [ -n "$pid" ]; then
+        echo -e "${YELLOW}Killing existing process on port $port (PID: $pid)...${NC}"
+        kill -9 $pid 2>/dev/null || true
+        sleep 1
+    fi
+}
+
+# Function to clean up ports before starting
+cleanup_ports() {
+    echo -e "${YELLOW}Checking for existing processes on required ports...${NC}"
+    kill_port 3000  # Web PWA
+    kill_port 3001  # API
+    kill_port 8081  # Expo Metro bundler
+    echo -e "${GREEN}Ports cleared.${NC}"
+    echo ""
+}
+
 # Function to install dependencies
 install_deps() {
     echo -e "${YELLOW}Installing dependencies...${NC}"
@@ -60,6 +81,9 @@ install_deps() {
 start_servers() {
     echo -e "${YELLOW}Starting development servers...${NC}"
     echo ""
+
+    # Clean up any existing processes on required ports
+    cleanup_ports
 
     # Start services in background and save PIDs
     cd "$(dirname "$0")"
@@ -98,6 +122,13 @@ start_servers() {
     wait
 }
 
+# Function to stop all dev servers
+stop_servers() {
+    echo -e "${YELLOW}Stopping all development servers...${NC}"
+    cleanup_ports
+    echo -e "${GREEN}All servers stopped.${NC}"
+}
+
 # Function to show help
 show_help() {
     echo "Usage: ./init.sh [command]"
@@ -105,6 +136,7 @@ show_help() {
     echo "Commands:"
     echo "  install    Install all dependencies"
     echo "  start      Start all development servers"
+    echo "  stop       Stop all development servers"
     echo "  help       Show this help message"
     echo ""
     echo "If no command is provided, both install and start will run."
@@ -117,6 +149,9 @@ case "${1:-}" in
         ;;
     start)
         start_servers
+        ;;
+    stop)
+        stop_servers
         ;;
     help|--help|-h)
         show_help
