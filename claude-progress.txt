@@ -743,3 +743,17 @@ Description: Data persists in local database
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### offline-view-data - COMPLETE
+### offline-indicator - COMPLETE (bonus, Priority 2)
+- Implemented:
+  - Mobile: New networkStore using @react-native-community/netinfo
+  - Mobile: Network state tracking (isConnected, isInternetReachable, connectionType)
+  - Mobile: OfflineBanner component in _layout.tsx
+  - Mobile: Yellow/amber banner appears when offline
+  - Mobile: Banner hides automatically when back online
+  - Mobile: All persisted data (groups, expenses, settlements) viewable offline
+- Verified:
+  - All 140 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Features complete
+

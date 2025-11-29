@@ -1163,7 +1163,7 @@
         "Can still view all previously loaded data",
         "Groups, expenses, balances all accessible"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "offline-indicator",
@@ -1176,7 +1176,7 @@
         "Indicator explains limited functionality",
         "Disappears when back online"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "offline-pending-indicator",
