@@ -244,7 +244,7 @@
         "Each group shows emoji, name, recent activity",
         "Groups sorted by most recent activity"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-view-detail",
@@ -258,7 +258,7 @@
         "See current balances summary",
         "Can navigate to different tabs/sections"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-edit-details",
