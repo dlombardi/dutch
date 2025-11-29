@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { Link, router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link, router, Stack } from 'expo-router';
 import { useGroupsStore } from '../../stores/groupsStore';
 
 export default function GroupsScreen() {
@@ -11,13 +10,16 @@ export default function GroupsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Groups</Text>
-        <TouchableOpacity style={styles.addButton} onPress={handleCreateGroup}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity style={styles.addButton} onPress={handleCreateGroup}>
+              <Text style={styles.addButtonText}>+</Text>
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       {groups.length === 0 ? (
         <View style={styles.emptyState}>
@@ -50,7 +52,7 @@ export default function GroupsScreen() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -59,29 +61,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
   addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   emptyState: {

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,37 +7,50 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useGroupsStore } from '../../stores/groupsStore';
 import { useAuthStore } from '../../stores/authStore';
+
+// React Query hooks
+import { useGroupByInviteCode } from '../../hooks/queries';
+import { useJoinGroup } from '../../hooks/mutations';
 
 export default function JoinGroupScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const router = useRouter();
-
-  const { previewGroup, isLoading, error, fetchGroupByInviteCode, joinGroup } =
-    useGroupsStore();
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    if (code) {
-      fetchGroupByInviteCode(code);
-    }
-  }, [code, fetchGroupByInviteCode]);
+  // React Query hooks - automatic caching and fetching
+  const {
+    data: previewGroup,
+    isLoading: isFetchingGroup,
+    error: fetchError,
+  } = useGroupByInviteCode(code);
 
-  const handleJoin = useCallback(async () => {
+  // Join mutation
+  const joinGroupMutation = useJoinGroup();
+
+  const handleJoin = useCallback(() => {
     if (!code || !user) return;
 
-    const group = await joinGroup(code, user.id);
-    if (group) {
-      router.replace(`/group/${group.id}`);
-    }
-  }, [code, user, joinGroup, router]);
+    joinGroupMutation.mutate(
+      { inviteCode: code, userId: user.id },
+      {
+        onSuccess: (group) => {
+          router.replace(`/group/${group.id}`);
+        },
+      }
+    );
+  }, [code, user, joinGroupMutation, router]);
 
   const handleCancel = useCallback(() => {
     router.back();
   }, [router]);
 
-  if (isLoading && !previewGroup) {
+  // Derived state
+  const isJoining = joinGroupMutation.isPending;
+  const joinError = joinGroupMutation.error?.message ?? null;
+  const displayError = fetchError?.message ?? joinError;
+
+  if (isFetchingGroup && !previewGroup) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -46,12 +59,12 @@ export default function JoinGroupScreen() {
     );
   }
 
-  if (error) {
+  if (displayError) {
     return (
       <View style={styles.container}>
         <Text style={styles.emoji}>❌</Text>
         <Text style={styles.errorTitle}>Invalid Invite</Text>
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>{displayError}</Text>
         <TouchableOpacity style={styles.button} onPress={handleCancel}>
           <Text style={styles.buttonText}>Go Back</Text>
         </TouchableOpacity>
@@ -82,9 +95,9 @@ export default function JoinGroupScreen() {
         <TouchableOpacity
           style={[styles.button, styles.primaryButton]}
           onPress={handleJoin}
-          disabled={isLoading}
+          disabled={isJoining}
         >
-          {isLoading ? (
+          {isJoining ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={[styles.buttonText, styles.primaryButtonText]}>
@@ -96,7 +109,7 @@ export default function JoinGroupScreen() {
         <TouchableOpacity
           style={[styles.button, styles.secondaryButton]}
           onPress={handleCancel}
-          disabled={isLoading}
+          disabled={isJoining}
         >
           <Text style={[styles.buttonText, styles.secondaryButtonText]}>
             Cancel

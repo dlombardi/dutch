@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useGroupsStore } from '../stores/groupsStore';
 import { useAuthStore } from '../stores/authStore';
-import { CURRENCIES, searchCurrencies, getDefaultCurrency, type Currency } from '@evn/shared';
+import { searchCurrencies, getDefaultCurrency, type Currency } from '@evn/shared';
 import { VALIDATION } from '@evn/shared';
+
+// React Query hooks
+import { useCreateGroup } from '../hooks/mutations';
 
 const POPULAR_EMOJIS = ['🏖️', '✈️', '🏠', '🍕', '🎉', '🚗', '⚽', '🎬', '🛒', '💼'];
 
@@ -27,8 +29,14 @@ export default function CreateGroupScreen() {
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>(getDefaultCurrency());
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
-  const { createGroup, isLoading, error, clearError } = useGroupsStore();
   const { user } = useAuthStore();
+
+  // React Query mutation
+  const createGroupMutation = useCreateGroup();
+
+  // Derived state
+  const isCreating = createGroupMutation.isPending;
+  const createError = createGroupMutation.error?.message ?? null;
 
   const filteredCurrencies = useMemo(() => {
     return searchCurrencies(currencySearch);
@@ -38,20 +46,24 @@ export default function CreateGroupScreen() {
     return value.trim().length >= VALIDATION.MIN_GROUP_NAME_LENGTH;
   };
 
-  const handleCreateGroup = async () => {
+  const handleCreateGroup = () => {
     if (!isValidName(name) || !user) {
       return;
     }
 
-    const group = await createGroup(
-      name.trim(),
-      user.id,
-      selectedEmoji,
-      selectedCurrency.code
+    createGroupMutation.mutate(
+      {
+        name: name.trim(),
+        createdById: user.id,
+        emoji: selectedEmoji,
+        defaultCurrency: selectedCurrency.code,
+      },
+      {
+        onSuccess: (group) => {
+          router.replace(`/group/${group.id}`);
+        },
+      }
     );
-    if (group) {
-      router.replace(`/group/${group.id}`);
-    }
   };
 
   const handleSelectCurrency = (currency: Currency) => {
@@ -73,9 +85,9 @@ export default function CreateGroupScreen() {
           <Text style={styles.headerTitle}>New Group</Text>
           <TouchableOpacity
             onPress={handleCreateGroup}
-            disabled={!isValidName(name) || isLoading}
+            disabled={!isValidName(name) || isCreating}
           >
-            {isLoading ? (
+            {isCreating ? (
               <ActivityIndicator size="small" color="#007AFF" />
             ) : (
               <Text
@@ -116,20 +128,20 @@ export default function CreateGroupScreen() {
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Group Name</Text>
             <TextInput
-              style={[styles.input, error ? styles.inputError : null]}
+              style={[styles.input, createError ? styles.inputError : null]}
               placeholder="e.g., Trip to Paris"
               placeholderTextColor="#999"
               value={name}
               onChangeText={(text) => {
                 setName(text);
-                if (error) clearError();
+                if (createError) createGroupMutation.reset();
               }}
               autoCapitalize="words"
               autoCorrect={false}
-              editable={!isLoading}
+              editable={!isCreating}
               autoFocus
             />
-            {error && <Text style={styles.errorText}>{error}</Text>}
+            {createError && <Text style={styles.errorText}>{createError}</Text>}
           </View>
 
           <View style={styles.inputSection}>
@@ -137,7 +149,7 @@ export default function CreateGroupScreen() {
             <TouchableOpacity
               style={styles.currencySelector}
               onPress={() => setCurrencyModalVisible(true)}
-              disabled={isLoading}
+              disabled={isCreating}
             >
               <View style={styles.currencyInfo}>
                 <Text style={styles.currencySymbol}>{selectedCurrency.symbol}</Text>

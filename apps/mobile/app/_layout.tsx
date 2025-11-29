@@ -1,20 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Slot, router, useSegments, useRootNavigationState } from 'expo-router';
+import { useEffect, useState, useCallback } from 'react';
+import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, ActivityIndicator, Text } from 'react-native';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { getQueryClient } from '../lib/queryClient';
 import { useAuthStore } from '../stores/authStore';
 import { useSyncStore } from '../stores/syncStore';
 import { useNetworkStore, setOnOnlineCallback } from '../stores/networkStore';
 import { useExpensesStore } from '../stores/expensesStore';
 
-function OfflineBanner() {
-  const { isConnected, isInternetReachable } = useNetworkStore();
-  const { pendingExpenses, isSyncing } = useExpensesStore();
-
-  // Show banner when offline or internet is not reachable
+// Offline banner as a pure presentational component (no hooks)
+function OfflineBannerView({
+  isConnected,
+  isInternetReachable,
+  pendingCount,
+  isSyncing,
+}: {
+  isConnected: boolean;
+  isInternetReachable: boolean | null;
+  pendingCount: number;
+  isSyncing: boolean;
+}) {
   const isOffline = !isConnected || isInternetReachable === false;
-  const hasPending = pendingExpenses.length > 0;
+  const hasPending = pendingCount > 0;
 
   if (!isOffline && !hasPending) return null;
 
@@ -24,16 +33,14 @@ function OfflineBanner() {
 
   if (hasPending && !isOffline) {
     if (isSyncing) {
-      message = `Syncing ${pendingExpenses.length} pending expense${pendingExpenses.length > 1 ? 's' : ''}...`;
+      message = `Syncing ${pendingCount} pending expense${pendingCount > 1 ? 's' : ''}...`;
       bgColor = '#3b82f6';
       textColor = '#ffffff';
     } else {
-      message = `${pendingExpenses.length} expense${pendingExpenses.length > 1 ? 's' : ''} pending sync`;
-      bgColor = '#f59e0b';
-      textColor = '#78350f';
+      message = `${pendingCount} expense${pendingCount > 1 ? 's' : ''} pending sync`;
     }
   } else if (hasPending && isOffline) {
-    message = `Offline - ${pendingExpenses.length} expense${pendingExpenses.length > 1 ? 's' : ''} will sync when online`;
+    message = `Offline - ${pendingCount} expense${pendingCount > 1 ? 's' : ''} will sync when online`;
   }
 
   return (
@@ -57,29 +64,119 @@ function OfflineBanner() {
   );
 }
 
+// Loading screen component (no hooks)
+function LoadingScreen() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <ActivityIndicator size="large" color="#007AFF" />
+    </View>
+  );
+}
+
+// Main app content with Stack navigator
+function AppContent({
+  isConnected,
+  isInternetReachable,
+  pendingCount,
+  isSyncing,
+}: {
+  isConnected: boolean;
+  isInternetReachable: boolean | null;
+  pendingCount: number;
+  isSyncing: boolean;
+}) {
+  return (
+    <>
+      <StatusBar style="auto" />
+      <OfflineBannerView
+        isConnected={isConnected}
+        isInternetReachable={isInternetReachable}
+        pendingCount={pendingCount}
+        isSyncing={isSyncing}
+      />
+      <Stack
+        screenOptions={{
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: '#fff',
+          },
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/verify" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="create-group"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="group/[id]"
+          options={{
+            headerBackTitle: 'Groups',
+          }}
+        />
+        <Stack.Screen
+          name="group/[id]/add-expense"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen name="expense/[id]" />
+        <Stack.Screen
+          name="expense/[id]/edit"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="join/[code]"
+          options={{
+            title: 'Join Group',
+          }}
+        />
+      </Stack>
+    </>
+  );
+}
+
 export default function RootLayout() {
+  // ALL hooks must be called unconditionally at the top
   const segments = useSegments();
   const navigationState = useRootNavigationState();
-  const { isAuthenticated, _hasHydrated } = useAuthStore();
-  const { connect, disconnect } = useSyncStore();
-  const { initialize: initializeNetwork } = useNetworkStore();
-  const { syncPendingExpenses } = useExpensesStore();
   const [isMounted, setIsMounted] = useState(false);
+
+  // Zustand store hooks - called unconditionally
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const _hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const connect = useSyncStore((state) => state.connect);
+  const disconnect = useSyncStore((state) => state.disconnect);
+  const initializeNetwork = useNetworkStore((state) => state.initialize);
+  const isConnected = useNetworkStore((state) => state.isConnected);
+  const isInternetReachable = useNetworkStore((state) => state.isInternetReachable);
+  const syncPendingExpenses = useExpensesStore((state) => state.syncPendingExpenses);
+  const pendingExpenses = useExpensesStore((state) => state.pendingExpenses);
+  const isSyncing = useExpensesStore((state) => state.isSyncing);
+
+  // Memoize callbacks to avoid re-creating functions
+  const handleOnline = useCallback(() => {
+    syncPendingExpenses();
+  }, [syncPendingExpenses]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Initialize network monitoring and set up online sync callback
+  // Initialize network monitoring
   useEffect(() => {
-    // Set up callback to sync pending expenses when coming online
-    setOnOnlineCallback(() => {
-      syncPendingExpenses();
-    });
-
+    setOnOnlineCallback(handleOnline);
     const unsubscribe = initializeNetwork();
     return unsubscribe;
-  }, []);
+  }, [initializeNetwork, handleOnline]);
 
   // Connect/disconnect WebSocket based on auth state
   useEffect(() => {
@@ -91,26 +188,19 @@ export default function RootLayout() {
       disconnect();
     }
 
-    // Cleanup on unmount
     return () => {
       disconnect();
     };
-  }, [isAuthenticated, _hasHydrated]);
+  }, [isAuthenticated, _hasHydrated, connect, disconnect]);
 
+  // Navigation effect
   useEffect(() => {
-    // Don't navigate until:
-    // 1. Component is mounted
-    // 2. Router is ready
-    // 3. Auth store has rehydrated from storage
     if (!isMounted || !navigationState?.key || !_hasHydrated) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inAuthVerify = segments[0] === 'auth' && (segments as string[])[1] === 'verify';
 
-    // Allow access to auth/verify route (for magic link deep links)
-    if (inAuthVerify) {
-      return;
-    }
+    if (inAuthVerify) return;
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/sign-in');
@@ -119,22 +209,21 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, segments, navigationState?.key, isMounted, _hasHydrated]);
 
-  // Show loading while waiting for hydration
-  if (!_hasHydrated) {
-    return (
-      <SafeAreaProvider>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" />
-        </View>
-      </SafeAreaProvider>
-    );
-  }
-
+  // Always render SafeAreaProvider - switch content based on hydration state
   return (
-    <SafeAreaProvider>
-      <StatusBar style="auto" />
-      <OfflineBanner />
-      <Slot />
-    </SafeAreaProvider>
+    <QueryClientProvider client={getQueryClient()}>
+      <SafeAreaProvider>
+        {!_hasHydrated ? (
+          <LoadingScreen />
+        ) : (
+          <AppContent
+            isConnected={isConnected}
+            isInternetReachable={isInternetReachable}
+            pendingCount={pendingExpenses.length}
+            isSyncing={isSyncing}
+          />
+        )}
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }

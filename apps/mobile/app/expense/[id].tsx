@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,18 +10,31 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useExpensesStore } from '../../stores/expensesStore';
-import { useGroupsStore } from '../../stores/groupsStore';
 import { useAuthStore } from '../../stores/authStore';
+
+// React Query hooks
+import { useExpense, useGroup, useGroupMembers } from '../../hooks/queries';
+import { useDeleteExpense } from '../../hooks/mutations';
 
 export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { currentExpense, fetchExpense, deleteExpense, isLoading, error } =
-    useExpensesStore();
-  const { currentGroup, currentGroupMembers, fetchGroup, fetchGroupMembers } =
-    useGroupsStore();
+
+  // React Query hooks - automatic caching and deduplication
+  const {
+    data: expense,
+    isLoading: isLoadingExpense,
+    error: expenseError,
+    refetch: refetchExpense,
+  } = useExpense(id);
+
+  // Fetch group and members once we have the expense
+  const { data: group } = useGroup(expense?.groupId);
+  const { data: members = [] } = useGroupMembers(expense?.groupId);
+
+  // Delete mutation
+  const deleteExpenseMutation = useDeleteExpense();
 
   const handleEdit = useCallback(() => {
     if (id) {
@@ -30,39 +43,33 @@ export default function ExpenseDetailScreen() {
   }, [id, router]);
 
   const handleDelete = useCallback(() => {
-    if (!id || !currentExpense) return;
+    if (!id || !expense) return;
 
     Alert.alert(
       'Delete Expense',
-      `Are you sure you want to delete "${currentExpense.description}"?`,
+      `Are you sure you want to delete "${expense.description}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            const success = await deleteExpense(id);
-            if (success) {
-              router.back();
-            }
+          onPress: () => {
+            deleteExpenseMutation.mutate(
+              { id, groupId: expense.groupId },
+              {
+                onSuccess: () => {
+                  router.back();
+                },
+                onError: () => {
+                  Alert.alert('Error', 'Failed to delete expense');
+                },
+              }
+            );
           },
         },
       ]
     );
-  }, [id, currentExpense, deleteExpense, router]);
-
-  useEffect(() => {
-    if (id) {
-      fetchExpense(id);
-    }
-  }, [id, fetchExpense]);
-
-  useEffect(() => {
-    if (currentExpense?.groupId) {
-      fetchGroup(currentExpense.groupId);
-      fetchGroupMembers(currentExpense.groupId);
-    }
-  }, [currentExpense?.groupId, fetchGroup, fetchGroupMembers]);
+  }, [id, expense, deleteExpenseMutation, router]);
 
   const getCurrencySymbol = useCallback((currency: string) => {
     switch (currency) {
@@ -82,13 +89,13 @@ export default function ExpenseDetailScreen() {
   const getPayerDisplayName = useCallback(
     (payerId: string) => {
       if (payerId === user?.id) return 'You';
-      const member = currentGroupMembers.find((m) => m.userId === payerId);
+      const member = members.find((m) => m.userId === payerId);
       if (member) {
         return `User ${member.userId.slice(0, 8)}...`;
       }
       return 'Unknown';
     },
-    [user, currentGroupMembers]
+    [user, members]
   );
 
   const formatDate = useCallback((dateString: string) => {
@@ -109,7 +116,11 @@ export default function ExpenseDetailScreen() {
     });
   }, []);
 
-  if (isLoading && !currentExpense) {
+  const handleRetry = useCallback(() => {
+    refetchExpense();
+  }, [refetchExpense]);
+
+  if (isLoadingExpense && !expense) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ title: 'Expense' }} />
@@ -120,18 +131,23 @@ export default function ExpenseDetailScreen() {
     );
   }
 
-  if (error || !currentExpense) {
+  if (expenseError || !expense) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ title: 'Expense' }} />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error || 'Expense not found'}</Text>
+          <Text style={styles.errorEmoji}>😕</Text>
+          <Text style={styles.errorTitle}>Unable to load expense</Text>
+          <Text style={styles.errorText}>
+            {expenseError?.message || 'Expense not found'}
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
-
-  const expense = currentExpense;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -179,11 +195,11 @@ export default function ExpenseDetailScreen() {
             </Text>
           </View>
 
-          {currentGroup && (
+          {group && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Group</Text>
               <Text style={styles.detailValue}>
-                {currentGroup.emoji} {currentGroup.name}
+                {group.emoji} {group.name}
               </Text>
             </View>
           )}
@@ -192,10 +208,9 @@ export default function ExpenseDetailScreen() {
         {/* Split Breakdown Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Split breakdown</Text>
-          {currentGroupMembers.length > 0 ? (
-            currentGroupMembers.map((member) => {
-              const perPerson =
-                expense.amount / Math.max(currentGroupMembers.length, 1);
+          {members.length > 0 ? (
+            members.map((member) => {
+              const perPerson = expense.amount / Math.max(members.length, 1);
               return (
                 <View key={member.userId} style={styles.splitRow}>
                   <View style={styles.splitMember}>
@@ -253,8 +268,16 @@ export default function ExpenseDetailScreen() {
 
       {/* Delete button */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteButtonText}>Delete Expense</Text>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDelete}
+          disabled={deleteExpenseMutation.isPending}
+        >
+          {deleteExpenseMutation.isPending ? (
+            <ActivityIndicator size="small" color="#FF3B30" />
+          ) : (
+            <Text style={styles.deleteButtonText}>Delete Expense</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -277,10 +300,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
   errorText: {
     fontSize: 16,
-    color: '#ff3b30',
+    color: '#666',
     textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   editButton: {
     color: '#007AFF',

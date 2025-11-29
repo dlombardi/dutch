@@ -14,24 +14,29 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useExpensesStore } from '../../../stores/expensesStore';
-import { useGroupsStore } from '../../../stores/groupsStore';
 import { useAuthStore } from '../../../stores/authStore';
+
+// React Query hooks
+import { useExpense, useGroup, useGroupMembers } from '../../../hooks/queries';
+import { useUpdateExpense } from '../../../hooks/mutations';
 
 export default function EditExpenseScreen() {
   const { id: expenseId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-
-  const {
-    currentExpense,
-    fetchExpense,
-    updateExpense,
-    isLoading,
-    error,
-  } = useExpensesStore();
-  const { currentGroup, currentGroupMembers, fetchGroup, fetchGroupMembers } =
-    useGroupsStore();
   const { user } = useAuthStore();
+
+  // React Query hooks - automatic caching and deduplication
+  const {
+    data: expense,
+    isLoading: isFetchingExpense,
+  } = useExpense(expenseId);
+
+  // Fetch group and members once we have the expense
+  const { data: group } = useGroup(expense?.groupId);
+  const { data: members = [] } = useGroupMembers(expense?.groupId);
+
+  // Update mutation
+  const updateExpenseMutation = useUpdateExpense();
 
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -39,32 +44,17 @@ export default function EditExpenseScreen() {
   const [showPayerPicker, setShowPayerPicker] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Fetch expense data
+  // Initialize form with expense data when it loads
   useEffect(() => {
-    if (expenseId) {
-      fetchExpense(expenseId);
-    }
-  }, [expenseId, fetchExpense]);
-
-  // Initialize form with expense data
-  useEffect(() => {
-    if (currentExpense && !initialized) {
-      setAmount(currentExpense.amount.toString());
-      setDescription(currentExpense.description);
-      setPaidById(currentExpense.paidById);
+    if (expense && !initialized) {
+      setAmount(expense.amount.toString());
+      setDescription(expense.description);
+      setPaidById(expense.paidById);
       setInitialized(true);
     }
-  }, [currentExpense, initialized]);
+  }, [expense, initialized]);
 
-  // Fetch group data when expense is loaded
-  useEffect(() => {
-    if (currentExpense?.groupId) {
-      fetchGroup(currentExpense.groupId);
-      fetchGroupMembers(currentExpense.groupId);
-    }
-  }, [currentExpense?.groupId, fetchGroup, fetchGroupMembers]);
-
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!expenseId || !paidById) return;
 
     const numericAmount = parseFloat(amount);
@@ -76,16 +66,22 @@ export default function EditExpenseScreen() {
       return;
     }
 
-    const result = await updateExpense(expenseId, {
-      amount: numericAmount,
-      description: description.trim(),
-      paidById,
-    });
-
-    if (result) {
-      router.back();
-    }
-  }, [expenseId, paidById, amount, description, updateExpense, router]);
+    updateExpenseMutation.mutate(
+      {
+        id: expenseId,
+        updates: {
+          amount: numericAmount,
+          description: description.trim(),
+          paidById,
+        },
+      },
+      {
+        onSuccess: () => {
+          router.back();
+        },
+      }
+    );
+  }, [expenseId, paidById, amount, description, updateExpenseMutation, router]);
 
   const handleSelectPayer = useCallback((memberId: string) => {
     setPaidById(memberId);
@@ -96,7 +92,7 @@ export default function EditExpenseScreen() {
     (payerId: string | null) => {
       if (!payerId) return 'Select payer';
       if (payerId === user?.id) return 'You';
-      const member = currentGroupMembers.find((m) => m.userId === payerId);
+      const member = members.find((m) => m.userId === payerId);
       if (member) {
         return member.userId === user?.id
           ? 'You'
@@ -104,12 +100,16 @@ export default function EditExpenseScreen() {
       }
       return 'Unknown';
     },
-    [user, currentGroupMembers]
+    [user, members]
   );
 
   const handleCancel = useCallback(() => {
     router.back();
   }, [router]);
+
+  // Derived state
+  const isUpdating = updateExpenseMutation.isPending;
+  const updateError = updateExpenseMutation.error?.message ?? null;
 
   const isValid =
     amount.trim() !== '' &&
@@ -117,7 +117,7 @@ export default function EditExpenseScreen() {
     parseFloat(amount) > 0 &&
     description.trim() !== '';
 
-  if (!currentExpense && isLoading) {
+  if (!expense && isFetchingExpense) {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ title: 'Edit Expense' }} />
@@ -141,9 +141,9 @@ export default function EditExpenseScreen() {
           headerRight: () => (
             <TouchableOpacity
               onPress={handleSave}
-              disabled={!isValid || isLoading}
+              disabled={!isValid || isUpdating}
             >
-              {isLoading ? (
+              {isUpdating ? (
                 <ActivityIndicator size="small" color="#007AFF" />
               ) : (
                 <Text
@@ -165,20 +165,20 @@ export default function EditExpenseScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.scrollView}>
-          {error && (
+          {updateError && (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{updateError}</Text>
             </View>
           )}
 
           {/* Amount Input */}
           <View style={styles.amountContainer}>
             <Text style={styles.currencySymbol}>
-              {currentGroup?.defaultCurrency === 'USD'
+              {group?.defaultCurrency === 'USD'
                 ? '$'
-                : currentGroup?.defaultCurrency === 'EUR'
+                : group?.defaultCurrency === 'EUR'
                   ? '€'
-                  : currentGroup?.defaultCurrency || '$'}
+                  : group?.defaultCurrency || '$'}
             </Text>
             <TextInput
               style={styles.amountInput}
@@ -243,7 +243,7 @@ export default function EditExpenseScreen() {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={currentGroupMembers}
+            data={members}
             keyExtractor={(item) => item.userId}
             renderItem={({ item }) => (
               <TouchableOpacity

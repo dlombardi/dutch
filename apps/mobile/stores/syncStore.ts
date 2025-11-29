@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
+import type { Expense } from './expensesStore';
+import type { Settlement } from './settlementsStore';
+import type { BalancesData } from './groupsStore';
 
 // Match the API configuration
 const WS_URL = __DEV__
@@ -7,6 +10,39 @@ const WS_URL = __DEV__
   : 'https://api.evn.app';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
+
+// P2-004 fix: Typed event payloads for sync events
+export interface ExpenseCreatedEvent {
+  expense: Expense;
+  groupId: string;
+  createdBy: string;
+}
+
+export interface ExpenseUpdatedEvent {
+  expense: Expense;
+  groupId: string;
+  updatedBy: string;
+}
+
+export interface ExpenseDeletedEvent {
+  expenseId: string;
+  groupId: string;
+  deletedBy: string;
+}
+
+export interface SettlementCreatedEvent {
+  settlement: Settlement;
+  groupId: string;
+  createdBy: string;
+}
+
+export interface BalancesUpdatedEvent {
+  groupId: string;
+  balances: BalancesData;
+}
+
+// Type for event callback functions
+type SyncEventCallback<T> = (data: T) => void;
 
 interface SyncState {
   socket: Socket | null;
@@ -21,12 +57,12 @@ interface SyncState {
   joinGroup: (groupId: string) => Promise<boolean>;
   leaveGroup: (groupId: string) => Promise<boolean>;
 
-  // Event listeners
-  onExpenseCreated: (callback: (data: any) => void) => () => void;
-  onExpenseUpdated: (callback: (data: any) => void) => () => void;
-  onExpenseDeleted: (callback: (data: any) => void) => () => void;
-  onSettlementCreated: (callback: (data: any) => void) => () => void;
-  onBalancesUpdated: (callback: (data: any) => void) => () => void;
+  // P2-004 fix: Typed event listeners
+  onExpenseCreated: (callback: SyncEventCallback<ExpenseCreatedEvent>) => () => void;
+  onExpenseUpdated: (callback: SyncEventCallback<ExpenseUpdatedEvent>) => () => void;
+  onExpenseDeleted: (callback: SyncEventCallback<ExpenseDeletedEvent>) => () => void;
+  onSettlementCreated: (callback: SyncEventCallback<SettlementCreatedEvent>) => () => void;
+  onBalancesUpdated: (callback: SyncEventCallback<BalancesUpdatedEvent>) => () => void;
 }
 
 export const useSyncStore = create<SyncState>((set, get) => ({
@@ -87,7 +123,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       // Rejoin all previously subscribed groups
       const { subscribedGroups } = get();
       subscribedGroups.forEach((groupId) => {
-        newSocket.emit('joinGroup', { groupId }, (response: any) => {
+        newSocket.emit('joinGroup', { groupId }, (response: { success: boolean }) => {
           console.log(`[Sync] Rejoined group ${groupId}:`, response.success);
         });
       });
@@ -156,44 +192,71 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     });
   },
 
-  // Generic event listener creator
-  onExpenseCreated: (callback: (data: any) => void) => {
+  // P2-003 fix: Event listeners now fetch socket from current state
+  // This prevents stale closure issues when socket reconnects
+  onExpenseCreated: (callback: SyncEventCallback<ExpenseCreatedEvent>) => {
     const { socket } = get();
     if (!socket) return () => {};
 
-    socket.on('expense:created', callback);
-    return () => socket.off('expense:created', callback);
+    const handler = (data: ExpenseCreatedEvent) => callback(data);
+    socket.on('expense:created', handler);
+
+    // P2-003 fix: Return cleanup that gets current socket reference
+    return () => {
+      const currentSocket = get().socket;
+      currentSocket?.off('expense:created', handler);
+    };
   },
 
-  onExpenseUpdated: (callback: (data: any) => void) => {
+  onExpenseUpdated: (callback: SyncEventCallback<ExpenseUpdatedEvent>) => {
     const { socket } = get();
     if (!socket) return () => {};
 
-    socket.on('expense:updated', callback);
-    return () => socket.off('expense:updated', callback);
+    const handler = (data: ExpenseUpdatedEvent) => callback(data);
+    socket.on('expense:updated', handler);
+
+    return () => {
+      const currentSocket = get().socket;
+      currentSocket?.off('expense:updated', handler);
+    };
   },
 
-  onExpenseDeleted: (callback: (data: any) => void) => {
+  onExpenseDeleted: (callback: SyncEventCallback<ExpenseDeletedEvent>) => {
     const { socket } = get();
     if (!socket) return () => {};
 
-    socket.on('expense:deleted', callback);
-    return () => socket.off('expense:deleted', callback);
+    const handler = (data: ExpenseDeletedEvent) => callback(data);
+    socket.on('expense:deleted', handler);
+
+    return () => {
+      const currentSocket = get().socket;
+      currentSocket?.off('expense:deleted', handler);
+    };
   },
 
-  onSettlementCreated: (callback: (data: any) => void) => {
+  onSettlementCreated: (callback: SyncEventCallback<SettlementCreatedEvent>) => {
     const { socket } = get();
     if (!socket) return () => {};
 
-    socket.on('settlement:created', callback);
-    return () => socket.off('settlement:created', callback);
+    const handler = (data: SettlementCreatedEvent) => callback(data);
+    socket.on('settlement:created', handler);
+
+    return () => {
+      const currentSocket = get().socket;
+      currentSocket?.off('settlement:created', handler);
+    };
   },
 
-  onBalancesUpdated: (callback: (data: any) => void) => {
+  onBalancesUpdated: (callback: SyncEventCallback<BalancesUpdatedEvent>) => {
     const { socket } = get();
     if (!socket) return () => {};
 
-    socket.on('balances:updated', callback);
-    return () => socket.off('balances:updated', callback);
+    const handler = (data: BalancesUpdatedEvent) => callback(data);
+    socket.on('balances:updated', handler);
+
+    return () => {
+      const currentSocket = get().socket;
+      currentSocket?.off('balances:updated', handler);
+    };
   },
 }));

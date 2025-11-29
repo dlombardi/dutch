@@ -19,6 +19,28 @@ export function setOnOnlineCallback(callback: () => void) {
   onOnlineCallback = callback;
 }
 
+/**
+ * Get current network status without importing the store directly.
+ * This allows other modules to check network status without creating
+ * a direct store dependency. (P2-002 fix: decoupled network status access)
+ */
+export function getNetworkStatus(): { isConnected: boolean; isInternetReachable: boolean | null } {
+  const state = useNetworkStore.getState();
+  return {
+    isConnected: state.isConnected,
+    isInternetReachable: state.isInternetReachable,
+  };
+}
+
+/**
+ * Check if the device is currently offline.
+ * Convenience function for the common offline check pattern.
+ */
+export function isOffline(): boolean {
+  const { isConnected, isInternetReachable } = getNetworkStatus();
+  return !isConnected || isInternetReachable === false;
+}
+
 export const useNetworkStore = create<NetworkState>((set, get) => ({
   isConnected: true, // Assume connected initially
   isInternetReachable: null,

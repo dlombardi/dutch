@@ -13,48 +13,56 @@ import {
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { useGroupsStore, GroupMember, Balance } from '../../stores/groupsStore';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
-import { useExpensesStore, Expense } from '../../stores/expensesStore';
-import { useSettlementsStore } from '../../stores/settlementsStore';
 import { useSyncStore } from '../../stores/syncStore';
+import { queryKeys } from '../../lib/queryClient';
+import type { Balance } from '../../stores/groupsStore';
+
+// React Query hooks
+import {
+  useGroupData,
+  useGroupExpenses,
+  useGroupSettlements,
+} from '../../hooks/queries';
+import { useCreateSettlement } from '../../hooks/mutations';
 
 type Tab = 'expenses' | 'balances' | 'members';
 
-const APP_URL_SCHEME = 'evn://';
 const WEB_URL = 'https://evn.app'; // Production web URL
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('expenses');
   const [settleModalVisible, setSettleModalVisible] = useState(false);
   const [selectedBalance, setSelectedBalance] = useState<Balance | null>(null);
   const [settleAmount, setSettleAmount] = useState('');
   const { user } = useAuthStore();
+
+  // React Query hooks - automatic caching, deduplication, and background refetching
   const {
-    currentGroup,
-    currentGroupMembers,
-    currentGroupBalances,
-    fetchGroup,
-    fetchGroupMembers,
-    fetchGroupBalances,
-    isLoading,
-    error,
-  } = useGroupsStore();
+    group,
+    members,
+    balances,
+    isLoading: isLoadingGroup,
+    isLoadingMembers,
+    isLoadingBalances,
+    error: groupError,
+    refetchAll,
+  } = useGroupData(id);
+
   const {
-    expenses,
-    fetchGroupExpenses,
-    isLoading: expensesLoading,
-    handleExpenseCreated,
-    handleExpenseUpdated,
-    handleExpenseDeleted,
-  } = useExpensesStore();
-  const {
-    createSettlement,
-    isLoading: settlementsLoading,
-    handleSettlementCreated,
-  } = useSettlementsStore();
+    data: expenses = [],
+    isLoading: isLoadingExpenses,
+    error: expensesError,
+  } = useGroupExpenses(id);
+
+  // Mutation for creating settlements
+  const createSettlementMutation = useCreateSettlement();
+
+  // Real-time sync handlers
   const {
     joinGroup: joinSyncGroup,
     leaveGroup: leaveSyncGroup,
@@ -65,16 +73,6 @@ export default function GroupDetailScreen() {
     connectionStatus,
   } = useSyncStore();
 
-  // Fetch data on mount
-  useEffect(() => {
-    if (id) {
-      fetchGroup(id);
-      fetchGroupMembers(id);
-      fetchGroupExpenses(id);
-      fetchGroupBalances(id);
-    }
-  }, [id, fetchGroup, fetchGroupMembers, fetchGroupExpenses, fetchGroupBalances]);
-
   // Subscribe to real-time updates when connected
   useEffect(() => {
     if (!id || connectionStatus !== 'connected') return;
@@ -82,33 +80,33 @@ export default function GroupDetailScreen() {
     // Join the group room for real-time updates
     joinSyncGroup(id);
 
-    // Set up event listeners
+    // Set up event listeners - invalidate queries on changes
     const unsubExpenseCreated = onExpenseCreated((data) => {
       if (data.expense.groupId === id) {
-        handleExpenseCreated(data.expense);
-        // Refresh balances when a new expense is added
-        fetchGroupBalances(id);
+        // Invalidate expenses and balances queries
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.byGroup(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.groups.balances(id) });
       }
     });
 
     const unsubExpenseUpdated = onExpenseUpdated((data) => {
       if (data.expense.groupId === id) {
-        handleExpenseUpdated(data.expense);
-        fetchGroupBalances(id);
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.byGroup(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.groups.balances(id) });
       }
     });
 
     const unsubExpenseDeleted = onExpenseDeleted((data) => {
       if (data.groupId === id) {
-        handleExpenseDeleted(data.expenseId);
-        fetchGroupBalances(id);
+        queryClient.invalidateQueries({ queryKey: queryKeys.expenses.byGroup(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.groups.balances(id) });
       }
     });
 
     const unsubSettlementCreated = onSettlementCreated((data) => {
       if (data.settlement.groupId === id) {
-        handleSettlementCreated(data.settlement);
-        fetchGroupBalances(id);
+        queryClient.invalidateQueries({ queryKey: queryKeys.settlements.byGroup(id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.groups.balances(id) });
       }
     });
 
@@ -120,13 +118,13 @@ export default function GroupDetailScreen() {
       unsubExpenseDeleted();
       unsubSettlementCreated();
     };
-  }, [id, connectionStatus]);
+  }, [id, connectionStatus, queryClient, joinSyncGroup, leaveSyncGroup, onExpenseCreated, onExpenseUpdated, onExpenseDeleted, onSettlementCreated]);
 
   // Get user's balance from memberBalances
   const getUserBalance = useCallback(() => {
-    if (!user || !currentGroupBalances) return 0;
-    return currentGroupBalances.memberBalances[user.id] || 0;
-  }, [user, currentGroupBalances]);
+    if (!user || !balances) return 0;
+    return balances.memberBalances[user.id] || 0;
+  }, [user, balances]);
 
   const getBalanceText = useCallback((balance: number) => {
     if (balance > 0) return 'you are owed';
@@ -162,22 +160,22 @@ export default function GroupDetailScreen() {
   );
 
   const handleShareInvite = useCallback(async () => {
-    if (!currentGroup) return;
+    if (!group) return;
 
-    const inviteLink = `${WEB_URL}/join/${currentGroup.inviteCode}`;
-    const message = `Join my group "${currentGroup.name}" on Evn!\n\n${inviteLink}`;
+    const inviteLink = `${WEB_URL}/join/${group.inviteCode}`;
+    const message = `Join my group "${group.name}" on Evn!\n\n${inviteLink}`;
 
     try {
       await Share.share({
         message,
-        title: `Join ${currentGroup.name} on Evn`,
+        title: `Join ${group.name} on Evn`,
       });
     } catch (err) {
       if (err instanceof Error && err.message !== 'User did not share') {
         Alert.alert('Error', 'Failed to open share sheet');
       }
     }
-  }, [currentGroup]);
+  }, [group]);
 
   const handleSettleUp = useCallback((balance: Balance) => {
     setSelectedBalance(balance);
@@ -194,29 +192,38 @@ export default function GroupDetailScreen() {
       return;
     }
 
-    const result = await createSettlement(
-      id,
-      selectedBalance.from,
-      selectedBalance.to,
-      amount,
-      user.id,
-      selectedBalance.currency,
-      'cash'
+    createSettlementMutation.mutate(
+      {
+        groupId: id,
+        fromUserId: selectedBalance.from,
+        toUserId: selectedBalance.to,
+        amount,
+        createdById: user.id,
+        currency: selectedBalance.currency,
+        method: 'cash',
+      },
+      {
+        onSuccess: () => {
+          setSettleModalVisible(false);
+          setSelectedBalance(null);
+          setSettleAmount('');
+          Alert.alert('Success', 'Settlement recorded!');
+        },
+        onError: () => {
+          Alert.alert('Error', 'Failed to record settlement');
+        },
+      }
     );
+  }, [selectedBalance, user, id, settleAmount, createSettlementMutation]);
 
-    if (result) {
-      setSettleModalVisible(false);
-      setSelectedBalance(null);
-      setSettleAmount('');
-      // Refresh balances
-      fetchGroupBalances(id);
-      Alert.alert('Success', 'Settlement recorded!');
-    } else {
-      Alert.alert('Error', 'Failed to record settlement');
-    }
-  }, [selectedBalance, user, id, settleAmount, createSettlement, fetchGroupBalances]);
+  // Retry handler
+  const handleRetry = useCallback(() => {
+    refetchAll();
+  }, [refetchAll]);
 
-  if (isLoading && !currentGroup) {
+  // Early returns MUST come after all hooks are defined
+  // Only block on fetchGroup loading/error - secondary data failures don't block UI
+  if (isLoadingGroup && !group) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -226,17 +233,24 @@ export default function GroupDetailScreen() {
     );
   }
 
-  if (error || !currentGroup) {
+  // Only show error screen if core group fetch failed - not for secondary data
+  if (groupError || !group) {
     return (
       <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Group' }} />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error || 'Group not found'}</Text>
+          <Text style={styles.errorEmoji}>😕</Text>
+          <Text style={styles.errorTitle}>Unable to load group</Text>
+          <Text style={styles.errorText}>
+            {groupError?.message || 'Group not found'}
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
-
-  const group = currentGroup;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -298,7 +312,7 @@ export default function GroupDetailScreen() {
           onPress={() => setActiveTab('members')}
         >
           <Text style={[styles.tabText, activeTab === 'members' && styles.activeTabText]}>
-            Members ({currentGroupMembers.length})
+            Members ({members.length})
           </Text>
         </TouchableOpacity>
       </View>
@@ -307,7 +321,7 @@ export default function GroupDetailScreen() {
       <View style={styles.content}>
         {activeTab === 'expenses' && (
           <ScrollView style={styles.expensesList}>
-            {expensesLoading && expenses.length === 0 ? (
+            {isLoadingExpenses && expenses.length === 0 ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#007AFF" />
               </View>
@@ -349,7 +363,7 @@ export default function GroupDetailScreen() {
         )}
         {activeTab === 'balances' && (
           <ScrollView style={styles.balancesList}>
-            {!currentGroupBalances || currentGroupBalances.balances.length === 0 ? (
+            {!balances || balances.balances.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>✨</Text>
                 <Text style={styles.emptyTitle}>All settled up!</Text>
@@ -360,7 +374,7 @@ export default function GroupDetailScreen() {
             ) : (
               <>
                 <Text style={styles.balancesHeader}>Who pays whom</Text>
-                {currentGroupBalances.balances.map((balance, index) => (
+                {balances.balances.map((balance, index) => (
                   <View key={`${balance.from}-${balance.to}-${index}`} style={styles.balanceItem}>
                     <View style={styles.balanceParties}>
                       <View style={styles.balanceAvatar}>
@@ -397,7 +411,7 @@ export default function GroupDetailScreen() {
         )}
         {activeTab === 'members' && (
           <ScrollView style={styles.membersList}>
-            {currentGroupMembers.length === 0 ? (
+            {members.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>👥</Text>
                 <Text style={styles.emptyTitle}>No members yet</Text>
@@ -406,7 +420,7 @@ export default function GroupDetailScreen() {
                 </Text>
               </View>
             ) : (
-              currentGroupMembers.map((member, index) => (
+              members.map((member, index) => (
                 <View key={member.userId} style={styles.memberItem}>
                   <View style={styles.memberAvatar}>
                     <Text style={styles.memberAvatarText}>
@@ -485,12 +499,12 @@ export default function GroupDetailScreen() {
             <TouchableOpacity
               style={[
                 styles.confirmButton,
-                settlementsLoading && styles.confirmButtonDisabled,
+                createSettlementMutation.isPending && styles.confirmButtonDisabled,
               ]}
               onPress={handleConfirmSettlement}
-              disabled={settlementsLoading}
+              disabled={createSettlementMutation.isPending}
             >
-              {settlementsLoading ? (
+              {createSettlementMutation.isPending ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.confirmButtonText}>Confirm Payment</Text>
@@ -519,10 +533,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
   errorText: {
     fontSize: 16,
-    color: '#ff3b30',
+    color: '#666',
     textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   headerButtons: {
     flexDirection: 'row',

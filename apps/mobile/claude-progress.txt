@@ -1,0 +1,432 @@
+# EVN Mobile App - Architecture Audit
+## Date: 2025-11-29
+## Session: State Management & Data Fetching Refactor
+
+================================================================================
+## 1. CURRENT STORE FILES AND RESPONSIBILITIES
+================================================================================
+
+### stores/authStore.ts
+- **Purpose**: User authentication state
+- **State**: user, accessToken, isAuthenticated, isLoading, magicLinkSent, error
+- **Dependencies**: lib/api.ts
+- **Persistence**: YES (AsyncStorage) - user, accessToken, isAuthenticated
+- **Issues**: Single shared `isLoading` and `error` state
+
+### stores/groupsStore.ts
+- **Purpose**: Groups management and current group context
+- **State**: groups, currentGroup, previewGroup, currentGroupMembers,
+            currentGroupBalances, isLoading, error
+- **Dependencies**: lib/api.ts
+- **Persistence**: YES (AsyncStorage) - groups only
+- **Issues**:
+  - Single shared `isLoading` boolean (P0-002)
+  - Single shared `error` state (P0-001)
+  - Each async action overwrites isLoading/error
+
+### stores/expensesStore.ts (MAIN - 377 lines)
+- **Purpose**: Expense CRUD operations with offline queue
+- **State**: expenses, pendingExpenses, currentExpense, isLoading, isSyncing, error
+- **Dependencies**: lib/api.ts, stores/networkStore.ts (TIGHT COUPLING - P2-002)
+- **Persistence**: YES (AsyncStorage) - expenses, pendingExpenses
+- **Issues**:
+  - Direct call to `useNetworkStore.getState()` inside createExpense
+  - Single shared isLoading/error state
+
+### stores/expenseStore.ts (DUPLICATE - 150 lines)
+- **Purpose**: Similar to expensesStore but with different structure
+- **State**: expenses (keyed by groupId), currentExpense, isLoading
+- **Dependencies**: None (TODO comments for API calls)
+- **Persistence**: NO
+- **Issues**:
+  - DUPLICATE of expensesStore.ts (INFO-001)
+  - Incomplete implementation (TODO comments)
+
+### stores/settlementsStore.ts
+- **Purpose**: Settlement CRUD operations
+- **State**: settlements, isLoading, error
+- **Dependencies**: lib/api.ts
+- **Persistence**: YES (AsyncStorage) - settlements
+- **Issues**: Single shared isLoading/error state
+
+### stores/syncStore.ts
+- **Purpose**: WebSocket connection and real-time updates
+- **State**: socket, connectionStatus, socketId, subscribedGroups, lastError
+- **Dependencies**: socket.io-client
+- **Persistence**: NO
+- **Issues**:
+  - Event handlers capture socket at subscription time (P2-003)
+  - Untyped callbacks - (data: any) => void (P2-004)
+
+### stores/networkStore.ts
+- **Purpose**: Network connectivity monitoring
+- **State**: isConnected, isInternetReachable, connectionType, isInitialized
+- **Dependencies**: @react-native-community/netinfo
+- **Persistence**: NO
+- **Issues**: Uses module-level callback (onOnlineCallback)
+
+================================================================================
+## 2. SCREENS THAT FETCH DATA
+================================================================================
+
+### app/(tabs)/index.tsx - Groups List
+- **Reads from**: useGroupsStore (groups)
+- **Fetches**: Nothing - relies on cached groups
+- **Issues**: No loading state, no error handling, no refresh capability
+
+### app/group/[id].tsx - Group Detail
+- **Reads from**: useGroupsStore, useExpensesStore, useSettlementsStore,
+                  useSyncStore, useAuthStore
+- **Fetches on mount**:
+  - fetchGroup(id) - core data
+  - fetchGroupMembers(id)
+  - fetchGroupExpenses(id)
+  - fetchGroupBalances(id)
+- **Real-time subscriptions**: expense:created, expense:updated, expense:deleted,
+                              settlement:created
+- **Issues**:
+  - Uses Promise.allSettled but shared error state still causes UI blocking
+  - Manual local error state workaround added (groupLoadError)
+  - Re-fetches all data on every navigation
+
+### app/expense/[id].tsx - Expense Detail
+- **Reads from**: useExpensesStore, useGroupsStore, useAuthStore
+- **Fetches on mount**:
+  - fetchExpense(id)
+  - fetchGroup(expense.groupId) - after expense loads
+  - fetchGroupMembers(expense.groupId)
+- **Issues**: Shared error state between expensesStore and groupsStore
+
+### app/create-group.tsx - Create Group Form
+- **Reads from**: useGroupsStore, useAuthStore
+- **Mutations**: createGroup()
+- **Issues**: Shares isLoading/error state with other group operations
+
+### app/join/[code].tsx - Join Group
+- **Reads from**: useGroupsStore, useAuthStore
+- **Fetches on mount**: fetchGroupByInviteCode(code)
+- **Mutations**: joinGroup()
+- **Issues**: Shared error state could show wrong error
+
+### app/group/[id]/add-expense.tsx - Add Expense Form
+- **Reads from**: useGroupsStore, useExpensesStore, useAuthStore
+- **Mutations**: createExpense()
+- **Issues**: Offline queue works but tight coupling to networkStore
+
+### app/expense/[id]/edit.tsx - Edit Expense Form
+- **Reads from**: useExpensesStore
+- **Mutations**: updateExpense()
+
+================================================================================
+## 3. API ENDPOINTS CALLED
+================================================================================
+
+### Auth
+- POST /auth/magic-link/request
+- POST /auth/magic-link/verify
+- POST /auth/guest
+
+### Groups
+- POST /groups - createGroup
+- GET /groups/:id - getGroup
+- GET /groups/invite/:code - getGroupByInviteCode
+- POST /groups/join - joinGroup
+- GET /groups/:id/members - getGroupMembers
+- GET /groups/:id/balances - getGroupBalances
+- GET /groups/:id/expenses - getGroupExpenses
+- GET /groups/:id/settlements - getGroupSettlements
+
+### Expenses
+- POST /expenses - createExpense
+- GET /expenses/:id - getExpense
+- PUT /expenses/:id - updateExpense
+- DELETE /expenses/:id - deleteExpense
+
+### Settlements
+- POST /settlements - createSettlement
+
+### Exchange Rates
+- GET /exchange-rates
+
+================================================================================
+## 4. STORE DEPENDENCY MAP
+================================================================================
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         lib/api.ts                               │
+│              (ApiClient - stores token internally)               │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ used by
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+│  authStore    │   │  groupsStore  │   │ settlementsStore
+│               │   │               │   │               │
+│ Sets token in │   │               │   │               │
+│ api.ts on     │   │               │   │               │
+│ login/logout  │   │               │   │               │
+└───────────────┘   └───────────────┘   └───────────────┘
+        │                    │
+        │                    │
+        ▼                    ▼
+┌───────────────────────────────────────────────────────┐
+│                     expensesStore                      │
+│                                                        │
+│  TIGHT COUPLING: useNetworkStore.getState() called    │
+│  directly inside createExpense action                  │
+└───────────────────────────────────────────────────────┘
+                             │
+                             │ checks
+                             ▼
+                    ┌───────────────┐
+                    │ networkStore  │
+                    │               │
+                    │ Monitors      │
+                    │ NetInfo       │
+                    └───────────────┘
+                             │
+                             │ triggers on online
+                             ▼
+                    ┌───────────────┐
+                    │ expensesStore │
+                    │ syncPending() │
+                    └───────────────┘
+
+┌───────────────┐
+│   syncStore   │  (WebSocket - independent)
+│               │
+│ Components    │
+│ subscribe to  │
+│ events        │
+└───────────────┘
+```
+
+================================================================================
+## 5. ERROR AND LOADING STATE PATTERNS
+================================================================================
+
+### Current Pattern (PROBLEMATIC)
+
+Each store has:
+```typescript
+interface StoreState {
+  isLoading: boolean;  // Single shared boolean
+  error: string | null; // Single shared error
+}
+
+// Every action does this:
+someAction: async () => {
+  set({ isLoading: true, error: null }); // Clears other errors!
+  try {
+    // ... do work
+  } catch (e) {
+    set({ error: e.message }); // Overwrites any other error
+  } finally {
+    set({ isLoading: false }); // Incorrect if other operations pending
+  }
+}
+```
+
+### Race Condition Scenarios
+
+**Scenario 1: Concurrent fetches in group detail**
+```
+T0: fetchGroup() starts      -> isLoading: true
+T1: fetchGroupBalances()     -> isLoading: true (still true, ok)
+T2: fetchGroup() succeeds    -> isLoading: false (WRONG - balances still loading)
+T3: fetchGroupBalances() fails -> error: "Failed" (blocks whole page)
+```
+
+**Scenario 2: Error overwriting**
+```
+T0: fetchGroup() fails       -> error: "Group not found"
+T1: fetchBalances() starts   -> error: null (CLEARS the real error!)
+T2: fetchBalances() succeeds -> shows page but group is actually missing
+```
+
+### Workaround Applied (group/[id].tsx)
+
+The current code has a partial workaround:
+```typescript
+const [groupLoadError, setGroupLoadError] = useState<string | null>(null);
+
+// Fetch group first, only proceed if successful
+const groupResult = await fetchGroup(id);
+if (!groupResult) {
+  setGroupLoadError('Failed to load group');
+  return;
+}
+
+// Clear errors after secondary fetches
+clearError();
+```
+
+This is a bandaid - the proper fix is operation-specific states.
+
+================================================================================
+## 6. PROPOSED TARGET ARCHITECTURE
+================================================================================
+
+### Phase 1: Fix P0 Issues
+Replace single boolean/string with operation-specific states:
+
+```typescript
+interface GroupsState {
+  // Loading states per operation
+  loadingStates: {
+    fetchGroup: boolean;
+    fetchMembers: boolean;
+    fetchBalances: boolean;
+    fetchExpenses: boolean;
+    createGroup: boolean;
+    joinGroup: boolean;
+  };
+
+  // Errors per operation
+  errors: {
+    fetchGroup: string | null;
+    fetchMembers: string | null;
+    fetchBalances: string | null;
+    fetchExpenses: string | null;
+    createGroup: string | null;
+    joinGroup: string | null;
+  };
+
+  // Helper selectors
+  isAnyLoading: () => boolean;
+  getError: (operation: keyof typeof errors) => string | null;
+}
+```
+
+### Phase 2: TanStack Query Integration
+Move server state to React Query, keep Zustand for client state:
+
+```
+/hooks
+  /queries
+    useGroup.ts         -> useQuery(['group', id])
+    useGroupMembers.ts  -> useQuery(['group', id, 'members'])
+    useGroupExpenses.ts -> useQuery(['group', id, 'expenses'])
+    useGroupBalances.ts -> useQuery(['group', id, 'balances'])
+  /mutations
+    useCreateExpense.ts -> useMutation with optimistic update
+    useUpdateExpense.ts
+    useDeleteExpense.ts
+
+/stores
+  authStore.ts          # Keep - client state
+  uiStore.ts            # New - UI-only state (modals, tabs)
+  offlineStore.ts       # Rename from expensesStore, keep only offline queue
+  syncStore.ts          # Keep - WebSocket connection
+```
+
+### Phase 3: Optimistic Updates
+Use TanStack Query's onMutate for instant UI updates:
+
+```typescript
+const useCreateExpense = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data) => api.createExpense(data),
+    onMutate: async (newExpense) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries(['group', newExpense.groupId, 'expenses']);
+
+      // Snapshot previous value
+      const previous = queryClient.getQueryData(['group', newExpense.groupId, 'expenses']);
+
+      // Optimistically update
+      queryClient.setQueryData(['group', newExpense.groupId, 'expenses'], old => [...old, newExpense]);
+
+      return { previous };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      queryClient.setQueryData(['group', variables.groupId, 'expenses'], context.previous);
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries(['group', variables.groupId, 'expenses']);
+    }
+  });
+};
+```
+
+================================================================================
+## 7. MIGRATION ORDER
+================================================================================
+
+1. P0-001: Refactor groupsStore to use operation-specific errors
+2. P0-002: Refactor groupsStore to use operation-specific loading states
+3. Update group/[id].tsx to use new granular states
+4. P1-001: Install TanStack Query, create QueryClientProvider
+5. Create query hooks one at a time, migrate screens incrementally
+6. P1-002: Add optimistic updates to mutation hooks
+7. P2-001: Refactor api.ts to get token from authStore dynamically
+8. P2-002: Remove useNetworkStore.getState() from expensesStore
+9. P2-003: Fix WebSocket subscription pattern in syncStore
+10. P2-004: Add TypeScript interfaces for sync events
+11. INFO-001: Delete duplicate expenseStore.ts
+
+================================================================================
+## 8. FILES TO MODIFY (IN ORDER)
+================================================================================
+
+### Phase 1 (P0 Issues)
+- stores/groupsStore.ts - Add granular loading/error states
+- stores/expensesStore.ts - Add granular loading/error states
+- stores/settlementsStore.ts - Add granular loading/error states
+- app/group/[id].tsx - Use new granular states
+- app/expense/[id].tsx - Use new granular states
+- app/join/[code].tsx - Use new granular states
+- app/create-group.tsx - Use new granular states
+
+### Phase 2 (TanStack Query)
+- package.json - Add @tanstack/react-query
+- lib/queryClient.ts - NEW: Configure QueryClient
+- app/_layout.tsx - Add QueryClientProvider
+- hooks/queries/useGroup.ts - NEW
+- hooks/queries/useGroupMembers.ts - NEW
+- hooks/queries/useGroupExpenses.ts - NEW
+- hooks/queries/useGroupBalances.ts - NEW
+- hooks/queries/useGroups.ts - NEW
+- app/group/[id].tsx - Migrate to React Query
+- app/(tabs)/index.tsx - Migrate to React Query
+
+### Phase 3 (Optimistic Updates)
+- hooks/mutations/useCreateExpense.ts - NEW
+- hooks/mutations/useUpdateExpense.ts - NEW
+- hooks/mutations/useDeleteExpense.ts - NEW
+- hooks/mutations/useCreateSettlement.ts - NEW
+
+### Phase 4 (P2 Issues)
+- lib/api.ts - Remove internal token storage
+- stores/expensesStore.ts - Remove networkStore dependency
+- stores/syncStore.ts - Fix closures, add types
+
+### Phase 5 (Cleanup)
+- stores/expenseStore.ts - DELETE
+- Update all imports
+
+================================================================================
+## 9. VERIFICATION CHECKLIST
+================================================================================
+
+[ ] P0-001: Failed balance fetch doesn't block group page
+[ ] P0-002: Multiple concurrent requests show correct loading states
+[ ] P1-001: Navigation back to cached screen doesn't re-fetch
+[ ] P1-002: UI updates immediately on expense creation
+[ ] P2-001: Logout immediately prevents authenticated requests
+[ ] P2-002: expensesStore doesn't import networkStore
+[ ] P2-003: WebSocket events work after reconnection
+[ ] P2-004: TypeScript catches incorrect event payload shapes
+[ ] INFO-001: Only one expense store file exists
+[ ] All screens continue to work during migration
+[ ] Offline queue still works
+[ ] Real-time sync still works
+[ ] npm run verify passes
+
+================================================================================

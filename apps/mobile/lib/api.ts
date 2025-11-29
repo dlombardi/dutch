@@ -14,16 +14,31 @@ export interface ApiError {
   statusCode: number;
 }
 
+// Token getter function - will be set by authStore to avoid circular dependency
+let getAccessToken: (() => string | null) | null = null;
+
+/**
+ * Register a function to get the access token.
+ * This is called by authStore during initialization to provide
+ * a single source of truth for the token. (P2-001 fix)
+ */
+export function registerTokenGetter(getter: () => string | null): void {
+  getAccessToken = getter;
+}
+
 class ApiClient {
   private baseUrl: string;
-  private accessToken: string | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
-  setAccessToken(token: string | null) {
-    this.accessToken = token;
+  /**
+   * @deprecated Use registerTokenGetter instead. Kept for backward compatibility during migration.
+   */
+  setAccessToken(_token: string | null): void {
+    // No-op: Token is now read from authStore via registerTokenGetter
+    // This method exists only for backward compatibility
   }
 
   private async request<T>(
@@ -31,14 +46,15 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const accessToken = getAccessToken?.() ?? null;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
 
-    if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
     const response = await fetch(url, {

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../lib/api';
-import { useNetworkStore } from './networkStore';
+import { isOffline } from './networkStore'; // P2-002 fix: use function instead of store import
 
 export interface Expense {
   id: string;
@@ -38,12 +38,44 @@ export interface PendingExpense {
   isSyncing?: boolean;
 }
 
+// Operation types for granular state tracking (P0 fix)
+export type ExpenseOperation =
+  | 'createExpense'
+  | 'updateExpense'
+  | 'deleteExpense'
+  | 'fetchExpense'
+  | 'fetchGroupExpenses';
+
+// Loading states per operation
+export interface ExpenseLoadingStates {
+  createExpense: boolean;
+  updateExpense: boolean;
+  deleteExpense: boolean;
+  fetchExpense: boolean;
+  fetchGroupExpenses: boolean;
+}
+
+// Error states per operation
+export interface ExpenseErrorStates {
+  createExpense: string | null;
+  updateExpense: string | null;
+  deleteExpense: string | null;
+  fetchExpense: string | null;
+  fetchGroupExpenses: string | null;
+}
+
 interface ExpensesState {
   expenses: Expense[];
   pendingExpenses: PendingExpense[];
   currentExpense: Expense | null;
-  isLoading: boolean;
   isSyncing: boolean;
+
+  // Granular loading and error states (P0 fix)
+  loadingStates: ExpenseLoadingStates;
+  errors: ExpenseErrorStates;
+
+  // Legacy compatibility - computed from granular states
+  isLoading: boolean;
   error: string | null;
 
   // Actions
@@ -72,8 +104,13 @@ interface ExpensesState {
   fetchExpense: (id: string) => Promise<Expense | null>;
   fetchGroupExpenses: (groupId: string) => Promise<Expense[] | null>;
   setCurrentExpense: (expense: Expense | null) => void;
-  clearError: () => void;
   clearExpenses: () => void;
+
+  // Granular error/loading management (P0 fix)
+  clearError: (operation?: ExpenseOperation) => void;
+  clearAllErrors: () => void;
+  isOperationLoading: (operation: ExpenseOperation) => boolean;
+  getOperationError: (operation: ExpenseOperation) => string | null;
 
   // Offline queue actions
   syncPendingExpenses: () => Promise<void>;
@@ -90,15 +127,43 @@ function generateLocalId(): string {
   return `pending-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
+// Helper to get initial loading states
+const initialLoadingStates: ExpenseLoadingStates = {
+  createExpense: false,
+  updateExpense: false,
+  deleteExpense: false,
+  fetchExpense: false,
+  fetchGroupExpenses: false,
+};
+
+// Helper to get initial error states
+const initialErrorStates: ExpenseErrorStates = {
+  createExpense: null,
+  updateExpense: null,
+  deleteExpense: null,
+  fetchExpense: null,
+  fetchGroupExpenses: null,
+};
+
 export const useExpensesStore = create<ExpensesState>()(
   persist(
     (set, get) => ({
       expenses: [],
       pendingExpenses: [],
       currentExpense: null,
-      isLoading: false,
       isSyncing: false,
-      error: null,
+      loadingStates: { ...initialLoadingStates },
+      errors: { ...initialErrorStates },
+
+      // Computed legacy compatibility getters
+      get isLoading() {
+        const state = get();
+        return Object.values(state.loadingStates).some(Boolean);
+      },
+      get error() {
+        const state = get();
+        return Object.values(state.errors).find((e) => e !== null) ?? null;
+      },
 
       createExpense: async (
         groupId,
@@ -111,11 +176,9 @@ export const useExpensesStore = create<ExpensesState>()(
         splitParticipants,
         exchangeRate
       ) => {
-        const { isConnected, isInternetReachable } = useNetworkStore.getState();
-        const isOffline = !isConnected || isInternetReachable === false;
-
+        // P2-002 fix: use isOffline() function instead of direct store access
         // If offline, queue the expense locally
-        if (isOffline) {
+        if (isOffline()) {
           const pendingExpense: PendingExpense = {
             localId: generateLocalId(),
             groupId,
@@ -155,7 +218,10 @@ export const useExpensesStore = create<ExpensesState>()(
         }
 
         // Online: create expense normally
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, createExpense: true },
+          errors: { ...state.errors, createExpense: null },
+        }));
         try {
           const response = await api.createExpense(
             groupId,
@@ -173,20 +239,25 @@ export const useExpensesStore = create<ExpensesState>()(
           const newExpense = response.expense;
           set((state) => ({
             expenses: [...state.expenses, newExpense],
+            loadingStates: { ...state.loadingStates, createExpense: false },
           }));
           return newExpense;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to create expense';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, createExpense: errorMessage },
+            loadingStates: { ...state.loadingStates, createExpense: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       updateExpense: async (id, updates) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, updateExpense: true },
+          errors: { ...state.errors, updateExpense: null },
+        }));
         try {
           const response = await api.updateExpense(id, updates);
           const updatedExpense = response.expense;
@@ -198,69 +269,90 @@ export const useExpensesStore = create<ExpensesState>()(
               state.currentExpense?.id === id
                 ? updatedExpense
                 : state.currentExpense,
+            loadingStates: { ...state.loadingStates, updateExpense: false },
           }));
           return updatedExpense;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to update expense';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, updateExpense: errorMessage },
+            loadingStates: { ...state.loadingStates, updateExpense: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       deleteExpense: async (id) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, deleteExpense: true },
+          errors: { ...state.errors, deleteExpense: null },
+        }));
         try {
           await api.deleteExpense(id);
           set((state) => ({
             expenses: state.expenses.filter((e) => e.id !== id),
             currentExpense:
               state.currentExpense?.id === id ? null : state.currentExpense,
+            loadingStates: { ...state.loadingStates, deleteExpense: false },
           }));
           return true;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to delete expense';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, deleteExpense: errorMessage },
+            loadingStates: { ...state.loadingStates, deleteExpense: false },
+          }));
           return false;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchExpense: async (id) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchExpense: true },
+          errors: { ...state.errors, fetchExpense: null },
+        }));
         try {
           const response = await api.getExpense(id);
           const expense = response.expense;
-          set({ currentExpense: expense });
+          set((state) => ({
+            currentExpense: expense,
+            loadingStates: { ...state.loadingStates, fetchExpense: false },
+          }));
           return expense;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch expense';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchExpense: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchExpense: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchGroupExpenses: async (groupId) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchGroupExpenses: true },
+          errors: { ...state.errors, fetchGroupExpenses: null },
+        }));
         try {
           const response = await api.getGroupExpenses(groupId);
           const expenses = response.expenses;
-          set({ expenses });
+          set((state) => ({
+            expenses,
+            loadingStates: { ...state.loadingStates, fetchGroupExpenses: false },
+          }));
           return expenses;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch expenses';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchGroupExpenses: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchGroupExpenses: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
@@ -268,12 +360,34 @@ export const useExpensesStore = create<ExpensesState>()(
         set({ currentExpense: expense });
       },
 
-      clearError: () => {
-        set({ error: null });
-      },
-
       clearExpenses: () => {
         set({ expenses: [], currentExpense: null });
+      },
+
+      // Clear a specific operation's error, or all errors if no operation specified
+      clearError: (operation) => {
+        if (operation) {
+          set((state) => ({
+            errors: { ...state.errors, [operation]: null },
+          }));
+        } else {
+          // Legacy behavior: clear all errors
+          set({ errors: { ...initialErrorStates } });
+        }
+      },
+
+      clearAllErrors: () => {
+        set({ errors: { ...initialErrorStates } });
+      },
+
+      // Helper to check if a specific operation is loading
+      isOperationLoading: (operation) => {
+        return get().loadingStates[operation];
+      },
+
+      // Helper to get error for a specific operation
+      getOperationError: (operation) => {
+        return get().errors[operation];
       },
 
       // Sync pending expenses when coming online
@@ -374,3 +488,10 @@ export const useExpensesStore = create<ExpensesState>()(
     }
   )
 );
+
+// Selector hooks for convenience
+export const useExpensesLoading = () =>
+  useExpensesStore((state) => state.loadingStates);
+export const useExpensesErrors = () => useExpensesStore((state) => state.errors);
+export const useIsAnyExpenseOperationLoading = () =>
+  useExpensesStore((state) => Object.values(state.loadingStates).some(Boolean));

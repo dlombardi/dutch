@@ -1,12 +1,8 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ActivityScreen() {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Activity</Text>
-      </View>
+    <View style={styles.container}>
       <View style={styles.emptyState}>
         <Text style={styles.emptyEmoji}>📋</Text>
         <Text style={styles.emptyTitle}>No activity yet</Text>
@@ -14,7 +10,7 @@ export default function ActivityScreen() {
           Your expense and settlement activity will appear here
         </Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -22,15 +18,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
   },
   emptyState: {
     flex: 1,

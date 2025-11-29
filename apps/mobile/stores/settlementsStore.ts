@@ -15,8 +15,31 @@ export interface Settlement {
   createdAt: string;
 }
 
+// Operation types for granular state tracking (P0 fix)
+export type SettlementOperation =
+  | 'createSettlement'
+  | 'fetchGroupSettlements';
+
+// Loading states per operation
+export interface SettlementLoadingStates {
+  createSettlement: boolean;
+  fetchGroupSettlements: boolean;
+}
+
+// Error states per operation
+export interface SettlementErrorStates {
+  createSettlement: string | null;
+  fetchGroupSettlements: string | null;
+}
+
 interface SettlementsState {
   settlements: Settlement[];
+
+  // Granular loading and error states (P0 fix)
+  loadingStates: SettlementLoadingStates;
+  errors: SettlementErrorStates;
+
+  // Legacy compatibility - computed from granular states
   isLoading: boolean;
   error: string | null;
 
@@ -31,18 +54,45 @@ interface SettlementsState {
     method?: string
   ) => Promise<Settlement | null>;
   fetchGroupSettlements: (groupId: string) => Promise<Settlement[] | null>;
-  clearError: () => void;
+
+  // Granular error/loading management (P0 fix)
+  clearError: (operation?: SettlementOperation) => void;
+  clearAllErrors: () => void;
+  isOperationLoading: (operation: SettlementOperation) => boolean;
+  getOperationError: (operation: SettlementOperation) => string | null;
 
   // Real-time sync handlers
   handleSettlementCreated: (settlement: Settlement) => void;
 }
 
+// Helper to get initial loading states
+const initialLoadingStates: SettlementLoadingStates = {
+  createSettlement: false,
+  fetchGroupSettlements: false,
+};
+
+// Helper to get initial error states
+const initialErrorStates: SettlementErrorStates = {
+  createSettlement: null,
+  fetchGroupSettlements: null,
+};
+
 export const useSettlementsStore = create<SettlementsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       settlements: [],
-      isLoading: false,
-      error: null,
+      loadingStates: { ...initialLoadingStates },
+      errors: { ...initialErrorStates },
+
+      // Computed legacy compatibility getters
+      get isLoading() {
+        const state = get();
+        return Object.values(state.loadingStates).some(Boolean);
+      },
+      get error() {
+        const state = get();
+        return Object.values(state.errors).find((e) => e !== null) ?? null;
+      },
 
       createSettlement: async (
         groupId,
@@ -53,7 +103,10 @@ export const useSettlementsStore = create<SettlementsState>()(
         currency,
         method
       ) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, createSettlement: true },
+          errors: { ...state.errors, createSettlement: null },
+        }));
         try {
           const response = await api.createSettlement(
             groupId,
@@ -67,36 +120,67 @@ export const useSettlementsStore = create<SettlementsState>()(
           const newSettlement = response.settlement;
           set((state) => ({
             settlements: [...state.settlements, newSettlement],
+            loadingStates: { ...state.loadingStates, createSettlement: false },
           }));
           return newSettlement;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to create settlement';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, createSettlement: errorMessage },
+            loadingStates: { ...state.loadingStates, createSettlement: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchGroupSettlements: async (groupId) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchGroupSettlements: true },
+          errors: { ...state.errors, fetchGroupSettlements: null },
+        }));
         try {
           const response = await api.getGroupSettlements(groupId);
-          set({ settlements: response.settlements });
+          set((state) => ({
+            settlements: response.settlements,
+            loadingStates: { ...state.loadingStates, fetchGroupSettlements: false },
+          }));
           return response.settlements;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch settlements';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchGroupSettlements: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchGroupSettlements: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
-      clearError: () => {
-        set({ error: null });
+      // Clear a specific operation's error, or all errors if no operation specified
+      clearError: (operation) => {
+        if (operation) {
+          set((state) => ({
+            errors: { ...state.errors, [operation]: null },
+          }));
+        } else {
+          // Legacy behavior: clear all errors
+          set({ errors: { ...initialErrorStates } });
+        }
+      },
+
+      clearAllErrors: () => {
+        set({ errors: { ...initialErrorStates } });
+      },
+
+      // Helper to check if a specific operation is loading
+      isOperationLoading: (operation) => {
+        return get().loadingStates[operation];
+      },
+
+      // Helper to get error for a specific operation
+      getOperationError: (operation) => {
+        return get().errors[operation];
       },
 
       // Real-time sync handlers
@@ -119,3 +203,11 @@ export const useSettlementsStore = create<SettlementsState>()(
     }
   )
 );
+
+// Selector hooks for convenience
+export const useSettlementsLoading = () =>
+  useSettlementsStore((state) => state.loadingStates);
+export const useSettlementsErrors = () =>
+  useSettlementsStore((state) => state.errors);
+export const useIsAnySettlementOperationLoading = () =>
+  useSettlementsStore((state) => Object.values(state.loadingStates).some(Boolean));

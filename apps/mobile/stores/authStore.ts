@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '../lib/api';
+import { api, registerTokenGetter } from '../lib/api';
 
 // Generate or retrieve a persistent device ID
 const DEVICE_ID_KEY = 'evn-device-id';
@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const deviceId = await getOrCreateDeviceId();
           const response = await api.createGuestUser(name, deviceId);
-          api.setAccessToken(response.accessToken);
+          // Token is stored in state and read by API client via registerTokenGetter (P2-001 fix)
           set({
             user: {
               id: response.user.id,
@@ -117,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await api.verifyMagicLink(token);
-          api.setAccessToken(response.accessToken);
+          // Token is stored in state and read by API client via registerTokenGetter (P2-001 fix)
           set({
             user: {
               id: response.user.id,
@@ -166,7 +166,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        api.setAccessToken(null);
+        // Token is cleared from state, API client reads null via registerTokenGetter (P2-001 fix)
         set({
           user: null,
           accessToken: null,
@@ -198,13 +198,14 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // Restore accessToken to API client when store is rehydrated
-        if (state?.accessToken) {
-          api.setAccessToken(state.accessToken);
-        }
         // Mark store as hydrated
         useAuthStore.getState().setHasHydrated(true);
       },
     }
   )
 );
+
+// Register token getter with API client (P2-001 fix: single source of truth)
+// This runs once when the module loads, providing the API client a way to
+// always get the current token from the store without storing it separately.
+registerTokenGetter(() => useAuthStore.getState().accessToken);

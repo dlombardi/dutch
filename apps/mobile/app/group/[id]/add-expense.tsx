@@ -14,10 +14,12 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useExpensesStore } from '../../../stores/expensesStore';
-import { useGroupsStore, GroupMember } from '../../../stores/groupsStore';
 import { useAuthStore } from '../../../stores/authStore';
 import { api } from '../../../lib/api';
+
+// React Query hooks
+import { useGroup, useGroupMembers } from '../../../hooks/queries';
+import { useCreateExpense } from '../../../hooks/mutations';
 
 // Common currencies with their symbols
 const CURRENCIES = [
@@ -56,11 +58,14 @@ const CURRENCIES = [
 export default function AddExpenseScreen() {
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-
-  const { createExpense, isLoading, error } = useExpensesStore();
-  const { currentGroup, currentGroupMembers, fetchGroupMembers } =
-    useGroupsStore();
   const { user } = useAuthStore();
+
+  // React Query hooks
+  const { data: group } = useGroup(groupId);
+  const { data: members = [] } = useGroupMembers(groupId);
+
+  // Create expense mutation
+  const createExpenseMutation = useCreateExpense();
 
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -75,13 +80,6 @@ export default function AddExpenseScreen() {
   const [currencySearch, setCurrencySearch] = useState('');
   const [splitParticipants, setSplitParticipants] = useState<string[]>([]);
 
-  // Fetch group members and set default payer
-  useEffect(() => {
-    if (groupId) {
-      fetchGroupMembers(groupId);
-    }
-  }, [groupId, fetchGroupMembers]);
-
   // Set default payer to current user
   useEffect(() => {
     if (user && !paidById) {
@@ -91,23 +89,23 @@ export default function AddExpenseScreen() {
 
   // Default all group members as split participants
   useEffect(() => {
-    if (currentGroupMembers.length > 0 && splitParticipants.length === 0) {
-      setSplitParticipants(currentGroupMembers.map((m) => m.userId));
+    if (members.length > 0 && splitParticipants.length === 0) {
+      setSplitParticipants(members.map((m) => m.userId));
     }
-  }, [currentGroupMembers, splitParticipants.length]);
+  }, [members, splitParticipants.length]);
 
   // Default currency to group's default
   useEffect(() => {
-    if (currentGroup && !currency) {
-      setCurrency(currentGroup.defaultCurrency);
+    if (group && !currency) {
+      setCurrency(group.defaultCurrency);
     }
-  }, [currentGroup, currency]);
+  }, [group, currency]);
 
   // Auto-fetch exchange rate when foreign currency is selected
   useEffect(() => {
     const fetchExchangeRate = async () => {
-      if (!currency || !currentGroup?.defaultCurrency) return;
-      if (currency === currentGroup.defaultCurrency) {
+      if (!currency || !group?.defaultCurrency) return;
+      if (currency === group.defaultCurrency) {
         setExchangeRate('');
         setRateAutoFetched(false);
         return;
@@ -115,12 +113,11 @@ export default function AddExpenseScreen() {
 
       setIsFetchingRate(true);
       try {
-        const result = await api.getExchangeRate(currency, currentGroup.defaultCurrency);
+        const result = await api.getExchangeRate(currency, group.defaultCurrency);
         setExchangeRate(result.rate.toString());
         setRateAutoFetched(true);
       } catch (err) {
         console.warn('Failed to fetch exchange rate:', err);
-        // Don't clear the exchange rate if fetch fails - let user enter manually
         setRateAutoFetched(false);
       } finally {
         setIsFetchingRate(false);
@@ -128,7 +125,7 @@ export default function AddExpenseScreen() {
     };
 
     fetchExchangeRate();
-  }, [currency, currentGroup?.defaultCurrency]);
+  }, [currency, group?.defaultCurrency]);
 
   // Filter currencies based on search
   const filteredCurrencies = useMemo(() => {
@@ -146,20 +143,20 @@ export default function AddExpenseScreen() {
 
   // Get current currency info
   const currentCurrency = useMemo(() => {
-    const code = currency || currentGroup?.defaultCurrency || 'USD';
+    const code = currency || group?.defaultCurrency || 'USD';
     return CURRENCIES.find((c) => c.code === code) || { code, symbol: code, name: code };
-  }, [currency, currentGroup?.defaultCurrency]);
+  }, [currency, group?.defaultCurrency]);
 
   // Check if exchange rate is needed (different currency from group default)
   const needsExchangeRate = useMemo(() => {
-    return currency && currentGroup?.defaultCurrency && currency !== currentGroup.defaultCurrency;
-  }, [currency, currentGroup?.defaultCurrency]);
+    return currency && group?.defaultCurrency && currency !== group.defaultCurrency;
+  }, [currency, group?.defaultCurrency]);
 
   // Get group's default currency info
   const groupCurrency = useMemo(() => {
-    const code = currentGroup?.defaultCurrency || 'USD';
+    const code = group?.defaultCurrency || 'USD';
     return CURRENCIES.find((c) => c.code === code) || { code, symbol: code, name: code };
-  }, [currentGroup?.defaultCurrency]);
+  }, [group?.defaultCurrency]);
 
   // Calculate per-person amount for preview
   const getPerPersonAmount = useCallback(() => {
@@ -173,7 +170,6 @@ export default function AddExpenseScreen() {
   const toggleParticipant = useCallback((userId: string) => {
     setSplitParticipants((prev) => {
       if (prev.includes(userId)) {
-        // Don't allow removing the last participant
         if (prev.length === 1) return prev;
         return prev.filter((id) => id !== userId);
       } else {
@@ -194,31 +190,32 @@ export default function AddExpenseScreen() {
       return;
     }
 
-    // If exchange rate is needed, validate it
     let numericExchangeRate: number | undefined;
     if (needsExchangeRate) {
       numericExchangeRate = parseFloat(exchangeRate);
       if (isNaN(numericExchangeRate) || numericExchangeRate <= 0) {
-        return; // Exchange rate required for foreign currency
+        return;
       }
     }
 
-    const expense = await createExpense(
-      groupId,
-      numericAmount,
-      description.trim(),
-      paidById, // paidById - selected payer
-      user.id, // createdById - current user created
-      currency || undefined, // currency - selected or default
-      undefined, // date - use default
-      splitParticipants.length > 0 ? splitParticipants : undefined,
-      numericExchangeRate
+    createExpenseMutation.mutate(
+      {
+        groupId,
+        amount: numericAmount,
+        description: description.trim(),
+        paidById,
+        createdById: user.id,
+        currency: currency || undefined,
+        splitParticipants: splitParticipants.length > 0 ? splitParticipants : undefined,
+        exchangeRate: numericExchangeRate,
+      },
+      {
+        onSuccess: () => {
+          router.back();
+        },
+      }
     );
-
-    if (expense) {
-      router.back();
-    }
-  }, [groupId, user, paidById, amount, description, currency, exchangeRate, needsExchangeRate, createExpense, router, splitParticipants]);
+  }, [groupId, user, paidById, amount, description, currency, exchangeRate, needsExchangeRate, createExpenseMutation, router, splitParticipants]);
 
   const handleSelectCurrency = useCallback((code: string) => {
     setCurrency(code);
@@ -235,14 +232,13 @@ export default function AddExpenseScreen() {
     (payerId: string | null) => {
       if (!payerId) return 'Select payer';
       if (payerId === user?.id) return 'You';
-      // For now, show the userId; in the future this could show actual user names
-      const member = currentGroupMembers.find((m) => m.userId === payerId);
+      const member = members.find((m) => m.userId === payerId);
       if (member) {
         return member.userId === user?.id ? 'You' : `User ${member.userId.slice(0, 8)}...`;
       }
       return 'Unknown';
     },
-    [user, currentGroupMembers]
+    [user, members]
   );
 
   const handleCancel = useCallback(() => {
@@ -255,6 +251,8 @@ export default function AddExpenseScreen() {
     parseFloat(amount) > 0 &&
     description.trim() !== '' &&
     (!needsExchangeRate || (exchangeRate.trim() !== '' && !isNaN(parseFloat(exchangeRate)) && parseFloat(exchangeRate) > 0));
+
+  const isCreating = createExpenseMutation.isPending;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -269,9 +267,9 @@ export default function AddExpenseScreen() {
           headerRight: () => (
             <TouchableOpacity
               onPress={handleSave}
-              disabled={!isValid || isLoading}
+              disabled={!isValid || isCreating}
             >
-              {isLoading ? (
+              {isCreating ? (
                 <ActivityIndicator size="small" color="#007AFF" />
               ) : (
                 <Text
@@ -293,9 +291,11 @@ export default function AddExpenseScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.scrollView}>
-          {error && (
+          {createExpenseMutation.error && (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>
+                {createExpenseMutation.error.message || 'Failed to create expense'}
+              </Text>
             </View>
           )}
 
@@ -348,7 +348,7 @@ export default function AddExpenseScreen() {
                   value={exchangeRate}
                   onChangeText={(text) => {
                     setExchangeRate(text);
-                    setRateAutoFetched(false); // User manually editing
+                    setRateAutoFetched(false);
                   }}
                   placeholder={isFetchingRate ? "Fetching rate..." : "Enter exchange rate"}
                   placeholderTextColor="#999"
@@ -393,13 +393,12 @@ export default function AddExpenseScreen() {
               onPress={() => setShowSplitPicker(true)}
             >
               <Text style={styles.pickerButtonText}>
-                {splitParticipants.length === currentGroupMembers.length
+                {splitParticipants.length === members.length
                   ? 'All members'
                   : `${splitParticipants.length} ${splitParticipants.length === 1 ? 'person' : 'people'}`}
               </Text>
               <Text style={styles.pickerChevron}>›</Text>
             </TouchableOpacity>
-            {/* Per-person amount preview */}
             {parseFloat(amount) > 0 && splitParticipants.length > 0 && (
               <View style={styles.perPersonPreview}>
                 <Text style={styles.perPersonText}>
@@ -427,7 +426,7 @@ export default function AddExpenseScreen() {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={currentGroupMembers}
+            data={members}
             keyExtractor={(item) => item.userId}
             renderItem={({ item }) => (
               <TouchableOpacity
@@ -471,7 +470,7 @@ export default function AddExpenseScreen() {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={currentGroupMembers}
+            data={members}
             keyExtractor={(item) => item.userId}
             renderItem={({ item }) => (
               <TouchableOpacity

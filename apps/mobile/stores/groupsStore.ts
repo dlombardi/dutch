@@ -32,12 +32,47 @@ export interface BalancesData {
   memberBalances: Record<string, number>;
 }
 
+// Operation types for granular state tracking
+export type GroupOperation =
+  | 'fetchGroup'
+  | 'fetchMembers'
+  | 'fetchBalances'
+  | 'createGroup'
+  | 'joinGroup'
+  | 'fetchByInviteCode';
+
+// Loading states per operation
+export interface LoadingStates {
+  fetchGroup: boolean;
+  fetchMembers: boolean;
+  fetchBalances: boolean;
+  createGroup: boolean;
+  joinGroup: boolean;
+  fetchByInviteCode: boolean;
+}
+
+// Error states per operation
+export interface ErrorStates {
+  fetchGroup: string | null;
+  fetchMembers: string | null;
+  fetchBalances: string | null;
+  createGroup: string | null;
+  joinGroup: string | null;
+  fetchByInviteCode: string | null;
+}
+
 interface GroupsState {
   groups: Group[];
   currentGroup: Group | null;
   previewGroup: Group | null;
   currentGroupMembers: GroupMember[];
   currentGroupBalances: BalancesData | null;
+
+  // Granular loading and error states (P0-001, P0-002 fixes)
+  loadingStates: LoadingStates;
+  errors: ErrorStates;
+
+  // Legacy compatibility - computed from granular states
   isLoading: boolean;
   error: string | null;
 
@@ -54,8 +89,33 @@ interface GroupsState {
   fetchGroupBalances: (groupId: string) => Promise<BalancesData | null>;
   joinGroup: (inviteCode: string, userId: string) => Promise<Group | null>;
   setCurrentGroup: (group: Group | null) => void;
-  clearError: () => void;
+
+  // Granular error/loading management
+  clearError: (operation?: GroupOperation) => void;
+  clearAllErrors: () => void;
+  isOperationLoading: (operation: GroupOperation) => boolean;
+  getOperationError: (operation: GroupOperation) => string | null;
 }
+
+// Helper to get initial loading states
+const initialLoadingStates: LoadingStates = {
+  fetchGroup: false,
+  fetchMembers: false,
+  fetchBalances: false,
+  createGroup: false,
+  joinGroup: false,
+  fetchByInviteCode: false,
+};
+
+// Helper to get initial error states
+const initialErrorStates: ErrorStates = {
+  fetchGroup: null,
+  fetchMembers: null,
+  fetchBalances: null,
+  createGroup: null,
+  joinGroup: null,
+  fetchByInviteCode: null,
+};
 
 export const useGroupsStore = create<GroupsState>()(
   persist(
@@ -65,11 +125,25 @@ export const useGroupsStore = create<GroupsState>()(
       previewGroup: null,
       currentGroupMembers: [],
       currentGroupBalances: null,
-      isLoading: false,
-      error: null,
+      loadingStates: { ...initialLoadingStates },
+      errors: { ...initialErrorStates },
+
+      // Computed legacy compatibility getters
+      get isLoading() {
+        const state = get();
+        return Object.values(state.loadingStates).some(Boolean);
+      },
+      get error() {
+        const state = get();
+        // Return first non-null error for backward compatibility
+        return Object.values(state.errors).find((e) => e !== null) ?? null;
+      },
 
       createGroup: async (name, userId, emoji, defaultCurrency) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, createGroup: true },
+          errors: { ...state.errors, createGroup: null },
+        }));
         try {
           const response = await api.createGroup(
             name,
@@ -81,20 +155,25 @@ export const useGroupsStore = create<GroupsState>()(
           set((state) => ({
             groups: [...state.groups, newGroup],
             currentGroup: newGroup,
+            loadingStates: { ...state.loadingStates, createGroup: false },
           }));
           return newGroup;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to create group';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, createGroup: errorMessage },
+            loadingStates: { ...state.loadingStates, createGroup: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchGroup: async (id) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchGroup: true },
+          errors: { ...state.errors, fetchGroup: null },
+        }));
         try {
           const response = await api.getGroup(id);
           const group = response.group;
@@ -103,76 +182,110 @@ export const useGroupsStore = create<GroupsState>()(
           set((state) => {
             const existingIndex = state.groups.findIndex((g) => g.id === id);
             if (existingIndex === -1) {
-              return { groups: [...state.groups, group], currentGroup: group };
+              return {
+                groups: [...state.groups, group],
+                currentGroup: group,
+                loadingStates: { ...state.loadingStates, fetchGroup: false },
+              };
             }
             const updatedGroups = [...state.groups];
             updatedGroups[existingIndex] = group;
-            return { groups: updatedGroups, currentGroup: group };
+            return {
+              groups: updatedGroups,
+              currentGroup: group,
+              loadingStates: { ...state.loadingStates, fetchGroup: false },
+            };
           });
 
           return group;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch group';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchGroup: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchGroup: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchGroupByInviteCode: async (inviteCode) => {
-        set({ isLoading: true, error: null, previewGroup: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchByInviteCode: true },
+          errors: { ...state.errors, fetchByInviteCode: null },
+          previewGroup: null,
+        }));
         try {
           const response = await api.getGroupByInviteCode(inviteCode);
           const group = response.group;
-          set({ previewGroup: group });
+          set((state) => ({
+            previewGroup: group,
+            loadingStates: { ...state.loadingStates, fetchByInviteCode: false },
+          }));
           return group;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Invalid invite code';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchByInviteCode: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchByInviteCode: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchGroupMembers: async (groupId) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchMembers: true },
+          errors: { ...state.errors, fetchMembers: null },
+        }));
         try {
           const response = await api.getGroupMembers(groupId);
           const members = response.members;
-          set({ currentGroupMembers: members });
+          set((state) => ({
+            currentGroupMembers: members,
+            loadingStates: { ...state.loadingStates, fetchMembers: false },
+          }));
           return members;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch members';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchMembers: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchMembers: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       fetchGroupBalances: async (groupId) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, fetchBalances: true },
+          errors: { ...state.errors, fetchBalances: null },
+        }));
         try {
           const response = await api.getGroupBalances(groupId);
-          set({ currentGroupBalances: response });
+          set((state) => ({
+            currentGroupBalances: response,
+            loadingStates: { ...state.loadingStates, fetchBalances: false },
+          }));
           return response;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to fetch balances';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, fetchBalances: errorMessage },
+            loadingStates: { ...state.loadingStates, fetchBalances: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       joinGroup: async (inviteCode, userId) => {
-        set({ isLoading: true, error: null });
+        set((state) => ({
+          loadingStates: { ...state.loadingStates, joinGroup: true },
+          errors: { ...state.errors, joinGroup: null },
+        }));
         try {
           const response = await api.joinGroup(inviteCode, userId);
           const group = response.group;
@@ -187,19 +300,25 @@ export const useGroupsStore = create<GroupsState>()(
                 groups: [...state.groups, group],
                 currentGroup: group,
                 previewGroup: null,
+                loadingStates: { ...state.loadingStates, joinGroup: false },
               };
             }
-            return { currentGroup: group, previewGroup: null };
+            return {
+              currentGroup: group,
+              previewGroup: null,
+              loadingStates: { ...state.loadingStates, joinGroup: false },
+            };
           });
 
           return group;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to join group';
-          set({ error: errorMessage });
+          set((state) => ({
+            errors: { ...state.errors, joinGroup: errorMessage },
+            loadingStates: { ...state.loadingStates, joinGroup: false },
+          }));
           return null;
-        } finally {
-          set({ isLoading: false });
         }
       },
 
@@ -207,8 +326,30 @@ export const useGroupsStore = create<GroupsState>()(
         set({ currentGroup: group });
       },
 
-      clearError: () => {
-        set({ error: null });
+      // Clear a specific operation's error, or all errors if no operation specified
+      clearError: (operation) => {
+        if (operation) {
+          set((state) => ({
+            errors: { ...state.errors, [operation]: null },
+          }));
+        } else {
+          // Legacy behavior: clear all errors
+          set({ errors: { ...initialErrorStates } });
+        }
+      },
+
+      clearAllErrors: () => {
+        set({ errors: { ...initialErrorStates } });
+      },
+
+      // Helper to check if a specific operation is loading
+      isOperationLoading: (operation) => {
+        return get().loadingStates[operation];
+      },
+
+      // Helper to get error for a specific operation
+      getOperationError: (operation) => {
+        return get().errors[operation];
       },
     }),
     {
@@ -220,3 +361,10 @@ export const useGroupsStore = create<GroupsState>()(
     }
   )
 );
+
+// Selector hooks for convenience
+export const useGroupsLoading = () =>
+  useGroupsStore((state) => state.loadingStates);
+export const useGroupsErrors = () => useGroupsStore((state) => state.errors);
+export const useIsAnyGroupOperationLoading = () =>
+  useGroupsStore((state) => Object.values(state.loadingStates).some(Boolean));
