@@ -1,92 +1,223 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useExpensesStore } from '../../stores/expensesStore';
+import { useGroupsStore } from '../../stores/groupsStore';
+import { useAuthStore } from '../../stores/authStore';
 
 export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const { currentExpense, fetchExpense, isLoading, error } = useExpensesStore();
+  const { currentGroup, currentGroupMembers, fetchGroup, fetchGroupMembers } =
+    useGroupsStore();
 
-  // Placeholder data - will be replaced with real data from stores
-  const expense = {
-    id,
-    description: 'Dinner at restaurant',
-    amount: 120.50,
-    currency: 'EUR',
-    category: 'Food',
-    paidBy: { id: '1', name: 'John' },
-    splitType: 'equal',
-    participants: [
-      { id: '1', name: 'John', amount: 40.17 },
-      { id: '2', name: 'Sarah', amount: 40.17 },
-      { id: '3', name: 'Mike', amount: 40.16 },
-    ],
-    date: new Date().toISOString(),
-    createdBy: { id: '1', name: 'John' },
-  };
+  useEffect(() => {
+    if (id) {
+      fetchExpense(id);
+    }
+  }, [id, fetchExpense]);
+
+  useEffect(() => {
+    if (currentExpense?.groupId) {
+      fetchGroup(currentExpense.groupId);
+      fetchGroupMembers(currentExpense.groupId);
+    }
+  }, [currentExpense?.groupId, fetchGroup, fetchGroupMembers]);
+
+  const getCurrencySymbol = useCallback((currency: string) => {
+    switch (currency) {
+      case 'USD':
+        return '$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'JPY':
+        return '¥';
+      default:
+        return currency;
+    }
+  }, []);
+
+  const getPayerDisplayName = useCallback(
+    (payerId: string) => {
+      if (payerId === user?.id) return 'You';
+      const member = currentGroupMembers.find((m) => m.userId === payerId);
+      if (member) {
+        return `User ${member.userId.slice(0, 8)}...`;
+      }
+      return 'Unknown';
+    },
+    [user, currentGroupMembers]
+  );
+
+  const formatDate = useCallback((dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }, []);
+
+  const formatTime = useCallback((dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }, []);
+
+  if (isLoading && !currentExpense) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Expense' }} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !currentExpense) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Expense' }} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || 'Expense not found'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const expense = currentExpense;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen
         options={{
-          title: 'Expense',
+          title: 'Expense Details',
           headerRight: () => (
             <TouchableOpacity>
-              <Text style={styles.headerButton}>Edit</Text>
+              <Text style={styles.editButton}>Edit</Text>
             </TouchableOpacity>
           ),
         }}
       />
 
-      <ScrollView style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.categoryEmoji}>🍽️</Text>
-          <Text style={styles.description}>{expense.description}</Text>
+      <ScrollView style={styles.scrollView}>
+        {/* Amount Header */}
+        <View style={styles.amountHeader}>
           <Text style={styles.amount}>
-            €{expense.amount.toFixed(2)}
+            {getCurrencySymbol(expense.currency)}
+            {expense.amount.toFixed(2)}
           </Text>
+          <Text style={styles.description}>{expense.description}</Text>
         </View>
 
-        {/* Details */}
+        {/* Details Section */}
         <View style={styles.section}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Paid by</Text>
-            <Text style={styles.detailValue}>{expense.paidBy.name}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>
-              {new Date(expense.date).toLocaleDateString()}
+              {getPayerDisplayName(expense.paidById)}
             </Text>
           </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Category</Text>
-            <Text style={styles.detailValue}>{expense.category}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Split type</Text>
-            <Text style={styles.detailValue}>Equal</Text>
-          </View>
-        </View>
 
-        {/* Split breakdown */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Split</Text>
-          {expense.participants.map((participant) => (
-            <View key={participant.id} style={styles.participantRow}>
-              <Text style={styles.participantName}>{participant.name}</Text>
-              <Text style={styles.participantAmount}>
-                €{participant.amount.toFixed(2)}
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Date</Text>
+            <Text style={styles.detailValue}>{formatDate(expense.date)}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Split</Text>
+            <Text style={styles.detailValue}>
+              {expense.splitType === 'equal'
+                ? 'Split equally'
+                : expense.splitType}
+            </Text>
+          </View>
+
+          {currentGroup && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Group</Text>
+              <Text style={styles.detailValue}>
+                {currentGroup.emoji} {currentGroup.name}
               </Text>
             </View>
-          ))}
+          )}
         </View>
 
-        {/* Metadata */}
-        <View style={styles.metadata}>
-          <Text style={styles.metadataText}>
-            Added by {expense.createdBy.name} on{' '}
-            {new Date(expense.date).toLocaleDateString()}
-          </Text>
+        {/* Split Breakdown Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Split breakdown</Text>
+          {currentGroupMembers.length > 0 ? (
+            currentGroupMembers.map((member) => {
+              const perPerson =
+                expense.amount / Math.max(currentGroupMembers.length, 1);
+              return (
+                <View key={member.userId} style={styles.splitRow}>
+                  <View style={styles.splitMember}>
+                    <View style={styles.memberAvatar}>
+                      <Text style={styles.memberAvatarText}>
+                        {member.userId.substring(0, 2).toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={styles.splitMemberName}>
+                      {member.userId === user?.id
+                        ? 'You'
+                        : `User ${member.userId.slice(0, 8)}...`}
+                    </Text>
+                  </View>
+                  <Text style={styles.splitAmount}>
+                    {getCurrencySymbol(expense.currency)}
+                    {perPerson.toFixed(2)}
+                  </Text>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.noMembersText}>No members to split with</Text>
+          )}
+        </View>
+
+        {/* Metadata Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Details</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Created by</Text>
+            <Text style={styles.metaValue}>
+              {expense.createdById === user?.id
+                ? 'You'
+                : `User ${expense.createdById.slice(0, 8)}...`}
+            </Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>Created on</Text>
+            <Text style={styles.metaValue}>
+              {formatDate(expense.createdAt)} at {formatTime(expense.createdAt)}
+            </Text>
+          </View>
+          {expense.updatedAt !== expense.createdAt && (
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>Last updated</Text>
+              <Text style={styles.metaValue}>
+                {formatDate(expense.updatedAt)} at{' '}
+                {formatTime(expense.updatedAt)}
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -105,47 +236,64 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  headerButton: {
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ff3b30',
+    textAlign: 'center',
+  },
+  editButton: {
     color: '#007AFF',
     fontSize: 16,
   },
-  content: {
+  scrollView: {
     flex: 1,
   },
-  header: {
+  amountHeader: {
     alignItems: 'center',
-    padding: 24,
+    paddingVertical: 32,
+    paddingHorizontal: 16,
     backgroundColor: '#f8f8f8',
   },
-  categoryEmoji: {
+  amount: {
     fontSize: 48,
-    marginBottom: 12,
+    fontWeight: '600',
+    color: '#1a1a1a',
   },
   description: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  amount: {
-    fontSize: 36,
-    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#666',
+    marginTop: 8,
   },
   section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 8,
+    borderBottomColor: '#f0f0f0',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
     color: '#666',
-    marginBottom: 12,
     textTransform: 'uppercase',
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   detailLabel: {
     fontSize: 16,
@@ -153,28 +301,61 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 16,
+    color: '#1a1a1a',
+    fontWeight: '500',
   },
-  participantRow: {
+  splitRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
-  participantName: {
-    fontSize: 16,
-  },
-  participantAmount: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  metadata: {
-    padding: 16,
+  splitMember: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  metadataText: {
+  memberAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  memberAvatarText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  splitMemberName: {
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  splitAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  noMembersText: {
     fontSize: 14,
     color: '#999',
+    fontStyle: 'italic',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  metaLabel: {
+    fontSize: 14,
+    color: '#999',
+  },
+  metaValue: {
+    fontSize: 14,
+    color: '#666',
   },
   footer: {
     padding: 16,

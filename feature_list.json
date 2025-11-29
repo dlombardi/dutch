@@ -441,7 +441,7 @@
         "See date, category, notes",
         "See who created and when"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "expenses-edit",

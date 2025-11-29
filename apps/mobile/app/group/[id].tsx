@@ -51,6 +51,13 @@ export default function GroupDetailScreen() {
     }
   }, [id, router]);
 
+  const handleExpensePress = useCallback(
+    (expenseId: string) => {
+      router.push(`/expense/${expenseId}`);
+    },
+    [router]
+  );
+
   const handleShareInvite = useCallback(async () => {
     if (!currentGroup) return;
 
@@ -164,7 +171,11 @@ export default function GroupDetailScreen() {
               </View>
             ) : (
               expenses.map((expense) => (
-                <View key={expense.id} style={styles.expenseItem}>
+                <TouchableOpacity
+                  key={expense.id}
+                  style={styles.expenseItem}
+                  onPress={() => handleExpensePress(expense.id)}
+                >
                   <View style={styles.expenseInfo}>
                     <Text style={styles.expenseDescription}>
                       {expense.description}
@@ -181,7 +192,7 @@ export default function GroupDetailScreen() {
                         : expense.currency}
                     {expense.amount.toFixed(2)}
                   </Text>
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </ScrollView>

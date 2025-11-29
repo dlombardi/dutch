@@ -400,3 +400,24 @@ Description: User can select who paid for the expense
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+### expenses-view-detail - COMPLETE
+- Implemented:
+  - Mobile: Updated expense/[id].tsx to use real store data
+  - Mobile: Fetches expense by ID, then fetches associated group and members
+  - Mobile: Shows amount header with currency symbol and description
+  - Mobile: Details section showing paid by, date, split type, and group
+  - Mobile: Split breakdown section showing each member's share
+  - Mobile: Metadata section showing created by and timestamps
+  - Mobile: Delete button (UI only, functionality pending)
+  - Mobile: Updated group detail to navigate on expense tap
+- Features:
+  - Tappable expense rows in group detail navigate to expense detail
+  - Currency symbol helper for common currencies
+  - Long date format for better readability
+  - "You" display for current user's expenses
+  - Member avatars with initials
+- Verified:
+  - All 59 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+
