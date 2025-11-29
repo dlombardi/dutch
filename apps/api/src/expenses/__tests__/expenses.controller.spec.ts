@@ -119,6 +119,7 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.50,
           currency: 'EUR',
+          exchangeRate: 1.10, // Required for foreign currency
           description: 'Coffee',
           paidById: 'user-123',
           createdById: 'user-123',
@@ -128,6 +129,7 @@ describe('ExpensesController (integration)', () => {
       const body = response.body as CreateExpenseResponse;
       expect(body.expense.currency).toBe('EUR');
       expect(body.expense.amount).toBe(100.5);
+      expect(body.expense.exchangeRate).toBe(1.10);
     });
 
     it('should create expense with custom date', async () => {

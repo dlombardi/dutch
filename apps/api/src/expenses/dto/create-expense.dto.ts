@@ -26,6 +26,11 @@ export class CreateExpenseDto {
   @IsOptional()
   currency?: string;
 
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  exchangeRate?: number;
+
   @IsString()
   @IsNotEmpty()
   @Transform(({ value }: { value: string }) => value?.trim())

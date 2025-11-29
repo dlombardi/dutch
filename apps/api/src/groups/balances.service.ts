@@ -41,20 +41,25 @@ export class BalancesService {
 
     // Process expenses
     for (const expense of expenses) {
-      const { paidById, splitAmounts } = expense;
+      const { paidById, splitAmounts, exchangeRate } = expense;
+      const rate = exchangeRate || 1; // Default to 1 for backwards compatibility
 
       // The payer is owed the total amount minus their share
+      // Convert to group currency using exchange rate
       for (const [userId, amountOwed] of Object.entries(splitAmounts)) {
         if (userId !== paidById) {
+          // Convert amount to group currency
+          const amountInGroupCurrency = Math.round(amountOwed * rate * 100) / 100;
+
           // userId owes money (decrease their balance)
           netBalances.set(
             userId,
-            (netBalances.get(userId) || 0) - amountOwed,
+            (netBalances.get(userId) || 0) - amountInGroupCurrency,
           );
           // paidById is owed money (increase their balance)
           netBalances.set(
             paidById,
-            (netBalances.get(paidById) || 0) + amountOwed,
+            (netBalances.get(paidById) || 0) + amountInGroupCurrency,
           );
         }
       }

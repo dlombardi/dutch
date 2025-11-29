@@ -417,5 +417,206 @@ describe('Balances API (integration)', () => {
         expect(body.memberBalances['user-c'] || 0).toBe(0);
       });
     });
+
+    describe('multi-currency conversion', () => {
+      it('should convert foreign currency expense to group default currency', async () => {
+        // Group has USD as default currency
+        // User A pays 100 EUR (with exchange rate 1.10 = $110 USD), split between A and B
+        await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'EUR',
+            exchangeRate: 1.10, // 1 EUR = 1.10 USD
+            description: 'European Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(201);
+
+        const response = await request(httpServer)
+          .get(`/groups/${testGroup.id}/balances`)
+          .expect(200);
+
+        const body = response.body as BalancesResponse;
+
+        // 100 EUR * 1.10 = 110 USD total
+        // Split between 2 people = 55 USD each
+        // B owes A $55 USD
+        expect(body.balances).toHaveLength(1);
+        expect(body.balances[0].from).toBe('user-b');
+        expect(body.balances[0].to).toBe('user-a');
+        expect(body.balances[0].amount).toBe(55);
+        expect(body.balances[0].currency).toBe('USD');
+      });
+
+      it('should handle mixed currency expenses and combine in group currency', async () => {
+        // User A pays $100 USD, split between A and B (B owes A $50)
+        await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'USD',
+            description: 'American Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(201);
+
+        // User B pays 50 EUR @ 1.20 rate = $60 USD, split between A and B (A owes B $30)
+        await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 50,
+            currency: 'EUR',
+            exchangeRate: 1.20, // 1 EUR = 1.20 USD
+            description: 'European Lunch',
+            paidById: 'user-b',
+            createdById: 'user-b',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(201);
+
+        const response = await request(httpServer)
+          .get(`/groups/${testGroup.id}/balances`)
+          .expect(200);
+
+        const body = response.body as BalancesResponse;
+
+        // Net: B owes A $50, A owes B $30 → B owes A $20
+        expect(body.balances).toHaveLength(1);
+        expect(body.balances[0].from).toBe('user-b');
+        expect(body.balances[0].to).toBe('user-a');
+        expect(body.balances[0].amount).toBe(20);
+        expect(body.balances[0].currency).toBe('USD');
+      });
+
+      it('should use exchangeRate of 1.0 when expense currency matches group currency', async () => {
+        // User A pays $100 USD (same as group currency), split between A and B
+        const expenseResponse = await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'USD',
+            description: 'Local Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(201);
+
+        // Expense should have exchangeRate of 1.0
+        expect(expenseResponse.body.expense.exchangeRate).toBe(1);
+
+        const response = await request(httpServer)
+          .get(`/groups/${testGroup.id}/balances`)
+          .expect(200);
+
+        const body = response.body as BalancesResponse;
+
+        // B owes A $50 USD
+        expect(body.balances).toHaveLength(1);
+        expect(body.balances[0].amount).toBe(50);
+      });
+
+      it('should require exchangeRate for foreign currency expenses', async () => {
+        // Try to create expense in EUR without exchangeRate
+        await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'EUR',
+            description: 'European Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(400);
+      });
+
+      it('should reject invalid exchange rate (zero or negative)', async () => {
+        // Try zero exchange rate
+        await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'EUR',
+            exchangeRate: 0,
+            description: 'European Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(400);
+
+        // Try negative exchange rate
+        await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'EUR',
+            exchangeRate: -1.5,
+            description: 'European Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(400);
+      });
+
+      it('should store exchangeRate on expense for historical accuracy', async () => {
+        const expenseResponse = await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'EUR',
+            exchangeRate: 1.15,
+            description: 'European Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(201);
+
+        expect(expenseResponse.body.expense.exchangeRate).toBe(1.15);
+        expect(expenseResponse.body.expense.currency).toBe('EUR');
+
+        // Fetch the expense and verify exchangeRate is persisted
+        const fetchResponse = await request(httpServer)
+          .get(`/expenses/${expenseResponse.body.expense.id}`)
+          .expect(200);
+
+        expect(fetchResponse.body.expense.exchangeRate).toBe(1.15);
+      });
+
+      it('should include amountInGroupCurrency on expense response', async () => {
+        const expenseResponse = await request(httpServer)
+          .post('/expenses')
+          .send({
+            groupId: testGroup.id,
+            amount: 100,
+            currency: 'EUR',
+            exchangeRate: 1.15,
+            description: 'European Dinner',
+            paidById: 'user-a',
+            createdById: 'user-a',
+            splitParticipants: ['user-a', 'user-b'],
+          })
+          .expect(201);
+
+        // 100 EUR * 1.15 = 115 USD
+        expect(expenseResponse.body.expense.amountInGroupCurrency).toBe(115);
+      });
+    });
   });
 });

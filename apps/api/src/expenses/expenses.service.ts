@@ -7,6 +7,8 @@ export interface ExpenseData {
   groupId: string;
   amount: number;
   currency: string;
+  exchangeRate: number;
+  amountInGroupCurrency: number;
   description: string;
   paidById: string;
   splitType: 'equal' | 'exact';
@@ -84,9 +86,30 @@ export class ExpensesService {
     splitParticipants?: string[],
     splitType?: 'equal' | 'exact',
     splitAmounts?: Record<string, number>,
+    exchangeRate?: number,
   ): { expense: ExpenseData } {
     // Verify group exists and get default currency
     const { group } = this.groupsService.getGroupById(groupId);
+
+    const expenseCurrency = currency || group.defaultCurrency;
+
+    // Handle exchange rate logic
+    let finalExchangeRate: number;
+    if (expenseCurrency === group.defaultCurrency) {
+      // Same currency as group default - exchange rate is 1.0
+      finalExchangeRate = 1;
+    } else {
+      // Different currency - exchange rate is required
+      if (exchangeRate === undefined || exchangeRate === null) {
+        throw new BadRequestException(
+          `Exchange rate is required when expense currency (${expenseCurrency}) differs from group default currency (${group.defaultCurrency})`
+        );
+      }
+      finalExchangeRate = exchangeRate;
+    }
+
+    // Calculate amount in group currency
+    const amountInGroupCurrency = Math.round(amount * finalExchangeRate * 100) / 100;
 
     const expenseId = randomBytes(16).toString('hex');
     const now = new Date();
@@ -113,7 +136,9 @@ export class ExpensesService {
       id: expenseId,
       groupId,
       amount,
-      currency: currency || group.defaultCurrency,
+      currency: expenseCurrency,
+      exchangeRate: finalExchangeRate,
+      amountInGroupCurrency,
       description,
       paidById,
       splitType: finalSplitType,
