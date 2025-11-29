@@ -757,3 +757,19 @@ Description: Data persists in local database
   - Mobile TypeScript compiles without errors
 - Status: Features complete
 
+### offline-expense-queue - COMPLETE
+- Implemented:
+  - Mobile: PendingExpense interface for offline queue items
+  - Mobile: pendingExpenses array in expensesStore (persisted to AsyncStorage)
+  - Mobile: createExpense checks network status and queues if offline
+  - Mobile: Offline expenses get local IDs (pending-timestamp-random)
+  - Mobile: syncPendingExpenses action processes queue when online
+  - Mobile: Network store calls syncPendingExpenses when coming online
+  - Mobile: OfflineBanner shows pending count and sync status
+  - Mobile: Blue banner with spinner while syncing
+  - Mobile: Different messages for offline vs pending vs syncing states
+- Verified:
+  - All 140 API tests pass
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

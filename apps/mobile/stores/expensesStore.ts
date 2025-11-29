@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../lib/api';
+import { useNetworkStore } from './networkStore';
 
 export interface Expense {
   id: string;
@@ -21,10 +22,28 @@ export interface Expense {
   updatedAt: string;
 }
 
+// Pending expense with local ID for offline queue
+export interface PendingExpense {
+  localId: string;
+  groupId: string;
+  amount: number;
+  currency?: string;
+  description: string;
+  paidById: string;
+  createdById: string;
+  date?: string;
+  splitParticipants?: string[];
+  exchangeRate?: number;
+  createdAt: string;
+  isSyncing?: boolean;
+}
+
 interface ExpensesState {
   expenses: Expense[];
+  pendingExpenses: PendingExpense[];
   currentExpense: Expense | null;
   isLoading: boolean;
+  isSyncing: boolean;
   error: string | null;
 
   // Actions
@@ -56,18 +75,29 @@ interface ExpensesState {
   clearError: () => void;
   clearExpenses: () => void;
 
+  // Offline queue actions
+  syncPendingExpenses: () => Promise<void>;
+  removePendingExpense: (localId: string) => void;
+
   // Real-time sync handlers
   handleExpenseCreated: (expense: Expense) => void;
   handleExpenseUpdated: (expense: Expense) => void;
   handleExpenseDeleted: (expenseId: string) => void;
 }
 
+// Generate a unique local ID for pending expenses
+function generateLocalId(): string {
+  return `pending-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
+
 export const useExpensesStore = create<ExpensesState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       expenses: [],
+      pendingExpenses: [],
       currentExpense: null,
       isLoading: false,
+      isSyncing: false,
       error: null,
 
       createExpense: async (
@@ -81,6 +111,50 @@ export const useExpensesStore = create<ExpensesState>()(
         splitParticipants,
         exchangeRate
       ) => {
+        const { isConnected, isInternetReachable } = useNetworkStore.getState();
+        const isOffline = !isConnected || isInternetReachable === false;
+
+        // If offline, queue the expense locally
+        if (isOffline) {
+          const pendingExpense: PendingExpense = {
+            localId: generateLocalId(),
+            groupId,
+            amount,
+            currency,
+            description,
+            paidById,
+            createdById,
+            date,
+            splitParticipants,
+            exchangeRate,
+            createdAt: new Date().toISOString(),
+          };
+
+          set((state) => ({
+            pendingExpenses: [...state.pendingExpenses, pendingExpense],
+          }));
+
+          // Return a mock expense object so the UI can show it
+          return {
+            id: pendingExpense.localId,
+            groupId,
+            amount,
+            currency: currency || 'USD',
+            exchangeRate: exchangeRate || 1,
+            amountInGroupCurrency: amount * (exchangeRate || 1),
+            description,
+            paidById,
+            splitType: 'equal',
+            splitParticipants: splitParticipants || [paidById],
+            splitAmounts: {},
+            date: date || new Date().toISOString(),
+            createdById,
+            createdAt: pendingExpense.createdAt,
+            updatedAt: pendingExpense.createdAt,
+          } as Expense;
+        }
+
+        // Online: create expense normally
         set({ isLoading: true, error: null });
         try {
           const response = await api.createExpense(
@@ -202,6 +276,67 @@ export const useExpensesStore = create<ExpensesState>()(
         set({ expenses: [], currentExpense: null });
       },
 
+      // Sync pending expenses when coming online
+      syncPendingExpenses: async () => {
+        const { pendingExpenses } = get();
+        if (pendingExpenses.length === 0) return;
+
+        set({ isSyncing: true });
+
+        for (const pending of pendingExpenses) {
+          // Mark as syncing
+          set((state) => ({
+            pendingExpenses: state.pendingExpenses.map((p) =>
+              p.localId === pending.localId ? { ...p, isSyncing: true } : p
+            ),
+          }));
+
+          try {
+            const response = await api.createExpense(
+              pending.groupId,
+              pending.amount,
+              pending.description,
+              pending.paidById,
+              pending.createdById,
+              pending.currency,
+              pending.date,
+              pending.splitParticipants,
+              undefined, // splitType
+              undefined, // splitAmounts
+              pending.exchangeRate
+            );
+
+            const newExpense = response.expense;
+
+            // Remove from pending and add to expenses
+            set((state) => ({
+              pendingExpenses: state.pendingExpenses.filter(
+                (p) => p.localId !== pending.localId
+              ),
+              expenses: [...state.expenses, newExpense],
+            }));
+          } catch (error) {
+            // Mark as not syncing on error, will retry next time
+            set((state) => ({
+              pendingExpenses: state.pendingExpenses.map((p) =>
+                p.localId === pending.localId ? { ...p, isSyncing: false } : p
+              ),
+            }));
+            console.error('[Expenses] Failed to sync pending expense:', error);
+          }
+        }
+
+        set({ isSyncing: false });
+      },
+
+      removePendingExpense: (localId) => {
+        set((state) => ({
+          pendingExpenses: state.pendingExpenses.filter(
+            (p) => p.localId !== localId
+          ),
+        }));
+      },
+
       // Real-time sync handlers
       handleExpenseCreated: (expense) => {
         set((state) => {
@@ -234,6 +369,7 @@ export const useExpensesStore = create<ExpensesState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         expenses: state.expenses,
+        pendingExpenses: state.pendingExpenses,
       }),
     }
   )
