@@ -9,7 +9,8 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "types": []
   },
   "include": ["lib/**/*"],
   "exclude": ["node_modules", "dist"]
