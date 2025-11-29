@@ -89,6 +89,7 @@ interface GroupsState {
   fetchGroupBalances: (groupId: string) => Promise<BalancesData | null>;
   joinGroup: (inviteCode: string, userId: string) => Promise<Group | null>;
   setCurrentGroup: (group: Group | null) => void;
+  clearGroups: () => void;
 
   // Granular error/loading management
   clearError: (operation?: GroupOperation) => void;
@@ -324,6 +325,16 @@ export const useGroupsStore = create<GroupsState>()(
 
       setCurrentGroup: (group) => {
         set({ currentGroup: group });
+      },
+
+      clearGroups: () => {
+        set({
+          groups: [],
+          currentGroup: null,
+          previewGroup: null,
+          currentGroupMembers: [],
+          currentGroupBalances: null,
+        });
       },
 
       // Clear a specific operation's error, or all errors if no operation specified
