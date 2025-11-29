@@ -184,6 +184,18 @@ class ApiClient {
       body: JSON.stringify({ inviteCode, userId }),
     });
   }
+
+  async getGroupMembers(groupId: string): Promise<{
+    members: {
+      userId: string;
+      role: 'admin' | 'member';
+      joinedAt: string;
+    }[];
+  }> {
+    return this.request(`/groups/${groupId}/members`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

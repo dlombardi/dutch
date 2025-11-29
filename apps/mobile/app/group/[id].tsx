@@ -6,13 +6,14 @@ import {
   Share,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
-import { useGroupsStore } from '../../stores/groupsStore';
+import { useGroupsStore, GroupMember } from '../../stores/groupsStore';
 
-type Tab = 'expenses' | 'balances' | 'activity';
+type Tab = 'expenses' | 'balances' | 'members';
 
 const APP_URL_SCHEME = 'evn://';
 const WEB_URL = 'https://evn.app'; // Production web URL
@@ -20,13 +21,21 @@ const WEB_URL = 'https://evn.app'; // Production web URL
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<Tab>('expenses');
-  const { currentGroup, fetchGroup, isLoading, error } = useGroupsStore();
+  const {
+    currentGroup,
+    currentGroupMembers,
+    fetchGroup,
+    fetchGroupMembers,
+    isLoading,
+    error,
+  } = useGroupsStore();
 
   useEffect(() => {
     if (id) {
       fetchGroup(id);
+      fetchGroupMembers(id);
     }
-  }, [id, fetchGroup]);
+  }, [id, fetchGroup, fetchGroupMembers]);
 
   const handleShareInvite = useCallback(async () => {
     if (!currentGroup) return;
@@ -114,11 +123,11 @@ export default function GroupDetailScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'activity' && styles.activeTab]}
-          onPress={() => setActiveTab('activity')}
+          style={[styles.tab, activeTab === 'members' && styles.activeTab]}
+          onPress={() => setActiveTab('members')}
         >
-          <Text style={[styles.tabText, activeTab === 'activity' && styles.activeTabText]}>
-            Activity
+          <Text style={[styles.tabText, activeTab === 'members' && styles.activeTabText]}>
+            Members ({currentGroupMembers.length})
           </Text>
         </TouchableOpacity>
       </View>
@@ -143,14 +152,43 @@ export default function GroupDetailScreen() {
             </Text>
           </View>
         )}
-        {activeTab === 'activity' && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>📋</Text>
-            <Text style={styles.emptyTitle}>No activity yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Group activity will appear here
-            </Text>
-          </View>
+        {activeTab === 'members' && (
+          <ScrollView style={styles.membersList}>
+            {currentGroupMembers.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyEmoji}>👥</Text>
+                <Text style={styles.emptyTitle}>No members yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  Invite friends to join this group
+                </Text>
+              </View>
+            ) : (
+              currentGroupMembers.map((member, index) => (
+                <View key={member.userId} style={styles.memberItem}>
+                  <View style={styles.memberAvatar}>
+                    <Text style={styles.memberAvatarText}>
+                      {member.userId.substring(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.memberInfo}>
+                    <Text style={styles.memberName}>
+                      {member.userId}
+                      {member.userId === group.createdById && ' (Creator)'}
+                    </Text>
+                    <Text style={styles.memberRole}>
+                      {member.role === 'admin' ? 'Admin' : 'Member'} · Joined{' '}
+                      {new Date(member.joinedAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  {member.role === 'admin' && (
+                    <View style={styles.adminBadge}>
+                      <Text style={styles.adminBadgeText}>Admin</Text>
+                    </View>
+                  )}
+                </View>
+              ))
+            )}
+          </ScrollView>
         )}
       </View>
 
@@ -270,6 +308,54 @@ const styles = StyleSheet.create({
   fabText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  membersList: {
+    flex: 1,
+  },
+  memberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  memberAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  memberAvatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  memberRole: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  adminBadge: {
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  adminBadgeText: {
+    fontSize: 12,
+    color: '#007AFF',
     fontWeight: '600',
   },
 });

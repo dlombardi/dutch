@@ -22,7 +22,7 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 11
+- Features passing: 12
 - Current focus: Implementing Priority 1 features
 
 ## Feature Breakdown by Category
@@ -315,3 +315,28 @@ Description: User can share invite link via system share sheet
 - Features passing: 11
 - Priority 1 remaining: 17
 - Focus: Groups features complete, ready for expenses or remaining auth features
+
+---
+
+## Session: 2025-11-28 (Continued)
+Working on: groups-view-members
+Description: User can see list of all group members
+
+### groups-view-members - COMPLETE
+- Implemented:
+  - API: GET /groups/:id/members endpoint
+  - API: Returns list of members with userId, role, joinedAt
+  - API: Validates group exists, returns 404 for non-existent groups
+  - Mobile: api.ts getGroupMembers method
+  - Mobile: groupsStore fetchGroupMembers action and currentGroupMembers state
+  - Mobile: Members tab in group detail screen with member list UI
+  - Mobile: Shows role badges, join dates, and member avatars
+- Tests added (in groups.controller.spec.ts):
+  - GET /groups/:id/members - returns list of members for a group
+  - GET /groups/:id/members - returns all members including those who joined
+  - GET /groups/:id/members - returns 404 for non-existent group
+- Verified:
+  - All 42 API tests pass (39 existing + 3 new)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete
+

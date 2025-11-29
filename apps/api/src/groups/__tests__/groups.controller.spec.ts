@@ -345,4 +345,94 @@ describe('GroupsController (integration)', () => {
       expect(body.membership.userId).toBe('duplicate-user-123');
     });
   });
+
+  describe('GET /groups/:id/members', () => {
+    interface Member {
+      userId: string;
+      role: 'admin' | 'member';
+      joinedAt: string;
+    }
+
+    interface MembersResponse {
+      members: Member[];
+    }
+
+    it('should return list of members for a group', async () => {
+      // Create a group
+      const createResponse = await request(httpServer)
+        .post('/groups')
+        .send({
+          name: 'Members Test Group',
+          createdById: 'creator-123',
+        })
+        .expect(201);
+
+      const createdGroup = (createResponse.body as CreateGroupResponse).group;
+
+      // Get members - should include creator as admin
+      const response = await request(httpServer)
+        .get(`/groups/${createdGroup.id}/members`)
+        .expect(200);
+
+      const body = response.body as MembersResponse;
+      expect(body.members).toHaveLength(1);
+      expect(body.members[0].userId).toBe('creator-123');
+      expect(body.members[0].role).toBe('admin');
+      expect(body.members[0]).toHaveProperty('joinedAt');
+    });
+
+    it('should return all members including those who joined', async () => {
+      // Create a group
+      const createResponse = await request(httpServer)
+        .post('/groups')
+        .send({
+          name: 'Multi Member Group',
+          createdById: 'creator-123',
+        })
+        .expect(201);
+
+      const createdGroup = (createResponse.body as CreateGroupResponse).group;
+
+      // Add some members
+      await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: createdGroup.inviteCode,
+          userId: 'member-1',
+        })
+        .expect(201);
+
+      await request(httpServer)
+        .post('/groups/join')
+        .send({
+          inviteCode: createdGroup.inviteCode,
+          userId: 'member-2',
+        })
+        .expect(201);
+
+      // Get members
+      const response = await request(httpServer)
+        .get(`/groups/${createdGroup.id}/members`)
+        .expect(200);
+
+      const body = response.body as MembersResponse;
+      expect(body.members).toHaveLength(3);
+
+      // Creator should be admin
+      const creator = body.members.find((m) => m.userId === 'creator-123');
+      expect(creator?.role).toBe('admin');
+
+      // Others should be members
+      const member1 = body.members.find((m) => m.userId === 'member-1');
+      const member2 = body.members.find((m) => m.userId === 'member-2');
+      expect(member1?.role).toBe('member');
+      expect(member2?.role).toBe('member');
+    });
+
+    it('should return 404 for non-existent group', async () => {
+      await request(httpServer)
+        .get('/groups/non-existent-id/members')
+        .expect(404);
+    });
+  });
 });

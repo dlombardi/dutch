@@ -14,10 +14,17 @@ export interface Group {
   updatedAt: string;
 }
 
+export interface GroupMember {
+  userId: string;
+  role: 'admin' | 'member';
+  joinedAt: string;
+}
+
 interface GroupsState {
   groups: Group[];
   currentGroup: Group | null;
   previewGroup: Group | null;
+  currentGroupMembers: GroupMember[];
   isLoading: boolean;
   error: string | null;
 
@@ -30,6 +37,7 @@ interface GroupsState {
   ) => Promise<Group | null>;
   fetchGroup: (id: string) => Promise<Group | null>;
   fetchGroupByInviteCode: (inviteCode: string) => Promise<Group | null>;
+  fetchGroupMembers: (groupId: string) => Promise<GroupMember[] | null>;
   joinGroup: (inviteCode: string, userId: string) => Promise<Group | null>;
   setCurrentGroup: (group: Group | null) => void;
   clearError: () => void;
@@ -41,6 +49,7 @@ export const useGroupsStore = create<GroupsState>()(
       groups: [],
       currentGroup: null,
       previewGroup: null,
+      currentGroupMembers: [],
       isLoading: false,
       error: null,
 
@@ -107,6 +116,23 @@ export const useGroupsStore = create<GroupsState>()(
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Invalid invite code';
+          set({ error: errorMessage });
+          return null;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      fetchGroupMembers: async (groupId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await api.getGroupMembers(groupId);
+          const members = response.members;
+          set({ currentGroupMembers: members });
+          return members;
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to fetch members';
           set({ error: errorMessage });
           return null;
         } finally {

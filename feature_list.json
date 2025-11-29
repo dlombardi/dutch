@@ -286,7 +286,7 @@
         "See who is guest vs claimed vs full account",
         "See member join dates"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "groups-remove-member",

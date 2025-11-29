@@ -112,6 +112,23 @@ export class GroupsService {
     return this.memberships.get(groupId) || [];
   }
 
+  getGroupMembersById(id: string): { members: Omit<GroupMembership, 'groupId'>[] } {
+    // First verify the group exists
+    const group = this.groups.get(id);
+    if (!group) {
+      throw new NotFoundException('Group not found');
+    }
+
+    const memberships = this.memberships.get(id) || [];
+    const members = memberships.map(({ userId, role, joinedAt }) => ({
+      userId,
+      role,
+      joinedAt,
+    }));
+
+    return { members };
+  }
+
   private generateUniqueInviteCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars (0, O, 1, I)
     let code: string;

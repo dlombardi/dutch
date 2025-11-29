@@ -37,6 +37,11 @@ export class GroupsController {
     return res.status(result.isNewMember ? 201 : 200).json(response);
   }
 
+  @Get(':id/members')
+  getGroupMembers(@Param('id') id: string) {
+    return this.groupsService.getGroupMembersById(id);
+  }
+
   @Get(':id')
   getGroup(@Param('id') id: string) {
     return this.groupsService.getGroupById(id);
