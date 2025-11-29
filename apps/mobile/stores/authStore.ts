@@ -3,6 +3,19 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../lib/api';
 
+// Generate or retrieve a persistent device ID
+const DEVICE_ID_KEY = 'evn-device-id';
+
+async function getOrCreateDeviceId(): Promise<string> {
+  let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+  if (!deviceId) {
+    // Generate a UUID-like identifier
+    deviceId = `device-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+  }
+  return deviceId;
+}
+
 export type UserType = 'guest' | 'claimed' | 'full';
 
 export interface User {
@@ -52,14 +65,19 @@ export const useAuthStore = create<AuthState>()(
       loginAsGuest: async (name) => {
         set({ isLoading: true, error: null });
         try {
-          // TODO: Call API to create guest user
-          const guestUser: User = {
-            id: `guest_${Date.now()}`,
-            name,
-            type: 'guest',
-            createdAt: new Date().toISOString(),
-          };
-          set({ user: guestUser, isAuthenticated: true });
+          const deviceId = await getOrCreateDeviceId();
+          const response = await api.createGuestUser(name, deviceId);
+          api.setAccessToken(response.accessToken);
+          set({
+            user: {
+              id: response.user.id,
+              name: response.user.name,
+              type: response.user.type,
+              createdAt: response.user.createdAt,
+            },
+            accessToken: response.accessToken,
+            isAuthenticated: true,
+          });
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to login as guest';

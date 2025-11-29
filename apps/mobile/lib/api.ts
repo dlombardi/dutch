@@ -32,9 +32,9 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     if (this.accessToken) {
@@ -77,6 +77,27 @@ class ApiClient {
     return this.request('/auth/magic-link/verify', {
       method: 'POST',
       body: JSON.stringify({ token }),
+    });
+  }
+
+  async createGuestUser(
+    name: string,
+    deviceId: string
+  ): Promise<{
+    user: {
+      id: string;
+      name: string;
+      type: 'guest';
+      authProvider: 'guest';
+      deviceId: string;
+      createdAt: string;
+      updatedAt: string;
+    };
+    accessToken: string;
+  }> {
+    return this.request('/auth/guest', {
+      method: 'POST',
+      body: JSON.stringify({ name, deviceId }),
     });
   }
 }

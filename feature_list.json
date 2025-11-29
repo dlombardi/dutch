@@ -56,7 +56,7 @@
         "Successfully join the group as guest member",
         "Guest identity tied to device"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-guest-device-persistence",

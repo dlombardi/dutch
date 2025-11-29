@@ -22,7 +22,7 @@
 ## Current State
 - Project initialized: 2025-11-28
 - Features total: 135
-- Features passing: 2
+- Features passing: 3
 - Current focus: Implementing Priority 1 auth features
 
 ## Feature Breakdown by Category
@@ -138,3 +138,33 @@ Description: User can authenticate by clicking the magic link in their email
   - Session persists via AsyncStorage (zustand persist middleware)
 - Commit: 2ccc00f
 - Notes: Full E2E testing requires running on device/simulator to test deep links
+
+---
+
+## Session: 2025-11-28 (Session 4)
+Working on: auth-guest-name-entry
+Description: Guest user can join a group by entering only their name
+
+### auth-guest-name-entry - COMPLETE
+- Implemented:
+  - API: POST /auth/guest endpoint with name and deviceId params
+  - GuestAuthDto with validation (name required, deviceId required, name trimming)
+  - AuthService.createGuestUser() stores guest users by device ID
+  - Mobile: guest-join.tsx screen with name input form
+  - Mobile: Updated sign-in.tsx "Continue as guest" to navigate to guest-join
+  - Mobile: authStore.loginAsGuest() calls API and stores session
+  - Device ID generation and persistence via AsyncStorage
+- Tests added:
+  - apps/api/src/auth/__tests__/guest-auth.controller.spec.ts (8 tests)
+    - Create guest user with name and device ID
+    - Return existing guest for same device ID
+    - Update name on re-registration
+    - Empty name rejection
+    - Missing name rejection
+    - Empty device ID rejection
+    - Missing device ID rejection
+    - Whitespace trimming on name
+- Verified:
+  - All 17 API tests pass (9 magic link + 8 guest auth)
+  - Mobile TypeScript compiles without errors
+- Status: Feature complete

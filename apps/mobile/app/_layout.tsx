@@ -14,7 +14,9 @@ function useProtectedRoute() {
     if (!navigationState?.key) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    const inAuthVerify = segments[0] === 'auth' && segments[1] === 'verify';
+    const segmentArray = [...segments];
+    const inAuthVerify =
+      segmentArray[0] === 'auth' && segmentArray[1] === 'verify';
 
     // Allow access to auth/verify route (for magic link deep links)
     if (inAuthVerify) {

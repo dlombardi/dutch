@@ -13,23 +13,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 
-export default function SignInScreen() {
-  const [email, setEmail] = useState('');
-  const { requestMagicLink, isLoading, error, clearError } = useAuthStore();
+export default function GuestJoinScreen() {
+  const [name, setName] = useState('');
+  const { loginAsGuest, isLoading, error, clearError } = useAuthStore();
 
-  const isValidEmail = (value: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const isValidName = (value: string) => {
+    return value.trim().length >= 1;
   };
 
-  const handleSendMagicLink = async () => {
-    if (!isValidEmail(email)) {
+  const handleJoinAsGuest = async () => {
+    if (!isValidName(name)) {
       return;
     }
 
-    const success = await requestMagicLink(email);
-    if (success) {
-      router.push('/(auth)/magic-link-sent');
-    }
+    await loginAsGuest(name.trim());
+    // The auth state change will trigger navigation via _layout.tsx
   };
 
   return (
@@ -39,31 +37,37 @@ export default function SignInScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.content}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
+
           <View style={styles.header}>
             <Text style={styles.logo}>evn</Text>
-            <Text style={styles.tagline}>Split expenses, not friendships</Text>
+            <Text style={styles.tagline}>Join as a guest</Text>
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.title}>Sign in with email</Text>
+            <Text style={styles.title}>What's your name?</Text>
             <Text style={styles.subtitle}>
-              We'll send you a magic link to sign in instantly
+              This is how others will see you in the group
             </Text>
 
             <TextInput
               style={[styles.input, error ? styles.inputError : null]}
-              placeholder="your@email.com"
+              placeholder="Enter your name"
               placeholderTextColor="#999"
-              value={email}
+              value={name}
               onChangeText={(text) => {
-                setEmail(text);
+                setName(text);
                 if (error) clearError();
               }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
+              autoCapitalize="words"
               autoCorrect={false}
               editable={!isLoading}
+              autoFocus
             />
 
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -71,34 +75,22 @@ export default function SignInScreen() {
             <TouchableOpacity
               style={[
                 styles.button,
-                (!isValidEmail(email) || isLoading) && styles.buttonDisabled,
+                (!isValidName(name) || isLoading) && styles.buttonDisabled,
               ]}
-              onPress={handleSendMagicLink}
-              disabled={!isValidEmail(email) || isLoading}
+              onPress={handleJoinAsGuest}
+              disabled={!isValidName(name) || isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Send Magic Link</Text>
+                <Text style={styles.buttonText}>Join Group</Text>
               )}
-            </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <TouchableOpacity
-              style={styles.guestButton}
-              onPress={() => router.push('/(auth)/guest-join')}
-            >
-              <Text style={styles.guestButtonText}>Continue as guest</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={styles.footer}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            Your identity is tied to this device. You can claim your account
+            later to sync across devices.
           </Text>
         </View>
       </KeyboardAvoidingView>
@@ -119,9 +111,18 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'space-between',
   },
+  backButton: {
+    alignSelf: 'flex-start',
+    padding: 8,
+    marginLeft: -8,
+  },
+  backButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+  },
   header: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 20,
   },
   logo: {
     fontSize: 48,
@@ -175,32 +176,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    color: '#999',
-    paddingHorizontal: 16,
-  },
-  guestButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  guestButtonText: {
-    color: '#333',
     fontSize: 16,
     fontWeight: '600',
   },

@@ -12,10 +12,11 @@ export interface MagicLinkData {
 
 export interface UserData {
   id: string;
-  email: string;
+  email?: string;
   name: string;
   type: 'guest' | 'claimed' | 'full';
   authProvider: 'magic_link' | 'google' | 'apple' | 'guest';
+  deviceId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +27,7 @@ export class AuthService {
   private magicLinks: Map<string, MagicLinkData> = new Map();
   private users: Map<string, UserData> = new Map();
   private usersByEmail: Map<string, string> = new Map();
+  private usersByDeviceId: Map<string, string> = new Map();
 
   requestMagicLink(email: string): { message: string } {
     // Generate a secure random token
@@ -100,6 +102,43 @@ export class AuthService {
     }
 
     // Generate access token (simplified for now)
+    const accessToken = randomBytes(32).toString('hex');
+
+    return { user, accessToken };
+  }
+
+  createGuestUser(
+    name: string,
+    deviceId: string,
+  ): { user: UserData; accessToken: string } {
+    // Check if device already has a guest user
+    const existingUserId = this.usersByDeviceId.get(deviceId);
+
+    let user: UserData;
+
+    if (existingUserId) {
+      // Update existing user's name
+      user = this.users.get(existingUserId)!;
+      user.name = name;
+      user.updatedAt = new Date();
+      this.users.set(existingUserId, user);
+    } else {
+      // Create new guest user
+      const userId = randomBytes(16).toString('hex');
+      user = {
+        id: userId,
+        name,
+        type: 'guest',
+        authProvider: 'guest',
+        deviceId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      this.users.set(userId, user);
+      this.usersByDeviceId.set(deviceId, userId);
+    }
+
+    // Generate access token
     const accessToken = randomBytes(32).toString('hex');
 
     return { user, accessToken };

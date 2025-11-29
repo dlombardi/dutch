@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RequestMagicLinkDto, VerifyMagicLinkDto } from './dto';
+import { RequestMagicLinkDto, VerifyMagicLinkDto, GuestAuthDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,5 +16,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   verifyMagicLink(@Body() dto: VerifyMagicLinkDto) {
     return this.authService.verifyMagicLink(dto.token);
+  }
+
+  @Post('guest')
+  createGuestUser(@Body() dto: GuestAuthDto) {
+    return this.authService.createGuestUser(dto.name, dto.deviceId);
   }
 }
