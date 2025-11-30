@@ -12,4 +12,19 @@ export default [
       "ios/**",
     ],
   },
+  {
+    rules: {
+      // Import ordering: groups sorted, members sorted alphabetically
+      "sort-imports": [
+        "warn",
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true, // Let developers order import declarations manually
+          ignoreMemberSort: false, // Sort members within destructured imports
+          memberSyntaxSortOrder: ["none", "all", "multiple", "single"],
+          allowSeparatedGroups: true,
+        },
+      ],
+    },
+  },
 ];
