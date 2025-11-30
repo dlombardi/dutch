@@ -24,13 +24,13 @@
     "description": "Missing app/_error.tsx. App crashes on unhandled component errors with no user-friendly fallback.",
     "effort": "low",
     "estimatedTime": "1 day",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
-      "app/_error.tsx"
+      "app/+error.tsx"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T15:22:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 3,
