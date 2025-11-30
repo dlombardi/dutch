@@ -14,6 +14,19 @@ export interface ApiError {
   statusCode: number;
 }
 
+// Default request timeout (30 seconds)
+const DEFAULT_TIMEOUT_MS = 30000;
+
+/**
+ * Custom error for request timeouts
+ */
+export class RequestTimeoutError extends Error {
+  constructor(url: string, timeoutMs: number) {
+    super(`Request to ${url} timed out after ${timeoutMs}ms`);
+    this.name = 'RequestTimeoutError';
+  }
+}
+
 // Token getter function - will be set by authStore to avoid circular dependency
 let getAccessToken: (() => string | null) | null = null;
 
@@ -43,7 +56,8 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeoutMs: number = DEFAULT_TIMEOUT_MS
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const accessToken = getAccessToken?.() ?? null;
@@ -64,11 +78,21 @@ class ApiClient {
       });
     }
 
+    // Create AbortController for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+
     try {
       const response = await fetch(url, {
         ...options,
         headers,
+        signal: controller.signal,
       });
+
+      // Clear timeout on successful response
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -81,6 +105,18 @@ class ApiClient {
 
       return data as T;
     } catch (error) {
+      // Clear timeout on error
+      clearTimeout(timeoutId);
+
+      // Check if error was due to abort (timeout)
+      if (error instanceof Error && error.name === 'AbortError') {
+        const timeoutError = new RequestTimeoutError(url, timeoutMs);
+        if (__DEV__) {
+          console.log(`[API] Request timed out:`, timeoutError.message);
+        }
+        throw timeoutError;
+      }
+
       if (__DEV__) {
         console.log(`[API] Request failed:`, error);
       }

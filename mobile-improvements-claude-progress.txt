@@ -71,8 +71,8 @@ PRE-EXISTING ISSUES
 CURRENT TASK
 ================================================================================
 
-Task ID: 8
-Task Title: No Request Timeouts
+Task ID: 9
+Task Title: Incomplete claimAccount API
 Status: Pending
 Started At: N/A
 
@@ -82,14 +82,21 @@ Pre-Task Baseline:
 - Tests: 78/78 mobile passed
 
 Notes:
-- lib/api.ts:44-88 - fetch has no timeout
-- Requests can hang indefinitely
-- Need to add AbortController with 30s timeout
+- stores/authStore.ts:153 has // TODO: Call API
+- Guest account claiming not implemented
 
 
 ================================================================================
 COMPLETED TASKS
 ================================================================================
+
+#8 - No Request Timeouts [2025-11-30T16:05:00Z]
+- Added RequestTimeoutError custom error class
+- Added AbortController to request method with 30s default timeout
+- Properly handle timeout errors vs other errors
+- Clear timeout on both success and error
+- Pre-check: 0 errors, 19 warnings | Post-check: 0 errors, 19 warnings
+- Tests: 78/78 mobile passed
 
 #7 - No Theme System [2025-11-30T16:00:00Z]
 - Created lib/theme.ts with comprehensive design tokens
