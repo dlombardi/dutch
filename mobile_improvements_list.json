@@ -224,13 +224,14 @@
     "description": "stores/authStore.ts:13 uses Math.random(). Should use expo-crypto for secure random.",
     "effort": "low",
     "estimatedTime": "1 day",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
-      "stores/authStore.ts"
+      "stores/authStore.ts",
+      "package.json"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T16:35:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 14,
@@ -252,14 +253,15 @@
     "description": "Console.log statements in stores/expensesStore.ts:439, stores/syncStore.ts:78,95,105. Should replace with proper logger.",
     "effort": "low",
     "estimatedTime": "1 day",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
       "stores/expensesStore.ts",
-      "stores/syncStore.ts"
+      "stores/syncStore.ts",
+      "stores/networkStore.ts"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T16:40:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 16,

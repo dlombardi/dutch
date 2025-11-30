@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../lib/api';
 import { isOffline } from './networkStore'; // P2-002 fix: use function instead of store import
+import { logger } from '../lib/logger';
 
 export interface Expense {
   id: string;
@@ -487,9 +488,11 @@ export const useExpensesStore = create<ExpensesState>()(
             }));
 
             if (newRetryCount >= MAX_RETRY_COUNT) {
-              console.warn(
-                `[Expenses] Pending expense ${pending.localId} failed after ${MAX_RETRY_COUNT} retries`
-              );
+              logger.warn('Pending expense permanently failed', {
+                category: 'expenses',
+                localId: pending.localId,
+                retryCount: MAX_RETRY_COUNT,
+              });
             }
           }
         }

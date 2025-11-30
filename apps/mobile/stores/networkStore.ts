@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+import { logger } from '../lib/logger';
 
 interface NetworkState {
   isConnected: boolean;
@@ -75,7 +76,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 
     // Trigger callback if we just came online
     if (isNowOnline && wasOffline && onOnlineCallback) {
-      console.log('[Network] Device came online, triggering sync');
+      logger.info('Device came online, triggering sync', { category: 'network' });
       onOnlineCallback();
     }
   },

@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import type { Expense } from './expensesStore';
 import type { Settlement } from './settlementsStore';
 import type { BalancesData } from './groupsStore';
+import { logger } from '../lib/logger';
 
 // Match the API configuration
 const WS_URL = __DEV__
@@ -92,45 +93,45 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     });
 
     newSocket.on('connect', () => {
-      console.log('[Sync] Connected to server');
+      logger.debug('Connected to sync server', { category: 'sync' });
       set({ connectionStatus: 'connected' });
     });
 
     newSocket.on('welcome', (data: { message: string; socketId: string }) => {
-      console.log('[Sync] Welcome:', data.message);
+      logger.debug('Welcome from server', { category: 'sync', message: data.message });
       set({ socketId: data.socketId });
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log('[Sync] Disconnected:', reason);
+      logger.debug('Disconnected from server', { category: 'sync', reason });
       set({ connectionStatus: 'disconnected', socketId: null });
     });
 
     newSocket.on('connect_error', (error) => {
-      console.log('[Sync] Connection error:', error.message);
+      logger.warn('Connection error', { category: 'sync', error: error.message });
       set({ lastError: error.message, connectionStatus: 'disconnected' });
     });
 
     newSocket.io.on('reconnect_attempt', () => {
-      console.log('[Sync] Attempting to reconnect...');
+      logger.debug('Attempting to reconnect...', { category: 'sync' });
       set({ connectionStatus: 'reconnecting' });
     });
 
     newSocket.io.on('reconnect', () => {
-      console.log('[Sync] Reconnected');
+      logger.info('Reconnected to server', { category: 'sync' });
       set({ connectionStatus: 'connected' });
 
       // Rejoin all previously subscribed groups
       const { subscribedGroups } = get();
       subscribedGroups.forEach((groupId) => {
         newSocket.emit('joinGroup', { groupId }, (response: { success: boolean }) => {
-          console.log(`[Sync] Rejoined group ${groupId}:`, response.success);
+          logger.debug('Rejoined group', { category: 'sync', groupId, success: response.success });
         });
       });
     });
 
     newSocket.io.on('reconnect_failed', () => {
-      console.log('[Sync] Reconnection failed');
+      logger.warn('Reconnection failed', { category: 'sync' });
       set({ connectionStatus: 'disconnected', lastError: 'Failed to reconnect' });
     });
 
@@ -154,7 +155,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     const { socket, subscribedGroups } = get();
 
     if (!socket?.connected) {
-      console.warn('[Sync] Cannot join group - not connected');
+      logger.warn('Cannot join group - not connected', { category: 'sync', groupId });
       return false;
     }
 
@@ -164,7 +165,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
           const newGroups = new Set(subscribedGroups);
           newGroups.add(groupId);
           set({ subscribedGroups: newGroups });
-          console.log(`[Sync] Joined group ${groupId}`);
+          logger.debug('Joined group', { category: 'sync', groupId });
         }
         resolve(response.success);
       });
@@ -175,7 +176,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     const { socket, subscribedGroups } = get();
 
     if (!socket?.connected) {
-      console.warn('[Sync] Cannot leave group - not connected');
+      logger.warn('Cannot leave group - not connected', { category: 'sync', groupId });
       return false;
     }
 
@@ -185,7 +186,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
           const newGroups = new Set(subscribedGroups);
           newGroups.delete(groupId);
           set({ subscribedGroups: newGroups });
-          console.log(`[Sync] Left group ${groupId}`);
+          logger.debug('Left group', { category: 'sync', groupId });
         }
         resolve(response.success);
       });

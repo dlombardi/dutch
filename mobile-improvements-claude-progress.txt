@@ -71,8 +71,8 @@ PRE-EXISTING ISSUES
 CURRENT TASK
 ================================================================================
 
-Task ID: 13
-Task Title: Device ID Uses Math.random()
+Task ID: 15
+Task Title: Console.log in Production
 Status: Pending
 Started At: N/A
 
@@ -82,12 +82,19 @@ Pre-Task Baseline:
 - Tests: 78/78 mobile passed
 
 Notes:
-- stores/authStore.ts:13 uses Math.random()
-- Should use expo-crypto for secure random
+- Console.log statements in stores/expensesStore.ts:439, stores/syncStore.ts:78,95,105
+- Should replace with proper logger
 
 ================================================================================
 COMPLETED TASKS
 ================================================================================
+
+#13 - Device ID Uses Math.random() [2025-11-30T16:35:00Z]
+- Replaced Math.random() with expo-crypto randomUUID()
+- Installed expo-crypto package
+- Provides cryptographically secure device ID generation
+- Pre-check: 0 errors, 19 warnings | Post-check: 0 errors, 19 warnings
+- Tests: 78/78 mobile passed
 
 #12 - FlatList Not Optimized [2025-11-30T16:30:00Z]
 - Added initialNumToRender (10) to limit initial render
