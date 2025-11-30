@@ -1,0 +1,244 @@
+[
+  {
+    "id": 1,
+    "priority": "critical",
+    "title": "Component Library",
+    "description": "Empty components/ directory causing code duplication. Currency formatting duplicated in 5+ files, user display name logic in 3+ files, date formatting in 4+ files, loading/error/empty states duplicated everywhere.",
+    "effort": "high",
+    "estimatedTime": "1-2 weeks",
+    "status": "not_started",
+    "filesAffected": [
+      "app/group/[id].tsx",
+      "app/expense/[id].tsx",
+      "app/create-group.tsx",
+      "components/"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 2,
+    "priority": "critical",
+    "title": "Global Error Boundary",
+    "description": "Missing app/_error.tsx. App crashes on unhandled component errors with no user-friendly fallback.",
+    "effort": "low",
+    "estimatedTime": "1 day",
+    "status": "not_started",
+    "filesAffected": [
+      "app/_error.tsx"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 3,
+    "priority": "high",
+    "title": "Offline Queue Retry Limits",
+    "description": "Failed pending expenses retry indefinitely in stores/expensesStore.ts:394-444. No max retry count or exponential backoff, no way to dismiss failed items.",
+    "effort": "medium",
+    "estimatedTime": "1-2 days",
+    "status": "not_started",
+    "filesAffected": [
+      "stores/expensesStore.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 4,
+    "priority": "high",
+    "title": "Type Assertions Without Runtime Validation",
+    "description": "API responses cast with 'as' without validation (e.g., response.expenses as Expense[]). Could cause crashes if API response changes.",
+    "effort": "medium",
+    "estimatedTime": "2-3 days",
+    "status": "not_started",
+    "filesAffected": [
+      "hooks/queries/useExpenses.ts",
+      "hooks/queries/useGroup.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 5,
+    "priority": "high",
+    "title": "Screen Components Too Large",
+    "description": "app/group/[id].tsx is 893 lines, mixing business logic with presentation and multiple responsibilities.",
+    "effort": "high",
+    "estimatedTime": "3-5 days",
+    "status": "not_started",
+    "filesAffected": [
+      "app/group/[id].tsx"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 6,
+    "priority": "high",
+    "title": "Zero Component Test Coverage",
+    "description": "Only 2 test files exist (auth + groups stores). 17 screen components untested, no integration or E2E tests.",
+    "effort": "high",
+    "estimatedTime": "ongoing",
+    "status": "not_started",
+    "filesAffected": [
+      "stores/__tests__/authStore.test.ts",
+      "stores/__tests__/groupsStore.test.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 7,
+    "priority": "medium",
+    "title": "No Theme System",
+    "description": "Colors hardcoded (#007AFF, #666, #f0f0f0). 500+ lines of StyleSheet in single file. Need to create lib/theme.ts with design tokens.",
+    "effort": "medium",
+    "estimatedTime": "3-5 days",
+    "status": "not_started",
+    "filesAffected": [
+      "lib/theme.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 8,
+    "priority": "medium",
+    "title": "No Request Timeouts",
+    "description": "lib/api.ts:44-88 - fetch has no timeout. Requests can hang indefinitely. Add AbortController with 30s timeout.",
+    "effort": "low",
+    "estimatedTime": "1 day",
+    "status": "not_started",
+    "filesAffected": [
+      "lib/api.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 9,
+    "priority": "medium",
+    "title": "Incomplete claimAccount API",
+    "description": "stores/authStore.ts:153 has // TODO: Call API. Guest account claiming not implemented.",
+    "effort": "medium",
+    "estimatedTime": "2-3 days",
+    "status": "not_started",
+    "filesAffected": [
+      "stores/authStore.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 10,
+    "priority": "medium",
+    "title": "No Error Tracking",
+    "description": "No Sentry or similar error tracking. Production errors are invisible, only console.log in dev.",
+    "effort": "medium",
+    "estimatedTime": "1-2 days",
+    "status": "not_started",
+    "filesAffected": [],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 11,
+    "priority": "medium",
+    "title": "Network vs API Errors Not Distinguished",
+    "description": "Users don't know if connectivity or server issue. Need to add specific error types.",
+    "effort": "medium",
+    "estimatedTime": "1-2 days",
+    "status": "not_started",
+    "filesAffected": [
+      "lib/api.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 12,
+    "priority": "medium",
+    "title": "FlatList Not Optimized",
+    "description": "app/(tabs)/index.tsx:48-62 - Missing initialNumToRender, windowSize, getItemLayout. Could lag with 100+ groups.",
+    "effort": "low",
+    "estimatedTime": "1 day",
+    "status": "not_started",
+    "filesAffected": [
+      "app/(tabs)/index.tsx"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 13,
+    "priority": "low",
+    "title": "Device ID Uses Math.random()",
+    "description": "stores/authStore.ts:13 uses Math.random(). Should use expo-crypto for secure random.",
+    "effort": "low",
+    "estimatedTime": "1 day",
+    "status": "not_started",
+    "filesAffected": [
+      "stores/authStore.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 14,
+    "priority": "low",
+    "title": "No Universal Links",
+    "description": "Scheme defined but no associated domains. Missing iOS/Android deep link config.",
+    "effort": "medium",
+    "estimatedTime": "2-3 days",
+    "status": "not_started",
+    "filesAffected": [],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 15,
+    "priority": "low",
+    "title": "Console.log in Production",
+    "description": "Console.log statements in stores/expensesStore.ts:439, stores/syncStore.ts:78,95,105. Should replace with proper logger.",
+    "effort": "low",
+    "estimatedTime": "1 day",
+    "status": "not_started",
+    "filesAffected": [
+      "stores/expensesStore.ts",
+      "stores/syncStore.ts"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  },
+  {
+    "id": 16,
+    "priority": "low",
+    "title": "Inconsistent Import Ordering",
+    "description": "No ESLint import sort rule configured.",
+    "effort": "low",
+    "estimatedTime": "1 day",
+    "status": "not_started",
+    "filesAffected": [
+      ".eslintrc.js"
+    ],
+    "completedAt": null,
+    "preChecksPassed": null,
+    "postChecksPassed": null
+  }
+]
