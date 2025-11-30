@@ -74,13 +74,19 @@
     "description": "app/group/[id].tsx is 893 lines, mixing business logic with presentation and multiple responsibilities.",
     "effort": "high",
     "estimatedTime": "3-5 days",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
-      "app/group/[id].tsx"
+      "app/group/[id].tsx",
+      "components/group/ExpensesTab.tsx",
+      "components/group/BalancesTab.tsx",
+      "components/group/MembersTab.tsx",
+      "components/group/SettleModal.tsx",
+      "components/group/index.ts",
+      "components/index.ts"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T16:05:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 6,

@@ -5,10 +5,6 @@ import {
   TouchableOpacity,
   Share,
   Alert,
-  ActivityIndicator,
-  ScrollView,
-  Modal,
-  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,20 +14,16 @@ import { useAuthStore } from '../../stores/authStore';
 import { useSyncStore } from '../../stores/syncStore';
 import { queryKeys } from '../../lib/queryClient';
 import type { Balance } from '../../stores/groupsStore';
-import { LoadingSpinner } from '../../components';
-import { getCurrencySymbol, formatAmount, formatBalance, getUserDisplayName } from '../../lib/formatters';
+import { LoadingSpinner, ExpensesTab, BalancesTab, MembersTab, SettleModal } from '../../components';
+import { formatBalance, getUserDisplayName } from '../../lib/formatters';
 
 // React Query hooks
-import {
-  useGroupData,
-  useGroupExpenses,
-  useGroupSettlements,
-} from '../../hooks/queries';
+import { useGroupData, useGroupExpenses } from '../../hooks/queries';
 import { useCreateSettlement } from '../../hooks/mutations';
 
 type Tab = 'expenses' | 'balances' | 'members';
 
-const WEB_URL = 'https://evn.app'; // Production web URL
+const WEB_URL = 'https://evn.app';
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -43,23 +35,17 @@ export default function GroupDetailScreen() {
   const [settleAmount, setSettleAmount] = useState('');
   const { user } = useAuthStore();
 
-  // React Query hooks - automatic caching, deduplication, and background refetching
+  // React Query hooks
   const {
     group,
     members,
     balances,
     isLoading: isLoadingGroup,
-    isLoadingMembers,
-    isLoadingBalances,
     error: groupError,
     refetchAll,
   } = useGroupData(id);
 
-  const {
-    data: expenses = [],
-    isLoading: isLoadingExpenses,
-    error: expensesError,
-  } = useGroupExpenses(id);
+  const { data: expenses = [], isLoading: isLoadingExpenses } = useGroupExpenses(id);
 
   // Mutation for creating settlements
   const createSettlementMutation = useCreateSettlement();
@@ -79,13 +65,10 @@ export default function GroupDetailScreen() {
   useEffect(() => {
     if (!id || connectionStatus !== 'connected') return;
 
-    // Join the group room for real-time updates
     joinSyncGroup(id);
 
-    // Set up event listeners - invalidate queries on changes
     const unsubExpenseCreated = onExpenseCreated((data) => {
       if (data.expense.groupId === id) {
-        // Invalidate expenses and balances queries
         queryClient.invalidateQueries({ queryKey: queryKeys.expenses.byGroup(id) });
         queryClient.invalidateQueries({ queryKey: queryKeys.groups.balances(id) });
       }
@@ -112,7 +95,6 @@ export default function GroupDetailScreen() {
       }
     });
 
-    // Cleanup: leave group and remove listeners
     return () => {
       leaveSyncGroup(id);
       unsubExpenseCreated();
@@ -122,7 +104,7 @@ export default function GroupDetailScreen() {
     };
   }, [id, connectionStatus, queryClient, joinSyncGroup, leaveSyncGroup, onExpenseCreated, onExpenseUpdated, onExpenseDeleted, onSettlementCreated]);
 
-  // Get user's balance from memberBalances
+  // Callbacks
   const getUserBalance = useCallback(() => {
     if (!user || !balances) return 0;
     return balances.memberBalances[user.id] || 0;
@@ -134,35 +116,24 @@ export default function GroupDetailScreen() {
     return 'All settled up!';
   }, []);
 
-  // Format user display name with "You" for current user
   const getDisplayName = useCallback((userId: string) => {
     return getUserDisplayName(userId, user?.id);
   }, [user?.id]);
 
   const handleAddExpense = useCallback(() => {
-    if (id) {
-      router.push(`/group/${id}/add-expense`);
-    }
+    if (id) router.push(`/group/${id}/add-expense`);
   }, [id, router]);
 
-  const handleExpensePress = useCallback(
-    (expenseId: string) => {
-      router.push(`/expense/${expenseId}`);
-    },
-    [router]
-  );
+  const handleExpensePress = useCallback((expenseId: string) => {
+    router.push(`/expense/${expenseId}`);
+  }, [router]);
 
   const handleShareInvite = useCallback(async () => {
     if (!group) return;
-
     const inviteLink = `${WEB_URL}/join/${group.inviteCode}`;
     const message = `Join my group "${group.name}" on Evn!\n\n${inviteLink}`;
-
     try {
-      await Share.share({
-        message,
-        title: `Join ${group.name} on Evn`,
-      });
+      await Share.share({ message, title: `Join ${group.name} on Evn` });
     } catch (err) {
       if (err instanceof Error && err.message !== 'User did not share') {
         Alert.alert('Error', 'Failed to open share sheet');
@@ -209,13 +180,11 @@ export default function GroupDetailScreen() {
     );
   }, [selectedBalance, user, id, settleAmount, createSettlementMutation]);
 
-  // Retry handler
-  const handleRetry = useCallback(() => {
-    refetchAll();
-  }, [refetchAll]);
+  const handleCloseModal = useCallback(() => {
+    setSettleModalVisible(false);
+  }, []);
 
-  // Early returns MUST come after all hooks are defined
-  // Only block on fetchGroup loading/error - secondary data failures don't block UI
+  // Loading state
   if (isLoadingGroup && !group) {
     return (
       <SafeAreaView style={styles.container}>
@@ -224,7 +193,7 @@ export default function GroupDetailScreen() {
     );
   }
 
-  // Only show error screen if core group fetch failed - not for secondary data
+  // Error state
   if (groupError || !group) {
     return (
       <SafeAreaView style={styles.container}>
@@ -232,16 +201,16 @@ export default function GroupDetailScreen() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>😕</Text>
           <Text style={styles.errorTitle}>Unable to load group</Text>
-          <Text style={styles.errorText}>
-            {groupError?.message || 'Group not found'}
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <Text style={styles.errorText}>{groupError?.message || 'Group not found'}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refetchAll}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
+
+  const userBalance = getUserBalance();
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -266,17 +235,17 @@ export default function GroupDetailScreen() {
         <Text style={styles.balanceLabel}>Your balance</Text>
         <Text style={[
           styles.balanceAmount,
-          getUserBalance() > 0 && styles.balancePositive,
-          getUserBalance() < 0 && styles.balanceNegative,
+          userBalance > 0 && styles.balancePositive,
+          userBalance < 0 && styles.balanceNegative,
         ]}>
-          {formatBalance(getUserBalance(), group.defaultCurrency)}
+          {formatBalance(userBalance, group.defaultCurrency)}
         </Text>
         <Text style={[
           styles.balanceHint,
-          getUserBalance() > 0 && styles.balanceHintPositive,
-          getUserBalance() < 0 && styles.balanceHintNegative,
+          userBalance > 0 && styles.balanceHintPositive,
+          userBalance < 0 && styles.balanceHintNegative,
         ]}>
-          {getBalanceText(getUserBalance())}
+          {getBalanceText(userBalance)}
         </Text>
       </View>
 
@@ -308,129 +277,24 @@ export default function GroupDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Content */}
+      {/* Tab Content */}
       <View style={styles.content}>
         {activeTab === 'expenses' && (
-          <ScrollView style={styles.expensesList}>
-            {isLoadingExpenses && expenses.length === 0 ? (
-              <LoadingSpinner size="small" />
-            ) : expenses.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>💸</Text>
-                <Text style={styles.emptyTitle}>No expenses yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Add your first expense to start tracking
-                </Text>
-              </View>
-            ) : (
-              expenses.map((expense) => (
-                <TouchableOpacity
-                  key={expense.id}
-                  style={styles.expenseItem}
-                  onPress={() => handleExpensePress(expense.id)}
-                >
-                  <View style={styles.expenseInfo}>
-                    <Text style={styles.expenseDescription}>
-                      {expense.description}
-                    </Text>
-                    <Text style={styles.expenseDate}>
-                      {new Date(expense.date).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  <Text style={styles.expenseAmount}>
-                    {getCurrencySymbol(expense.currency)}
-                    {formatAmount(expense.amount, expense.currency)}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
+          <ExpensesTab
+            expenses={expenses}
+            isLoading={isLoadingExpenses}
+            onExpensePress={handleExpensePress}
+          />
         )}
         {activeTab === 'balances' && (
-          <ScrollView style={styles.balancesList}>
-            {!balances || balances.balances.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>✨</Text>
-                <Text style={styles.emptyTitle}>All settled up!</Text>
-                <Text style={styles.emptySubtitle}>
-                  No outstanding balances in this group
-                </Text>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.balancesHeader}>Who pays whom</Text>
-                {balances.balances.map((balance, index) => (
-                  <View key={`${balance.from}-${balance.to}-${index}`} style={styles.balanceItem}>
-                    <View style={styles.balanceParties}>
-                      <View style={styles.balanceAvatar}>
-                        <Text style={styles.balanceAvatarText}>
-                          {balance.from.substring(0, 2).toUpperCase()}
-                        </Text>
-                      </View>
-                      <View style={styles.balanceDetails}>
-                        <Text style={styles.balanceFrom}>
-                          {getDisplayName(balance.from)}
-                        </Text>
-                        <Text style={styles.balanceArrow}>owes</Text>
-                        <Text style={styles.balanceTo}>
-                          {getDisplayName(balance.to)}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.balanceActions}>
-                      <Text style={styles.balanceItemAmount}>
-                        {getCurrencySymbol(balance.currency)}{formatAmount(balance.amount, balance.currency)}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.settleButton}
-                        onPress={() => handleSettleUp(balance)}
-                      >
-                        <Text style={styles.settleButtonText}>Settle</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </>
-            )}
-          </ScrollView>
+          <BalancesTab
+            balances={balances}
+            getDisplayName={getDisplayName}
+            onSettleUp={handleSettleUp}
+          />
         )}
         {activeTab === 'members' && (
-          <ScrollView style={styles.membersList}>
-            {members.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>👥</Text>
-                <Text style={styles.emptyTitle}>No members yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Invite friends to join this group
-                </Text>
-              </View>
-            ) : (
-              members.map((member, index) => (
-                <View key={member.userId} style={styles.memberItem}>
-                  <View style={styles.memberAvatar}>
-                    <Text style={styles.memberAvatarText}>
-                      {member.userId.substring(0, 2).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>
-                      {member.userId}
-                      {member.userId === group.createdById && ' (Creator)'}
-                    </Text>
-                    <Text style={styles.memberRole}>
-                      {member.role === 'admin' ? 'Admin' : 'Member'} · Joined{' '}
-                      {new Date(member.joinedAt).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  {member.role === 'admin' && (
-                    <View style={styles.adminBadge}>
-                      <Text style={styles.adminBadgeText}>Admin</Text>
-                    </View>
-                  )}
-                </View>
-              ))
-            )}
-          </ScrollView>
+          <MembersTab members={members} createdById={group.createdById} />
         )}
       </View>
 
@@ -440,64 +304,16 @@ export default function GroupDetailScreen() {
       </TouchableOpacity>
 
       {/* Settle Up Modal */}
-      <Modal
+      <SettleModal
         visible={settleModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSettleModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Record Payment</Text>
-              <TouchableOpacity onPress={() => setSettleModalVisible(false)}>
-                <Text style={styles.modalCancel}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-
-            {selectedBalance && (
-              <View style={styles.settleDetails}>
-                <Text style={styles.settleDescription}>
-                  {getDisplayName(selectedBalance.from)} pays{' '}
-                  {getDisplayName(selectedBalance.to)}
-                </Text>
-                <View style={styles.settleAmountRow}>
-                  <Text style={styles.settleCurrency}>
-                    {getCurrencySymbol(selectedBalance.currency)}
-                  </Text>
-                  <TextInput
-                    style={styles.settleAmountInput}
-                    value={settleAmount}
-                    onChangeText={setSettleAmount}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                    placeholderTextColor="#999"
-                  />
-                </View>
-                <Text style={styles.settleHint}>
-                  Full amount owed: {getCurrencySymbol(selectedBalance.currency)}
-                  {formatAmount(selectedBalance.amount, selectedBalance.currency)}
-                </Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[
-                styles.confirmButton,
-                createSettlementMutation.isPending && styles.confirmButtonDisabled,
-              ]}
-              onPress={handleConfirmSettlement}
-              disabled={createSettlementMutation.isPending}
-            >
-              {createSettlementMutation.isPending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.confirmButtonText}>Confirm Payment</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        selectedBalance={selectedBalance}
+        settleAmount={settleAmount}
+        isPending={createSettlementMutation.isPending}
+        getDisplayName={getDisplayName}
+        onAmountChange={setSettleAmount}
+        onConfirm={handleConfirmSettlement}
+        onClose={handleCloseModal}
+      />
     </SafeAreaView>
   );
 }
@@ -506,11 +322,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   errorContainer: {
     flex: 1,
@@ -547,10 +358,11 @@ const styles = StyleSheet.create({
   },
   headerButtons: {
     flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
+    gap: 12,
   },
   headerInviteButton: {
-    marginRight: 8,
+    paddingHorizontal: 8,
   },
   headerButton: {
     color: '#007AFF',
@@ -558,117 +370,41 @@ const styles = StyleSheet.create({
   },
   balanceSummary: {
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#f8f8f8',
+    paddingVertical: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   balanceLabel: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 4,
   },
   balanceAmount: {
     fontSize: 36,
-    fontWeight: 'bold',
-    marginVertical: 4,
-  },
-  balanceHint: {
-    fontSize: 14,
-    color: '#4CAF50',
+    fontWeight: '700',
+    color: '#1a1a1a',
   },
   balancePositive: {
     color: '#4CAF50',
   },
   balanceNegative: {
-    color: '#FF5722',
+    color: '#FF5252',
+  },
+  balanceHint: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
   },
   balanceHintPositive: {
     color: '#4CAF50',
   },
   balanceHintNegative: {
-    color: '#FF5722',
-  },
-  balancesList: {
-    flex: 1,
-  },
-  balancesHeader: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    padding: 16,
-    paddingBottom: 8,
-    textTransform: 'uppercase',
-  },
-  balanceItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  balanceParties: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  balanceAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FF5722',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  balanceAvatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  balanceDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    flex: 1,
-  },
-  balanceFrom: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  balanceArrow: {
-    fontSize: 14,
-    color: '#666',
-    marginHorizontal: 6,
-  },
-  balanceTo: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  balanceActions: {
-    alignItems: 'flex-end',
-  },
-  balanceItemAmount: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FF5722',
-  },
-  settleButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginTop: 6,
-  },
-  settleButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#FF5252',
   },
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
   },
   tab: {
     flex: 1,
@@ -680,7 +416,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#007AFF',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
   },
   activeTabText: {
@@ -690,188 +426,23 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
   fab: {
     position: 'absolute',
     bottom: 24,
-    left: 24,
     right: 24,
     backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 28,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   fabText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  membersList: {
-    flex: 1,
-  },
-  memberItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  memberAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  memberAvatarText: {
-    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  memberRole: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  adminBadge: {
-    backgroundColor: '#E3F2FD',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  adminBadgeText: {
-    fontSize: 12,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  expensesList: {
-    flex: 1,
-  },
-  expenseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  expenseInfo: {
-    flex: 1,
-  },
-  expenseDescription: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1a1a1a',
-  },
-  expenseDate: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  expenseAmount: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  modalCancel: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  settleDetails: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  settleDescription: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
-  },
-  settleAmountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  settleCurrency: {
-    fontSize: 36,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginRight: 4,
-  },
-  settleAmountInput: {
-    fontSize: 36,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    minWidth: 120,
-    textAlign: 'center',
-  },
-  settleHint: {
-    fontSize: 14,
-    color: '#999',
-  },
-  confirmButton: {
-    backgroundColor: '#4CAF50',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  confirmButtonDisabled: {
-    backgroundColor: '#a5d6a7',
-  },
-  confirmButtonText: {
-    color: '#fff',
-    fontSize: 18,
     fontWeight: '600',
   },
 });
