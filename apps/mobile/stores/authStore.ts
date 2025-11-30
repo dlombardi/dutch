@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, registerTokenGetter } from '../lib/api';
+import { logger } from '../lib/logger';
 
 // Generate or retrieve a persistent device ID
 const DEVICE_ID_KEY = 'evn-device-id';
@@ -73,19 +74,24 @@ export const useAuthStore = create<AuthState>()(
           const deviceId = await getOrCreateDeviceId();
           const response = await api.createGuestUser(name, deviceId);
           // Token is stored in state and read by API client via registerTokenGetter (P2-001 fix)
+          const user = {
+            id: response.user.id,
+            name: response.user.name,
+            type: response.user.type,
+            createdAt: response.user.createdAt,
+          };
           set({
-            user: {
-              id: response.user.id,
-              name: response.user.name,
-              type: response.user.type,
-              createdAt: response.user.createdAt,
-            },
+            user,
             accessToken: response.accessToken,
             isAuthenticated: true,
           });
+          // Set user context for error tracking
+          logger.setUser({ id: user.id, name: user.name });
+          logger.info('Guest user logged in', { userId: user.id });
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to login as guest';
+          logger.error('Guest login failed', error);
           set({ error: errorMessage });
         } finally {
           set({ isLoading: false });
@@ -100,12 +106,14 @@ export const useAuthStore = create<AuthState>()(
             magicLinkSent: true,
             magicLinkEmail: email,
           });
+          logger.info('Magic link requested', { email });
           return true;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error
               ? error.message
               : 'Failed to send magic link';
+          logger.error('Magic link request failed', error, { email });
           set({ error: errorMessage });
           return false;
         } finally {
@@ -118,25 +126,30 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await api.verifyMagicLink(token);
           // Token is stored in state and read by API client via registerTokenGetter (P2-001 fix)
+          const user = {
+            id: response.user.id,
+            name: response.user.name,
+            email: response.user.email,
+            type: response.user.type,
+            createdAt: response.user.createdAt,
+          };
           set({
-            user: {
-              id: response.user.id,
-              name: response.user.name,
-              email: response.user.email,
-              type: response.user.type,
-              createdAt: response.user.createdAt,
-            },
+            user,
             accessToken: response.accessToken,
             isAuthenticated: true,
             magicLinkSent: false,
             magicLinkEmail: null,
           });
+          // Set user context for error tracking
+          logger.setUser({ id: user.id, email: user.email, name: user.name });
+          logger.info('Magic link verified', { userId: user.id });
           return true;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error
               ? error.message
               : 'Failed to verify magic link';
+          logger.error('Magic link verification failed', error);
           set({ error: errorMessage });
           return false;
         } finally {
@@ -175,6 +188,9 @@ export const useAuthStore = create<AuthState>()(
           magicLinkEmail: null,
           error: null,
         });
+        // Clear user context from error tracking
+        logger.setUser(null);
+        logger.info('User logged out');
       },
 
       clearError: () => {

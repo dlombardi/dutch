@@ -2,13 +2,17 @@ import { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { ErrorBoundaryProps, useRouter } from 'expo-router';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/theme';
+import { logger } from '../lib/logger';
 
 export default function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const router = useRouter();
 
   useEffect(() => {
-    // Log error for debugging - in production, send to error tracking service
-    console.error('Unhandled error:', error);
+    // Log error for debugging and error tracking
+    logger.captureException(error, {
+      source: 'ErrorBoundary',
+      route: 'unknown', // Could be enhanced with route info
+    });
   }, [error]);
 
   const handleGoHome = () => {

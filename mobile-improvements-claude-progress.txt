@@ -71,8 +71,8 @@ PRE-EXISTING ISSUES
 CURRENT TASK
 ================================================================================
 
-Task ID: 9
-Task Title: Incomplete claimAccount API
+Task ID: 11
+Task Title: Network vs API Errors Not Distinguished
 Status: Pending
 Started At: N/A
 
@@ -82,13 +82,28 @@ Pre-Task Baseline:
 - Tests: 78/78 mobile passed
 
 Notes:
-- stores/authStore.ts:153 has // TODO: Call API
-- Guest account claiming not implemented
+- Users don't know if connectivity or server issue
+- Need to add specific error types
 
 
 ================================================================================
 COMPLETED TASKS
 ================================================================================
+
+#10 - No Error Tracking [2025-11-30T16:15:00Z]
+- Created lib/logger.ts with Logger class abstraction
+- Supports debug, info, warn, error logging levels
+- Has captureException for error tracking integration
+- Has setUser for user context (associates errors with users)
+- Has addBreadcrumb, setTag, setExtra for rich error context
+- Updated +error.tsx to use logger.captureException
+- Updated authStore.ts to use logger for auth events:
+  - User login/logout tracking
+  - Magic link request/verify tracking
+  - Error logging with context
+- Ready for Sentry integration (TODO comments in place)
+- Pre-check: 0 errors, 19 warnings | Post-check: 0 errors, 19 warnings
+- Tests: 78/78 mobile passed
 
 #8 - No Request Timeouts [2025-11-30T16:05:00Z]
 - Added RequestTimeoutError custom error class
@@ -182,7 +197,11 @@ COMPLETED TASKS
 BLOCKED / NOTES
 ================================================================================
 
-[None yet]
+#9 - Incomplete claimAccount API [BLOCKED]
+- Reason: Requires backend API endpoint that doesn't exist
+- Backend auth controller only has: magic-link/request, magic-link/verify, guest
+- Need to implement /auth/claim endpoint in API first
+- Mobile changes cannot be completed until backend is ready
 
 ================================================================================
 VALIDATION RESULTS

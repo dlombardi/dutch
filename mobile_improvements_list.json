@@ -160,13 +160,14 @@
     "description": "stores/authStore.ts:153 has // TODO: Call API. Guest account claiming not implemented.",
     "effort": "medium",
     "estimatedTime": "2-3 days",
-    "status": "not_started",
+    "status": "blocked",
     "filesAffected": [
       "stores/authStore.ts"
     ],
     "completedAt": null,
     "preChecksPassed": null,
-    "postChecksPassed": null
+    "postChecksPassed": null,
+    "blockedReason": "Requires backend /auth/claim endpoint that doesn't exist"
   },
   {
     "id": 10,
@@ -175,11 +176,15 @@
     "description": "No Sentry or similar error tracking. Production errors are invisible, only console.log in dev.",
     "effort": "medium",
     "estimatedTime": "1-2 days",
-    "status": "not_started",
-    "filesAffected": [],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "status": "completed",
+    "filesAffected": [
+      "lib/logger.ts",
+      "app/+error.tsx",
+      "stores/authStore.ts"
+    ],
+    "completedAt": "2025-11-30T16:15:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 11,
