@@ -42,13 +42,13 @@
     "description": "Failed pending expenses retry indefinitely in stores/expensesStore.ts:394-444. No max retry count or exponential backoff, no way to dismiss failed items.",
     "effort": "medium",
     "estimatedTime": "1-2 days",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
       "stores/expensesStore.ts"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T15:42:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 4,

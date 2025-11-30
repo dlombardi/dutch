@@ -36,6 +36,33 @@ export interface PendingExpense {
   exchangeRate?: number;
   createdAt: string;
   isSyncing?: boolean;
+  // Retry tracking
+  retryCount?: number;
+  lastRetryAt?: string;
+  errorMessage?: string;
+}
+
+// Maximum retry attempts before giving up
+const MAX_RETRY_COUNT = 3;
+
+// Calculate exponential backoff delay in milliseconds
+// 1st retry: 1s, 2nd: 4s, 3rd: 16s
+function getRetryDelay(retryCount: number): number {
+  return Math.pow(4, retryCount) * 1000;
+}
+
+// Check if enough time has passed for a retry
+function canRetry(pending: PendingExpense): boolean {
+  const retryCount = pending.retryCount ?? 0;
+  if (retryCount >= MAX_RETRY_COUNT) return false;
+
+  if (!pending.lastRetryAt) return true;
+
+  const lastRetry = new Date(pending.lastRetryAt).getTime();
+  const now = Date.now();
+  const delay = getRetryDelay(retryCount);
+
+  return now - lastRetry >= delay;
 }
 
 // Operation types for granular state tracking (P0 fix)
@@ -115,6 +142,7 @@ interface ExpensesState {
   // Offline queue actions
   syncPendingExpenses: () => Promise<void>;
   removePendingExpense: (localId: string) => void;
+  getFailedPendingExpenses: () => PendingExpense[];
 
   // Real-time sync handlers
   handleExpenseCreated: (expense: Expense) => void;
@@ -395,9 +423,16 @@ export const useExpensesStore = create<ExpensesState>()(
         const { pendingExpenses } = get();
         if (pendingExpenses.length === 0) return;
 
+        // Filter to expenses that can be retried
+        const retryablePending = pendingExpenses.filter(canRetry);
+        if (retryablePending.length === 0) return;
+
         set({ isSyncing: true });
 
-        for (const pending of pendingExpenses) {
+        for (const pending of retryablePending) {
+          // Skip if already syncing
+          if (pending.isSyncing) continue;
+
           // Mark as syncing
           set((state) => ({
             pendingExpenses: state.pendingExpenses.map((p) =>
@@ -430,17 +465,43 @@ export const useExpensesStore = create<ExpensesState>()(
               expenses: [...state.expenses, newExpense],
             }));
           } catch (error) {
-            // Mark as not syncing on error, will retry next time
+            const currentRetryCount = pending.retryCount ?? 0;
+            const newRetryCount = currentRetryCount + 1;
+            const errorMessage = error instanceof Error ? error.message : 'Sync failed';
+
+            // Update with retry info
             set((state) => ({
               pendingExpenses: state.pendingExpenses.map((p) =>
-                p.localId === pending.localId ? { ...p, isSyncing: false } : p
+                p.localId === pending.localId
+                  ? {
+                      ...p,
+                      isSyncing: false,
+                      retryCount: newRetryCount,
+                      lastRetryAt: new Date().toISOString(),
+                      errorMessage: newRetryCount >= MAX_RETRY_COUNT
+                        ? `Failed after ${MAX_RETRY_COUNT} attempts: ${errorMessage}`
+                        : errorMessage,
+                    }
+                  : p
               ),
             }));
-            console.error('[Expenses] Failed to sync pending expense:', error);
+
+            if (newRetryCount >= MAX_RETRY_COUNT) {
+              console.warn(
+                `[Expenses] Pending expense ${pending.localId} failed after ${MAX_RETRY_COUNT} retries`
+              );
+            }
           }
         }
 
         set({ isSyncing: false });
+      },
+
+      // Get pending expenses that have permanently failed
+      getFailedPendingExpenses: () => {
+        return get().pendingExpenses.filter(
+          (p) => (p.retryCount ?? 0) >= MAX_RETRY_COUNT
+        );
       },
 
       removePendingExpense: (localId) => {
