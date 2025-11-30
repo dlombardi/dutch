@@ -6,7 +6,10 @@ import { ExpensesModule } from '../expenses/expenses.module';
 import { SettlementsModule } from '../settlements/settlements.module';
 
 @Module({
-  imports: [forwardRef(() => ExpensesModule), forwardRef(() => SettlementsModule)],
+  imports: [
+    forwardRef(() => ExpensesModule),
+    forwardRef(() => SettlementsModule),
+  ],
   controllers: [GroupsController],
   providers: [GroupsService, BalancesService],
   exports: [GroupsService],

@@ -216,9 +216,7 @@ describe('GroupsController (integration)', () => {
     });
 
     it('should return 404 for non-existent group', async () => {
-      await request(httpServer)
-        .get('/groups/non-existent-id')
-        .expect(404);
+      await request(httpServer).get('/groups/non-existent-id').expect(404);
     });
   });
 
@@ -248,9 +246,7 @@ describe('GroupsController (integration)', () => {
     });
 
     it('should return 404 for invalid invite code', async () => {
-      await request(httpServer)
-        .get('/groups/invite/INVALID')
-        .expect(404);
+      await request(httpServer).get('/groups/invite/INVALID').expect(404);
     });
   });
 
@@ -277,7 +273,10 @@ describe('GroupsController (integration)', () => {
         })
         .expect(201);
 
-      const body = joinResponse.body as { group: Group; membership: { userId: string; role: string } };
+      const body = joinResponse.body as {
+        group: Group;
+        membership: { userId: string; role: string };
+      };
       expect(body.group.id).toBe(createdGroup.id);
       expect(body.membership.userId).toBe('new-member-456');
       expect(body.membership.role).toBe('member');
@@ -341,7 +340,10 @@ describe('GroupsController (integration)', () => {
         })
         .expect(200);
 
-      const body = secondJoin.body as { group: Group; membership: { userId: string; role: string } };
+      const body = secondJoin.body as {
+        group: Group;
+        membership: { userId: string; role: string };
+      };
       expect(body.membership.userId).toBe('duplicate-user-123');
     });
   });

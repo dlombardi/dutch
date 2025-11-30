@@ -149,8 +149,12 @@ describe('Balances API (integration)', () => {
       // B owes A $30, C owes A $30
       expect(body.balances).toHaveLength(2);
 
-      const bToA = body.balances.find(b => b.from === 'user-b' && b.to === 'user-a');
-      const cToA = body.balances.find(b => b.from === 'user-c' && b.to === 'user-a');
+      const bToA = body.balances.find(
+        (b) => b.from === 'user-b' && b.to === 'user-a',
+      );
+      const cToA = body.balances.find(
+        (b) => b.from === 'user-c' && b.to === 'user-a',
+      );
 
       expect(bToA?.amount).toBe(30);
       expect(cToA?.amount).toBe(30);
@@ -359,7 +363,10 @@ describe('Balances API (integration)', () => {
         expect(body.balances.length).toBeLessThanOrEqual(2);
 
         // Total amount transferred should equal total debt
-        const totalTransferred = body.balances.reduce((sum, b) => sum + b.amount, 0);
+        const totalTransferred = body.balances.reduce(
+          (sum, b) => sum + b.amount,
+          0,
+        );
         expect(totalTransferred).toBe(50);
       });
 
@@ -428,7 +435,7 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 100,
             currency: 'EUR',
-            exchangeRate: 1.10, // 1 EUR = 1.10 USD
+            exchangeRate: 1.1, // 1 EUR = 1.10 USD
             description: 'European Dinner',
             paidById: 'user-a',
             createdById: 'user-a',
@@ -474,7 +481,7 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 50,
             currency: 'EUR',
-            exchangeRate: 1.20, // 1 EUR = 1.20 USD
+            exchangeRate: 1.2, // 1 EUR = 1.20 USD
             description: 'European Lunch',
             paidById: 'user-b',
             createdById: 'user-b',

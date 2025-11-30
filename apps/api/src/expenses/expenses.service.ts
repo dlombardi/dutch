@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Optional,
+} from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { GroupsService } from '../groups/groups.service';
 import { SyncGateway } from '../sync/sync.gateway';
@@ -68,7 +73,9 @@ export class ExpensesService {
     // Check for negative amounts
     for (const [userId, amount] of entries) {
       if (amount < 0) {
-        throw new BadRequestException(`Split amount for ${userId} cannot be negative`);
+        throw new BadRequestException(
+          `Split amount for ${userId} cannot be negative`,
+        );
       }
     }
 
@@ -76,7 +83,7 @@ export class ExpensesService {
     const sum = entries.reduce((acc, [, amount]) => acc + amount, 0);
     if (Math.abs(sum - totalAmount) > 0.01) {
       throw new BadRequestException(
-        `Split amounts must sum to total expense amount. Expected ${totalAmount}, got ${sum.toFixed(2)}`
+        `Split amounts must sum to total expense amount. Expected ${totalAmount}, got ${sum.toFixed(2)}`,
       );
     }
   }
@@ -109,26 +116,29 @@ export class ExpensesService {
       // Different currency - exchange rate is required
       if (exchangeRate === undefined || exchangeRate === null) {
         throw new BadRequestException(
-          `Exchange rate is required when expense currency (${expenseCurrency}) differs from group default currency (${group.defaultCurrency})`
+          `Exchange rate is required when expense currency (${expenseCurrency}) differs from group default currency (${group.defaultCurrency})`,
         );
       }
       finalExchangeRate = exchangeRate;
     }
 
     // Calculate amount in group currency
-    const amountInGroupCurrency = Math.round(amount * finalExchangeRate * 100) / 100;
+    const amountInGroupCurrency =
+      Math.round(amount * finalExchangeRate * 100) / 100;
 
     const expenseId = randomBytes(16).toString('hex');
     const now = new Date();
     const expenseDate = date || now.toISOString().split('T')[0];
 
-    let finalSplitType: 'equal' | 'exact' = splitType || 'equal';
+    const finalSplitType: 'equal' | 'exact' = splitType || 'equal';
     let finalSplitParticipants: string[];
     let finalSplitAmounts: Record<string, number>;
 
     if (finalSplitType === 'exact') {
       if (!splitAmounts || Object.keys(splitAmounts).length === 0) {
-        throw new BadRequestException('Split amounts are required for exact split type');
+        throw new BadRequestException(
+          'Split amounts are required for exact split type',
+        );
       }
       this.validateExactSplitAmounts(amount, splitAmounts);
       finalSplitAmounts = splitAmounts;
@@ -136,7 +146,10 @@ export class ExpensesService {
     } else {
       // Equal split
       finalSplitParticipants = splitParticipants || [paidById];
-      finalSplitAmounts = this.calculateEqualSplits(amount, finalSplitParticipants);
+      finalSplitAmounts = this.calculateEqualSplits(
+        amount,
+        finalSplitParticipants,
+      );
     }
 
     const expense: ExpenseData = {
@@ -167,7 +180,9 @@ export class ExpensesService {
 
     // Broadcast expense:created event to group members
     if (this.syncGateway) {
-      this.syncGateway.broadcastToGroup(groupId, 'expense:created', { expense });
+      this.syncGateway.broadcastToGroup(groupId, 'expense:created', {
+        expense,
+      });
     }
 
     return { expense };
@@ -242,12 +257,21 @@ export class ExpensesService {
         expense.splitAmounts = updates.splitAmounts;
         expense.splitParticipants = Object.keys(updates.splitAmounts);
         expense.splitType = 'exact';
-      } else if (updates.splitType === 'exact' && expense.splitType !== 'exact') {
+      } else if (
+        updates.splitType === 'exact' &&
+        expense.splitType !== 'exact'
+      ) {
         // Trying to change to exact without providing amounts
-        throw new BadRequestException('Split amounts are required for exact split type');
+        throw new BadRequestException(
+          'Split amounts are required for exact split type',
+        );
       }
       // If just updating amount and keeping exact split, validate existing amounts
-      if (updates.amount !== undefined && expense.splitType === 'exact' && !updates.splitAmounts) {
+      if (
+        updates.amount !== undefined &&
+        expense.splitType === 'exact' &&
+        !updates.splitAmounts
+      ) {
         this.validateExactSplitAmounts(expense.amount, expense.splitAmounts);
       }
     } else {
@@ -275,7 +299,9 @@ export class ExpensesService {
 
     // Broadcast expense:updated event to group members
     if (this.syncGateway) {
-      this.syncGateway.broadcastToGroup(expense.groupId, 'expense:updated', { expense });
+      this.syncGateway.broadcastToGroup(expense.groupId, 'expense:updated', {
+        expense,
+      });
     }
 
     return { expense };
@@ -304,7 +330,10 @@ export class ExpensesService {
 
     // Broadcast expense:deleted event to group members
     if (this.syncGateway) {
-      this.syncGateway.broadcastToGroup(groupId, 'expense:deleted', { expenseId: id, groupId });
+      this.syncGateway.broadcastToGroup(groupId, 'expense:deleted', {
+        expenseId: id,
+        groupId,
+      });
     }
 
     return { message: 'Expense deleted successfully' };

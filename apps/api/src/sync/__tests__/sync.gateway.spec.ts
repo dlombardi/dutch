@@ -96,9 +96,13 @@ describe('SyncGateway', () => {
       clientSocket = await connectClient();
 
       const response = await new Promise<any>((resolve) => {
-        clientSocket.emit('joinGroup', { groupId: 'test-group-1' }, (response: any) => {
-          resolve(response);
-        });
+        clientSocket.emit(
+          'joinGroup',
+          { groupId: 'test-group-1' },
+          (response: any) => {
+            resolve(response);
+          },
+        );
       });
 
       expect(response.success).toBe(true);
@@ -117,9 +121,13 @@ describe('SyncGateway', () => {
 
       // Then leave
       const response = await new Promise<any>((resolve) => {
-        clientSocket.emit('leaveGroup', { groupId: 'test-group-1' }, (response: any) => {
-          resolve(response);
-        });
+        clientSocket.emit(
+          'leaveGroup',
+          { groupId: 'test-group-1' },
+          (response: any) => {
+            resolve(response);
+          },
+        );
       });
 
       expect(response.success).toBe(true);
@@ -130,15 +138,23 @@ describe('SyncGateway', () => {
       clientSocket = await connectClient();
 
       const response1 = await new Promise<any>((resolve) => {
-        clientSocket.emit('joinGroup', { groupId: 'group-1' }, (response: any) => {
-          resolve(response);
-        });
+        clientSocket.emit(
+          'joinGroup',
+          { groupId: 'group-1' },
+          (response: any) => {
+            resolve(response);
+          },
+        );
       });
 
       const response2 = await new Promise<any>((resolve) => {
-        clientSocket.emit('joinGroup', { groupId: 'group-2' }, (response: any) => {
-          resolve(response);
-        });
+        clientSocket.emit(
+          'joinGroup',
+          { groupId: 'group-2' },
+          (response: any) => {
+            resolve(response);
+          },
+        );
       });
 
       expect(response1.success).toBe(true);
@@ -168,9 +184,13 @@ describe('SyncGateway', () => {
 
       // Both join the same group
       await new Promise<void>((resolve) => {
-        clientSocket.emit('joinGroup', { groupId: 'broadcast-test-group' }, () => {
-          resolve();
-        });
+        clientSocket.emit(
+          'joinGroup',
+          { groupId: 'broadcast-test-group' },
+          () => {
+            resolve();
+          },
+        );
       });
 
       await new Promise<void>((resolve) => {

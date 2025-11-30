@@ -62,7 +62,9 @@ export class SettlementsService {
 
     // Broadcast settlement:created event to group members
     if (this.syncGateway) {
-      this.syncGateway.broadcastToGroup(groupId, 'settlement:created', { settlement });
+      this.syncGateway.broadcastToGroup(groupId, 'settlement:created', {
+        settlement,
+      });
     }
 
     return { settlement };

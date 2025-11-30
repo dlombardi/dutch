@@ -8,7 +8,13 @@ import { CurrencyModule } from './currency/currency.module';
 import { SyncModule } from './sync/sync.module';
 
 @Module({
-  imports: [AuthModule, GroupsModule, ExpensesModule, CurrencyModule, SyncModule],
+  imports: [
+    AuthModule,
+    GroupsModule,
+    ExpensesModule,
+    CurrencyModule,
+    SyncModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

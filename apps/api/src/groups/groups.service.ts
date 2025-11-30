@@ -117,7 +117,9 @@ export class GroupsService {
     return this.memberships.get(groupId) || [];
   }
 
-  getGroupMembersById(id: string): { members: Omit<GroupMembership, 'groupId'>[] } {
+  getGroupMembersById(id: string): {
+    members: Omit<GroupMembership, 'groupId'>[];
+  } {
     // First verify the group exists
     const group = this.groups.get(id);
     if (!group) {

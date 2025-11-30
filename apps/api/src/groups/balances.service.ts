@@ -33,7 +33,8 @@ export class BalancesService {
     const { expenses } = this.expensesService.getExpensesByGroupId(groupId);
 
     // Get all settlements for the group
-    const { settlements } = this.settlementsService.getSettlementsByGroupId(groupId);
+    const { settlements } =
+      this.settlementsService.getSettlementsByGroupId(groupId);
 
     // Step 1: Calculate net balance for each person
     // Positive = owed money, Negative = owes money
@@ -49,7 +50,8 @@ export class BalancesService {
       for (const [userId, amountOwed] of Object.entries(splitAmounts)) {
         if (userId !== paidById) {
           // Convert amount to group currency
-          const amountInGroupCurrency = Math.round(amountOwed * rate * 100) / 100;
+          const amountInGroupCurrency =
+            Math.round(amountOwed * rate * 100) / 100;
 
           // userId owes money (decrease their balance)
           netBalances.set(
@@ -69,15 +71,9 @@ export class BalancesService {
     for (const settlement of settlements) {
       const { fromUserId, toUserId, amount } = settlement;
       // fromUserId paid toUserId, so fromUserId's balance increases (less debt)
-      netBalances.set(
-        fromUserId,
-        (netBalances.get(fromUserId) || 0) + amount,
-      );
+      netBalances.set(fromUserId, (netBalances.get(fromUserId) || 0) + amount);
       // toUserId received payment, so their balance decreases (owed less)
-      netBalances.set(
-        toUserId,
-        (netBalances.get(toUserId) || 0) - amount,
-      );
+      netBalances.set(toUserId, (netBalances.get(toUserId) || 0) - amount);
     }
 
     // Step 2: Simplify debts using greedy algorithm
