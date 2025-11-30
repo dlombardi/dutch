@@ -193,13 +193,13 @@
     "description": "Users don't know if connectivity or server issue. Need to add specific error types.",
     "effort": "medium",
     "estimatedTime": "1-2 days",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
       "lib/api.ts"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T16:20:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 12,

@@ -8,7 +8,7 @@ const API_BASE_URL = __DEV__
 // For Android emulator, use 10.0.2.2 instead of localhost
 // const API_BASE_URL = __DEV__ ? 'http://10.0.2.2:3001' : 'https://api.evn.app';
 
-export interface ApiError {
+export interface ApiErrorResponse {
   message: string | string[];
   error: string;
   statusCode: number;
@@ -18,13 +18,145 @@ export interface ApiError {
 const DEFAULT_TIMEOUT_MS = 30000;
 
 /**
- * Custom error for request timeouts
+ * Base class for all API-related errors
  */
-export class RequestTimeoutError extends Error {
-  constructor(url: string, timeoutMs: number) {
-    super(`Request to ${url} timed out after ${timeoutMs}ms`);
-    this.name = 'RequestTimeoutError';
+export abstract class BaseApiError extends Error {
+  abstract readonly isNetworkError: boolean;
+  abstract readonly isServerError: boolean;
+  abstract readonly isUserRecoverable: boolean;
+}
+
+/**
+ * Error for network connectivity issues (no internet, DNS failure, etc.)
+ * User can recover by checking their connection
+ */
+export class NetworkError extends BaseApiError {
+  readonly isNetworkError = true;
+  readonly isServerError = false;
+  readonly isUserRecoverable = true;
+
+  constructor(originalError?: Error) {
+    super(originalError?.message || 'Network connection failed. Please check your internet connection.');
+    this.name = 'NetworkError';
+    this.cause = originalError;
   }
+}
+
+/**
+ * Error for request timeouts
+ * User can retry the request
+ */
+export class RequestTimeoutError extends BaseApiError {
+  readonly isNetworkError = true;
+  readonly isServerError = false;
+  readonly isUserRecoverable = true;
+  readonly url: string;
+  readonly timeoutMs: number;
+
+  constructor(url: string, timeoutMs: number) {
+    super(`Request timed out. Please try again.`);
+    this.name = 'RequestTimeoutError';
+    this.url = url;
+    this.timeoutMs = timeoutMs;
+  }
+}
+
+/**
+ * Error for API/server errors (4xx, 5xx responses)
+ * May or may not be user recoverable depending on status code
+ */
+export class ApiError extends BaseApiError {
+  readonly isNetworkError = false;
+  readonly isServerError: boolean;
+  readonly isUserRecoverable: boolean;
+  readonly statusCode: number;
+  readonly errorCode?: string;
+  readonly details?: string | string[];
+
+  constructor(response: ApiErrorResponse) {
+    const message = Array.isArray(response.message)
+      ? response.message.join(', ')
+      : response.message;
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = response.statusCode;
+    this.errorCode = response.error;
+    this.details = response.message;
+    // 4xx errors are client errors (often user recoverable)
+    // 5xx errors are server errors (usually not user recoverable)
+    this.isServerError = response.statusCode >= 500;
+    // 400, 401, 403, 404, 422 are often user recoverable
+    this.isUserRecoverable = response.statusCode < 500;
+  }
+
+  /**
+   * Check if this is an authentication error
+   */
+  isAuthError(): boolean {
+    return this.statusCode === 401 || this.statusCode === 403;
+  }
+
+  /**
+   * Check if this is a not found error
+   */
+  isNotFoundError(): boolean {
+    return this.statusCode === 404;
+  }
+
+  /**
+   * Check if this is a validation error
+   */
+  isValidationError(): boolean {
+    return this.statusCode === 400 || this.statusCode === 422;
+  }
+}
+
+/**
+ * Type guard to check if an error is a network-related error
+ */
+export function isNetworkError(error: unknown): error is NetworkError | RequestTimeoutError {
+  return error instanceof NetworkError || error instanceof RequestTimeoutError;
+}
+
+/**
+ * Type guard to check if an error is an API error
+ */
+export function isApiError(error: unknown): error is ApiError {
+  return error instanceof ApiError;
+}
+
+/**
+ * Get a user-friendly error message for any error
+ */
+export function getErrorMessage(error: unknown): string {
+  if (isNetworkError(error)) {
+    if (error instanceof RequestTimeoutError) {
+      return 'The request took too long. Please try again.';
+    }
+    return 'Unable to connect. Please check your internet connection.';
+  }
+
+  if (isApiError(error)) {
+    if (error.isAuthError()) {
+      return 'Please sign in again to continue.';
+    }
+    if (error.isNotFoundError()) {
+      return 'The requested item was not found.';
+    }
+    if (error.isValidationError()) {
+      return error.message || 'Please check your input and try again.';
+    }
+    if (error.isServerError) {
+      return 'Something went wrong on our end. Please try again later.';
+    }
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'An unexpected error occurred.';
 }
 
 // Token getter function - will be set by authStore to avoid circular dependency
@@ -100,13 +232,19 @@ class ApiClient {
         if (__DEV__) {
           console.log(`[API] Error ${response.status}:`, data);
         }
-        throw data as ApiError;
+        // Throw structured API error
+        throw new ApiError(data as ApiErrorResponse);
       }
 
       return data as T;
     } catch (error) {
       // Clear timeout on error
       clearTimeout(timeoutId);
+
+      // If it's already one of our custom errors, re-throw it
+      if (error instanceof ApiError || error instanceof NetworkError || error instanceof RequestTimeoutError) {
+        throw error;
+      }
 
       // Check if error was due to abort (timeout)
       if (error instanceof Error && error.name === 'AbortError') {
@@ -115,6 +253,15 @@ class ApiClient {
           console.log(`[API] Request timed out:`, timeoutError.message);
         }
         throw timeoutError;
+      }
+
+      // Check for network errors (TypeError from fetch usually means network issue)
+      if (error instanceof TypeError) {
+        const networkError = new NetworkError(error);
+        if (__DEV__) {
+          console.log(`[API] Network error:`, networkError.message);
+        }
+        throw networkError;
       }
 
       if (__DEV__) {
