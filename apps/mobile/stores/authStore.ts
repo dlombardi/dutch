@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 import { api, registerTokenGetter } from '../lib/api';
 import { logger } from '../lib/logger';
 
@@ -10,8 +11,8 @@ const DEVICE_ID_KEY = 'evn-device-id';
 async function getOrCreateDeviceId(): Promise<string> {
   let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
   if (!deviceId) {
-    // Generate a UUID-like identifier
-    deviceId = `device-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    // Generate a cryptographically secure UUID
+    deviceId = await Crypto.randomUUID();
     await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
   }
   return deviceId;
