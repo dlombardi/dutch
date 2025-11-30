@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
-import type { Expense } from '../../stores/expensesStore';
 import { useAuthStore } from '../../stores/authStore';
+import { validateExpenses, validateExpense } from '../../lib/validators';
 
 /**
  * Query hook to fetch expenses for a specific group.
@@ -22,7 +22,7 @@ export function useGroupExpenses(groupId: string | undefined) {
     queryFn: async () => {
       if (!groupId) throw new Error('Group ID is required');
       const response = await api.getGroupExpenses(groupId);
-      return response.expenses as Expense[];
+      return validateExpenses(response.expenses);
     },
     enabled: !!groupId && hasHydrated && isAuthenticated,
   });
@@ -40,7 +40,7 @@ export function useExpense(expenseId: string | undefined) {
     queryFn: async () => {
       if (!expenseId) throw new Error('Expense ID is required');
       const response = await api.getExpense(expenseId);
-      return response.expense as Expense;
+      return validateExpense(response.expense);
     },
     enabled: !!expenseId && hasHydrated && isAuthenticated,
   });
@@ -56,7 +56,7 @@ export function usePrefetchGroupExpenses() {
   return (groupId: string) => {
     queryClient.prefetchQuery({
       queryKey: queryKeys.expenses.byGroup(groupId),
-      queryFn: () => api.getGroupExpenses(groupId).then((r) => r.expenses),
+      queryFn: () => api.getGroupExpenses(groupId).then((r) => validateExpenses(r.expenses)),
     });
   };
 }
@@ -71,7 +71,7 @@ export function usePrefetchExpense() {
   return (expenseId: string) => {
     queryClient.prefetchQuery({
       queryKey: queryKeys.expenses.detail(expenseId),
-      queryFn: () => api.getExpense(expenseId).then((r) => r.expense),
+      queryFn: () => api.getExpense(expenseId).then((r) => validateExpense(r.expense)),
     });
   };
 }

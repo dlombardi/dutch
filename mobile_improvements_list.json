@@ -57,14 +57,15 @@
     "description": "API responses cast with 'as' without validation (e.g., response.expenses as Expense[]). Could cause crashes if API response changes.",
     "effort": "medium",
     "estimatedTime": "2-3 days",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
+      "lib/validators.ts",
       "hooks/queries/useExpenses.ts",
       "hooks/queries/useGroup.ts"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T15:50:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 5,

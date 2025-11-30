@@ -71,10 +71,10 @@ PRE-EXISTING ISSUES
 CURRENT TASK
 ================================================================================
 
-Task ID: 3
-Task Title: Offline Queue Retry Limits
+Task ID: 4
+Task Title: Type Assertions Without Runtime Validation
 Status: In Progress
-Started At: 2025-11-30T15:38:00Z
+Started At: 2025-11-30T15:45:00Z
 
 Pre-Task Baseline:
 - Lint: 0 errors, 11 warnings (pre-existing)
@@ -82,14 +82,23 @@ Pre-Task Baseline:
 - Tests: 148/148 passed
 
 Notes:
-- Adding retryCount, lastRetryAt, and errorMessage to PendingExpense
-- Max 3 retries with exponential backoff (1s, 4s, 16s)
-- Provide UI to dismiss failed items via removePendingExpense
+- Creating lib/validators.ts with runtime type guards
+- Type guards validate shape of API responses before use
+- Updated hooks/queries to use validators instead of bare `as` casts
 
 
 ================================================================================
 COMPLETED TASKS
 ================================================================================
+
+#4 - Type Assertions Without Runtime Validation [2025-11-30T15:50:00Z]
+- Created lib/validators.ts with runtime type guards
+- Implemented type guards: isExpense, isGroup, isGroupMember, isBalance, isBalancesData
+- Added validation functions: validateExpenses, validateExpense, validateGroup, etc.
+- Updated useExpenses.ts hooks to use validators instead of bare `as` casts
+- Updated useGroup.ts hooks to use validators instead of bare `as` casts
+- Pre-check: 0 errors, 11 warnings | Post-check: 0 errors, 11 warnings
+- Tests: 148/148 passed
 
 #3 - Offline Queue Retry Limits [2025-11-30T15:42:00Z]
 - Added retryCount, lastRetryAt, and errorMessage fields to PendingExpense

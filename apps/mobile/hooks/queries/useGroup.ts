@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
-import type { Group, GroupMember, BalancesData } from '../../stores/groupsStore';
 import { useAuthStore } from '../../stores/authStore';
+import { validateGroup, validateGroupMembers, validateBalancesData } from '../../lib/validators';
 
 /**
  * Query hook to fetch a single group by ID.
@@ -22,7 +22,7 @@ export function useGroup(groupId: string | undefined) {
     queryFn: async () => {
       if (!groupId) throw new Error('Group ID is required');
       const response = await api.getGroup(groupId);
-      return response.group as Group;
+      return validateGroup(response.group);
     },
     // Only fetch when we have a groupId AND auth is ready
     enabled: !!groupId && hasHydrated && isAuthenticated,
@@ -41,7 +41,7 @@ export function useGroupMembers(groupId: string | undefined) {
     queryFn: async () => {
       if (!groupId) throw new Error('Group ID is required');
       const response = await api.getGroupMembers(groupId);
-      return response.members as GroupMember[];
+      return validateGroupMembers(response.members);
     },
     enabled: !!groupId && hasHydrated && isAuthenticated,
   });
@@ -59,7 +59,7 @@ export function useGroupBalances(groupId: string | undefined) {
     queryFn: async () => {
       if (!groupId) throw new Error('Group ID is required');
       const response = await api.getGroupBalances(groupId);
-      return response as BalancesData;
+      return validateBalancesData(response);
     },
     enabled: !!groupId && hasHydrated && isAuthenticated,
   });
@@ -77,7 +77,7 @@ export function useGroupByInviteCode(inviteCode: string | undefined) {
     queryFn: async () => {
       if (!inviteCode) throw new Error('Invite code is required');
       const response = await api.getGroupByInviteCode(inviteCode);
-      return response.group as Group;
+      return validateGroup(response.group);
     },
     enabled: !!inviteCode && hasHydrated && isAuthenticated,
   });
@@ -133,15 +133,15 @@ export function usePrefetchGroupData() {
     // Prefetch all group-related queries
     queryClient.prefetchQuery({
       queryKey: queryKeys.groups.detail(groupId),
-      queryFn: () => api.getGroup(groupId).then((r) => r.group),
+      queryFn: () => api.getGroup(groupId).then((r) => validateGroup(r.group)),
     });
     queryClient.prefetchQuery({
       queryKey: queryKeys.groups.members(groupId),
-      queryFn: () => api.getGroupMembers(groupId).then((r) => r.members),
+      queryFn: () => api.getGroupMembers(groupId).then((r) => validateGroupMembers(r.members)),
     });
     queryClient.prefetchQuery({
       queryKey: queryKeys.groups.balances(groupId),
-      queryFn: () => api.getGroupBalances(groupId),
+      queryFn: () => api.getGroupBalances(groupId).then((r) => validateBalancesData(r)),
     });
   };
 }
