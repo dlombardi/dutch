@@ -11,17 +11,26 @@ import {
   View,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { useGroupsStore } from '../stores/groupsStore';
 import { useAuthStore } from '../stores/authStore';
+import { useGroupByInviteCode } from '../hooks/queries';
+import { useJoinGroup } from '../hooks/mutations';
 
 export default function JoinGroupScreen() {
   const [inviteCode, setInviteCode] = useState('');
-  const { fetchGroupByInviteCode, joinGroup, previewGroup, loadingStates, errors, clearError } =
-    useGroupsStore();
+  const [searchCode, setSearchCode] = useState('');
   const user = useAuthStore((state) => state.user);
 
-  const isLoading = loadingStates.fetchByInviteCode || loadingStates.joinGroup;
-  const error = errors.fetchByInviteCode || errors.joinGroup;
+  // React Query hooks
+  const {
+    data: previewGroup,
+    isLoading: isLoadingPreview,
+    error: previewError,
+  } = useGroupByInviteCode(searchCode || undefined);
+
+  const joinGroupMutation = useJoinGroup();
+
+  const isLoading = isLoadingPreview || joinGroupMutation.isPending;
+  const error = previewError?.message || (joinGroupMutation.error?.message);
 
   const handleLookup = async () => {
     if (!inviteCode.trim()) {
@@ -29,33 +38,32 @@ export default function JoinGroupScreen() {
       return;
     }
 
-    clearError('fetchByInviteCode');
-    clearError('joinGroup');
-
     const code = inviteCode.trim().toUpperCase();
-    const group = await fetchGroupByInviteCode(code);
-
-    if (!group) {
-      // Error is set in the store
-      return;
-    }
+    setSearchCode(code);
   };
 
   const handleJoin = async () => {
     if (!previewGroup || !user) return;
 
-    clearError('joinGroup');
-
-    const group = await joinGroup(previewGroup.inviteCode, user.id);
-
-    if (group) {
-      Alert.alert('Success', `You've joined ${group.name}!`, [
-        {
-          text: 'OK',
-          onPress: () => router.replace(`/group/${group.id}`),
+    joinGroupMutation.mutate(
+      {
+        inviteCode: previewGroup.inviteCode,
+        userId: user.id,
+      },
+      {
+        onSuccess: (group) => {
+          Alert.alert('Success', `You've joined ${group.name}!`, [
+            {
+              text: 'OK',
+              onPress: () => router.replace(`/group/${group.id}`),
+            },
+          ]);
         },
-      ]);
-    }
+        onError: (err) => {
+          Alert.alert('Error', err.message || 'Failed to join group');
+        },
+      }
+    );
   };
 
   const handleCodeChange = (text: string) => {
@@ -64,11 +72,14 @@ export default function JoinGroupScreen() {
     setInviteCode(cleaned);
 
     // Clear preview when code changes
-    if (previewGroup) {
-      useGroupsStore.setState({ previewGroup: null });
+    if (searchCode) {
+      setSearchCode('');
     }
-    clearError('fetchByInviteCode');
-    clearError('joinGroup');
+  };
+
+  const handleReset = () => {
+    setSearchCode('');
+    setInviteCode('');
   };
 
   return (
@@ -116,7 +127,7 @@ export default function JoinGroupScreen() {
             disabled={inviteCode.length < 6 || isLoading}
             testID="lookup-button"
           >
-            {loadingStates.fetchByInviteCode ? (
+            {isLoadingPreview ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
               <Text style={styles.lookupButtonText}>Look Up Group</Text>
@@ -133,12 +144,12 @@ export default function JoinGroupScreen() {
             </Text>
 
             <TouchableOpacity
-              style={[styles.joinButton, loadingStates.joinGroup && styles.buttonDisabled]}
+              style={[styles.joinButton, joinGroupMutation.isPending && styles.buttonDisabled]}
               onPress={handleJoin}
-              disabled={loadingStates.joinGroup}
+              disabled={joinGroupMutation.isPending}
               testID="join-button"
             >
-              {loadingStates.joinGroup ? (
+              {joinGroupMutation.isPending ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={styles.joinButtonText}>Join Group</Text>
@@ -147,10 +158,7 @@ export default function JoinGroupScreen() {
 
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => {
-                useGroupsStore.setState({ previewGroup: null });
-                setInviteCode('');
-              }}
+              onPress={handleReset}
             >
               <Text style={styles.cancelButtonText}>Try Different Code</Text>
             </TouchableOpacity>

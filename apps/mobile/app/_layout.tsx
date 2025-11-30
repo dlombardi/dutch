@@ -10,7 +10,7 @@ import { getQueryClient } from '../lib/queryClient';
 import { useAuthStore } from '../stores/authStore';
 import { useSyncStore } from '../stores/syncStore';
 import { setOnOnlineCallback, useNetworkStore } from '../stores/networkStore';
-import { useExpensesStore } from '../stores/expensesStore';
+import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 import { colors } from '../lib/theme';
 
 // Offline banner as a pure presentational component (no hooks)
@@ -161,9 +161,9 @@ export default function RootLayout() {
   const initializeNetwork = useNetworkStore((state) => state.initialize);
   const isConnected = useNetworkStore((state) => state.isConnected);
   const isInternetReachable = useNetworkStore((state) => state.isInternetReachable);
-  const syncPendingExpenses = useExpensesStore((state) => state.syncPendingExpenses);
-  const pendingExpenses = useExpensesStore((state) => state.pendingExpenses);
-  const isSyncing = useExpensesStore((state) => state.isSyncing);
+  const syncPendingExpenses = useOfflineQueueStore((state) => state.syncPendingExpenses);
+  const pendingExpenses = useOfflineQueueStore((state) => state.pendingExpenses);
+  const isSyncing = useOfflineQueueStore((state) => state.isSyncing);
 
   // Memoize callbacks to avoid re-creating functions
   const handleOnline = useCallback(() => {

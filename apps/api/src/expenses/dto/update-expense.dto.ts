@@ -10,7 +10,8 @@ import {
   IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { EXPENSE_CATEGORIES, ExpenseCategory } from './create-expense.dto';
+import { EXPENSE_CATEGORIES } from './create-expense.dto';
+import type { ExpenseCategory } from './create-expense.dto';
 
 export class UpdateExpenseDto {
   @IsNumber()

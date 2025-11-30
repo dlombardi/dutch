@@ -21,11 +21,12 @@ interface JoinGroupInput {
  * Mutation hook for creating a group.
  *
  * Features:
- * - Updates both React Query cache and Zustand store
+ * - Updates both React Query cache and Zustand store (for offline persistence)
  * - Returns the new group for navigation
  */
 export function useCreateGroup() {
   const queryClient = useQueryClient();
+  const addGroup = useGroupsStore((state) => state.addGroup);
 
   return useMutation({
     mutationFn: async (input: CreateGroupInput) => {
@@ -45,11 +46,8 @@ export function useCreateGroup() {
       );
       queryClient.setQueryData(queryKeys.groups.detail(newGroup.id), newGroup);
 
-      // Update Zustand store (persists to AsyncStorage)
-      const { groups } = useGroupsStore.getState();
-      if (!groups.some((g) => g.id === newGroup.id)) {
-        useGroupsStore.setState({ groups: [...groups, newGroup] });
-      }
+      // Update Zustand store (persists to AsyncStorage for offline access)
+      addGroup(newGroup);
     },
   });
 }
@@ -58,11 +56,12 @@ export function useCreateGroup() {
  * Mutation hook for joining a group via invite code.
  *
  * Features:
- * - Updates both React Query cache and Zustand store
+ * - Updates both React Query cache and Zustand store (for offline persistence)
  * - Returns the joined group for navigation
  */
 export function useJoinGroup() {
   const queryClient = useQueryClient();
+  const addGroup = useGroupsStore((state) => state.addGroup);
 
   return useMutation({
     mutationFn: async (input: JoinGroupInput) => {
@@ -86,11 +85,8 @@ export function useJoinGroup() {
         queryKey: queryKeys.groups.byInviteCode(joinedGroup.inviteCode),
       });
 
-      // Update Zustand store (persists to AsyncStorage)
-      const { groups } = useGroupsStore.getState();
-      if (!groups.some((g) => g.id === joinedGroup.id)) {
-        useGroupsStore.setState({ groups: [...groups, joinedGroup] });
-      }
+      // Update Zustand store (persists to AsyncStorage for offline access)
+      addGroup(joinedGroup);
     },
   });
 }

@@ -1,18 +1,25 @@
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { useGroupsStore } from '../../stores/groupsStore';
-import { useExpensesStore } from '../../stores/expensesStore';
+import { useOfflineQueueStore } from '../../stores/offlineQueueStore';
 import { useAuthStore } from '../../stores/authStore';
 
 export default function SettingsScreen() {
+  const queryClient = useQueryClient();
   const clearGroups = useGroupsStore((state) => state.clearGroups);
-  const clearExpenses = useExpensesStore((state) => state.clearExpenses);
+  const pendingExpenses = useOfflineQueueStore((state) => state.pendingExpenses);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
 
   const handleClearLocalData = () => {
+    const hasPending = pendingExpenses.length > 0;
+    const warningMessage = hasPending
+      ? `This will remove all locally cached data including ${pendingExpenses.length} pending expense(s) that haven't synced yet. You will need to rejoin groups.`
+      : 'This will remove all locally cached groups and expenses. You will need to rejoin groups.';
+
     Alert.alert(
       'Clear Local Data',
-      'This will remove all locally cached groups and expenses. You will need to rejoin groups.',
+      warningMessage,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -20,7 +27,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: () => {
             clearGroups();
-            clearExpenses();
+            queryClient.clear();
             Alert.alert('Done', 'Local data cleared');
           },
         },
@@ -39,7 +46,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: () => {
             clearGroups();
-            clearExpenses();
+            queryClient.clear();
             logout();
           },
         },

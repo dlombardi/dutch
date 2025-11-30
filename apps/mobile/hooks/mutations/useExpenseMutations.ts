@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
+import { isOffline } from '../../stores/networkStore';
+import { useOfflineQueueStore } from '../../stores/offlineQueueStore';
 import type { Expense } from '../../stores/expensesStore';
 
 // Type for create expense input
@@ -34,18 +36,56 @@ interface UpdateExpenseInput {
 }
 
 /**
- * Mutation hook for creating an expense with optimistic updates.
+ * Mutation hook for creating an expense with optimistic updates and offline support.
  *
  * Features:
  * - Optimistic update: Immediately adds expense to cache
  * - Automatic rollback on error
  * - Invalidates related queries on success (balances, group expenses)
+ * - Offline support: Queues expense for later sync when offline
  */
 export function useCreateExpense() {
   const queryClient = useQueryClient();
+  const queueExpense = useOfflineQueueStore((state) => state.queueExpense);
 
   return useMutation({
     mutationFn: async (input: CreateExpenseInput) => {
+      // If offline, queue for later and return an optimistic expense
+      if (isOffline()) {
+        const pending = queueExpense({
+          groupId: input.groupId,
+          amount: input.amount,
+          description: input.description,
+          paidById: input.paidById,
+          createdById: input.createdById,
+          currency: input.currency,
+          date: input.date,
+          splitParticipants: input.splitParticipants,
+          splitType: input.splitType,
+          splitAmounts: input.splitAmounts,
+          exchangeRate: input.exchangeRate,
+        });
+
+        // Return an optimistic expense object
+        return {
+          id: pending.localId,
+          groupId: input.groupId,
+          amount: input.amount,
+          currency: input.currency || 'USD',
+          exchangeRate: input.exchangeRate || 1,
+          amountInGroupCurrency: input.amount * (input.exchangeRate || 1),
+          description: input.description,
+          paidById: input.paidById,
+          splitType: input.splitType || 'equal',
+          splitParticipants: input.splitParticipants || [input.paidById],
+          splitAmounts: input.splitAmounts || {},
+          date: input.date || new Date().toISOString(),
+          createdById: input.createdById,
+          createdAt: pending.createdAt,
+          updatedAt: pending.createdAt,
+        } as Expense;
+      }
+
       const response = await api.createExpense(
         input.groupId,
         input.amount,
