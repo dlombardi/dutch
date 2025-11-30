@@ -18,6 +18,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { useSyncStore } from '../../stores/syncStore';
 import { queryKeys } from '../../lib/queryClient';
 import type { Balance } from '../../stores/groupsStore';
+import { LoadingSpinner } from '../../components';
+import { getCurrencySymbol, formatAmount, formatBalance, getUserDisplayName } from '../../lib/formatters';
 
 // React Query hooks
 import {
@@ -132,19 +134,10 @@ export default function GroupDetailScreen() {
     return 'All settled up!';
   }, []);
 
-  const getCurrencySymbol = useCallback((currency: string) => {
-    switch (currency) {
-      case 'USD': return '$';
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      default: return currency;
-    }
-  }, []);
-
-  const getUserDisplayName = useCallback((userId: string) => {
-    if (userId === user?.id) return 'You';
-    return `User ${userId.slice(0, 8)}...`;
-  }, [user]);
+  // Format user display name with "You" for current user
+  const getDisplayName = useCallback((userId: string) => {
+    return getUserDisplayName(userId, user?.id);
+  }, [user?.id]);
 
   const handleAddExpense = useCallback(() => {
     if (id) {
@@ -226,9 +219,7 @@ export default function GroupDetailScreen() {
   if (isLoadingGroup && !group) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
+        <LoadingSpinner fullScreen />
       </SafeAreaView>
     );
   }
@@ -278,7 +269,7 @@ export default function GroupDetailScreen() {
           getUserBalance() > 0 && styles.balancePositive,
           getUserBalance() < 0 && styles.balanceNegative,
         ]}>
-          {getUserBalance() < 0 ? '-' : ''}{getCurrencySymbol(group.defaultCurrency)}{Math.abs(getUserBalance()).toFixed(2)}
+          {formatBalance(getUserBalance(), group.defaultCurrency)}
         </Text>
         <Text style={[
           styles.balanceHint,
@@ -322,9 +313,7 @@ export default function GroupDetailScreen() {
         {activeTab === 'expenses' && (
           <ScrollView style={styles.expensesList}>
             {isLoadingExpenses && expenses.length === 0 ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#007AFF" />
-              </View>
+              <LoadingSpinner size="small" />
             ) : expenses.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>💸</Text>
@@ -349,12 +338,8 @@ export default function GroupDetailScreen() {
                     </Text>
                   </View>
                   <Text style={styles.expenseAmount}>
-                    {expense.currency === 'USD'
-                      ? '$'
-                      : expense.currency === 'EUR'
-                        ? '€'
-                        : expense.currency}
-                    {expense.amount.toFixed(2)}
+                    {getCurrencySymbol(expense.currency)}
+                    {formatAmount(expense.amount, expense.currency)}
                   </Text>
                 </TouchableOpacity>
               ))
@@ -384,17 +369,17 @@ export default function GroupDetailScreen() {
                       </View>
                       <View style={styles.balanceDetails}>
                         <Text style={styles.balanceFrom}>
-                          {getUserDisplayName(balance.from)}
+                          {getDisplayName(balance.from)}
                         </Text>
                         <Text style={styles.balanceArrow}>owes</Text>
                         <Text style={styles.balanceTo}>
-                          {getUserDisplayName(balance.to)}
+                          {getDisplayName(balance.to)}
                         </Text>
                       </View>
                     </View>
                     <View style={styles.balanceActions}>
                       <Text style={styles.balanceItemAmount}>
-                        {getCurrencySymbol(balance.currency)}{balance.amount.toFixed(2)}
+                        {getCurrencySymbol(balance.currency)}{formatAmount(balance.amount, balance.currency)}
                       </Text>
                       <TouchableOpacity
                         style={styles.settleButton}
@@ -473,8 +458,8 @@ export default function GroupDetailScreen() {
             {selectedBalance && (
               <View style={styles.settleDetails}>
                 <Text style={styles.settleDescription}>
-                  {getUserDisplayName(selectedBalance.from)} pays{' '}
-                  {getUserDisplayName(selectedBalance.to)}
+                  {getDisplayName(selectedBalance.from)} pays{' '}
+                  {getDisplayName(selectedBalance.to)}
                 </Text>
                 <View style={styles.settleAmountRow}>
                   <Text style={styles.settleCurrency}>
@@ -491,7 +476,7 @@ export default function GroupDetailScreen() {
                 </View>
                 <Text style={styles.settleHint}>
                   Full amount owed: {getCurrencySymbol(selectedBalance.currency)}
-                  {selectedBalance.amount.toFixed(2)}
+                  {formatAmount(selectedBalance.amount, selectedBalance.currency)}
                 </Text>
               </View>
             )}

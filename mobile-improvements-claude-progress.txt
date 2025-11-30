@@ -71,10 +71,10 @@ PRE-EXISTING ISSUES
 CURRENT TASK
 ================================================================================
 
-Task ID: 2
-Task Title: Global Error Boundary
+Task ID: 1
+Task Title: Component Library
 Status: In Progress
-Started At: 2025-11-30T15:20:00Z
+Started At: 2025-11-30T15:25:00Z
 
 Pre-Task Baseline:
 - Lint: 0 errors, 11 warnings (pre-existing)
@@ -82,12 +82,27 @@ Pre-Task Baseline:
 - Tests: 148/148 passed
 
 Notes:
-- Creating app/+error.tsx for expo-router error boundary
+- Creating reusable components for common patterns:
+  1. LoadingSpinner - ActivityIndicator wrapper (30+ usages)
+  2. EmptyState - Empty list states (7+ usages)
+  3. Use existing @evn/shared getCurrencySymbol, formatCurrency
+  4. formatAmount utility using getCurrency for decimalPlaces
 
 
 ================================================================================
 COMPLETED TASKS
 ================================================================================
+
+#1 - Component Library [2025-11-30T15:35:00Z]
+- Created components/LoadingSpinner.tsx with fullScreen and message props
+- Created components/EmptyState.tsx with title, message, and action props
+- Created lib/formatters.ts with getCurrencySymbol, formatAmount, formatBalance, getUserDisplayName
+- Updated app/group/[id].tsx to use new components and formatters
+- Updated app/expense/[id].tsx to use new components and formatters
+- Updated app/join/[code].tsx to use LoadingSpinner component
+- Removed duplicate getCurrencySymbol implementations (now using @evn/shared)
+- Pre-check: 0 errors, 11 warnings | Post-check: 0 errors, 11 warnings
+- Tests: 148/148 passed
 
 #2 - Global Error Boundary [2025-11-30T15:22:00Z]
 - Created app/+error.tsx with expo-router ErrorBoundaryProps

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
+import { LoadingSpinner } from '../../components';
 
 // React Query hooks
 import { useGroupByInviteCode } from '../../hooks/queries';
@@ -51,12 +52,7 @@ export default function JoinGroupScreen() {
   const displayError = fetchError?.message ?? joinError;
 
   if (isFetchingGroup && !previewGroup) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading group info...</Text>
-      </View>
-    );
+    return <LoadingSpinner fullScreen message="Loading group info..." />;
   }
 
   if (displayError) {

@@ -6,16 +6,19 @@
     "description": "Empty components/ directory causing code duplication. Currency formatting duplicated in 5+ files, user display name logic in 3+ files, date formatting in 4+ files, loading/error/empty states duplicated everywhere.",
     "effort": "high",
     "estimatedTime": "1-2 weeks",
-    "status": "not_started",
+    "status": "completed",
     "filesAffected": [
+      "components/LoadingSpinner.tsx",
+      "components/EmptyState.tsx",
+      "components/index.ts",
+      "lib/formatters.ts",
       "app/group/[id].tsx",
       "app/expense/[id].tsx",
-      "app/create-group.tsx",
-      "components/"
+      "app/join/[code].tsx"
     ],
-    "completedAt": null,
-    "preChecksPassed": null,
-    "postChecksPassed": null
+    "completedAt": "2025-11-30T15:35:00Z",
+    "preChecksPassed": true,
+    "postChecksPassed": true
   },
   {
     "id": 2,

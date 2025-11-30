@@ -11,6 +11,8 @@ import {
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../stores/authStore';
+import { LoadingSpinner } from '../../components';
+import { getCurrencySymbol, formatAmount, getUserDisplayName } from '../../lib/formatters';
 
 // React Query hooks
 import { useExpense, useGroup, useGroupMembers } from '../../hooks/queries';
@@ -71,31 +73,11 @@ export default function ExpenseDetailScreen() {
     );
   }, [id, expense, deleteExpenseMutation, router]);
 
-  const getCurrencySymbol = useCallback((currency: string) => {
-    switch (currency) {
-      case 'USD':
-        return '$';
-      case 'EUR':
-        return '€';
-      case 'GBP':
-        return '£';
-      case 'JPY':
-        return '¥';
-      default:
-        return currency;
-    }
-  }, []);
-
-  const getPayerDisplayName = useCallback(
-    (payerId: string) => {
-      if (payerId === user?.id) return 'You';
-      const member = members.find((m) => m.userId === payerId);
-      if (member) {
-        return `User ${member.userId.slice(0, 8)}...`;
-      }
-      return 'Unknown';
+  const getDisplayName = useCallback(
+    (userId: string) => {
+      return getUserDisplayName(userId, user?.id);
     },
-    [user, members]
+    [user?.id]
   );
 
   const formatDate = useCallback((dateString: string) => {
@@ -124,9 +106,7 @@ export default function ExpenseDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ title: 'Expense' }} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
+        <LoadingSpinner fullScreen />
       </SafeAreaView>
     );
   }
@@ -167,7 +147,7 @@ export default function ExpenseDetailScreen() {
         <View style={styles.amountHeader}>
           <Text style={styles.amount}>
             {getCurrencySymbol(expense.currency)}
-            {expense.amount.toFixed(2)}
+            {formatAmount(expense.amount, expense.currency)}
           </Text>
           <Text style={styles.description}>{expense.description}</Text>
         </View>
@@ -177,7 +157,7 @@ export default function ExpenseDetailScreen() {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Paid by</Text>
             <Text style={styles.detailValue}>
-              {getPayerDisplayName(expense.paidById)}
+              {getDisplayName(expense.paidById)}
             </Text>
           </View>
 
@@ -220,14 +200,12 @@ export default function ExpenseDetailScreen() {
                       </Text>
                     </View>
                     <Text style={styles.splitMemberName}>
-                      {member.userId === user?.id
-                        ? 'You'
-                        : `User ${member.userId.slice(0, 8)}...`}
+                      {getDisplayName(member.userId)}
                     </Text>
                   </View>
                   <Text style={styles.splitAmount}>
                     {getCurrencySymbol(expense.currency)}
-                    {perPerson.toFixed(2)}
+                    {formatAmount(perPerson, expense.currency)}
                   </Text>
                 </View>
               );
@@ -243,9 +221,7 @@ export default function ExpenseDetailScreen() {
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>Created by</Text>
             <Text style={styles.metaValue}>
-              {expense.createdById === user?.id
-                ? 'You'
-                : `User ${expense.createdById.slice(0, 8)}...`}
+              {getDisplayName(expense.createdById)}
             </Text>
           </View>
           <View style={styles.metaRow}>
