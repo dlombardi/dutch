@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { getCurrencySymbol, formatAmount } from '../../lib/formatters';
+import { colors, spacing, fontSize, fontWeight } from '../../lib/theme';
 import type { Expense } from '../../stores/expensesStore';
 
 interface ExpensesTabProps {
@@ -58,46 +59,46 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 48,
+    paddingVertical: spacing[12],
   },
   emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: fontSize['5xl'],
+    marginBottom: spacing[4],
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing[2],
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
     textAlign: 'center',
   },
   expenseItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing[4],
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.border.light,
   },
   expenseInfo: {
     flex: 1,
   },
   expenseDescription: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    marginBottom: 4,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+    marginBottom: spacing[1],
   },
   expenseDate: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
   },
   expenseAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
   },
 });

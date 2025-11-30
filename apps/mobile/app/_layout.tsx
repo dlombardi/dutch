@@ -1,3 +1,5 @@
+import '../global.css';
+
 import { useEffect, useState, useCallback } from 'react';
 import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +11,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useSyncStore } from '../stores/syncStore';
 import { useNetworkStore, setOnOnlineCallback } from '../stores/networkStore';
 import { useExpensesStore } from '../stores/expensesStore';
+import { colors } from '../lib/theme';
 
 // Offline banner as a pure presentational component (no hooks)
 function OfflineBannerView({
@@ -28,14 +31,14 @@ function OfflineBannerView({
   if (!isOffline && !hasPending) return null;
 
   let message = "You're offline. Data shown may be outdated.";
-  let bgColor = '#f59e0b';
-  let textColor = '#78350f';
+  let bgColor = colors.warning.DEFAULT;
+  let textColor = colors.warning[900];
 
   if (hasPending && !isOffline) {
     if (isSyncing) {
       message = `Syncing ${pendingCount} pending expense${pendingCount > 1 ? 's' : ''}...`;
-      bgColor = '#3b82f6';
-      textColor = '#ffffff';
+      bgColor = colors.info.DEFAULT;
+      textColor = colors.text.inverse;
     } else {
       message = `${pendingCount} expense${pendingCount > 1 ? 's' : ''} pending sync`;
     }
@@ -67,8 +70,8 @@ function OfflineBannerView({
 // Loading screen component (no hooks)
 function LoadingScreen() {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-      <ActivityIndicator size="large" color="#007AFF" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background.DEFAULT }}>
+      <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
     </View>
   );
 }
@@ -98,7 +101,7 @@ function AppContent({
         screenOptions={{
           headerShadowVisible: false,
           headerStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: colors.background.DEFAULT,
           },
         }}
       >

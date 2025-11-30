@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { getCurrencySymbol, formatAmount } from '../../lib/formatters';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/theme';
 import type { Balance } from '../../stores/groupsStore';
 
 interface SettleModalProps {
@@ -63,7 +64,7 @@ export function SettleModal({
                   onChangeText={onAmountChange}
                   keyboardType="decimal-pad"
                   placeholder="0.00"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.text.muted}
                 />
               </View>
               <Text style={styles.hint}>
@@ -79,7 +80,7 @@ export function SettleModal({
             disabled={isPending}
           >
             {isPending ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.text.inverse} />
             ) : (
               <Text style={styles.confirmButtonText}>Confirm Payment</Text>
             )}
@@ -97,72 +98,72 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   content: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 24,
-    paddingBottom: 40,
+    backgroundColor: colors.background.DEFAULT,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: spacing[6],
+    paddingBottom: spacing[10],
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing[6],
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
   },
   cancelText: {
-    fontSize: 16,
-    color: '#007AFF',
+    fontSize: fontSize.base,
+    color: colors.primary.DEFAULT,
   },
   details: {
-    marginBottom: 24,
+    marginBottom: spacing[6],
   },
   description: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
+    fontSize: fontSize.base,
+    color: colors.text.secondary,
+    marginBottom: spacing[4],
     textAlign: 'center',
   },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: spacing[2],
   },
   currency: {
     fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginRight: 4,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
+    marginRight: spacing[1],
   },
   amountInput: {
     fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
     minWidth: 120,
     textAlign: 'center',
   },
   hint: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
     textAlign: 'center',
   },
   confirmButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: colors.success.DEFAULT,
+    paddingVertical: spacing[4],
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
   },
   confirmButtonDisabled: {
     opacity: 0.6,
   },
   confirmButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    color: colors.text.inverse,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
   },
 });

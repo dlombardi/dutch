@@ -71,25 +71,46 @@ PRE-EXISTING ISSUES
 CURRENT TASK
 ================================================================================
 
-Task ID: 7
-Task Title: No Theme System
+Task ID: 8
+Task Title: No Request Timeouts
 Status: Pending
 Started At: N/A
 
 Pre-Task Baseline:
-- Lint: 0 errors, 6 warnings (mobile)
+- Lint: 0 errors, 19 warnings (mobile)
 - TypeCheck: PASSED
-- Tests: 148/148 API + 78/78 mobile = 226 total passed
+- Tests: 78/78 mobile passed
 
 Notes:
-- Colors hardcoded (#007AFF, #666, #f0f0f0)
-- 500+ lines of StyleSheet in single file
-- Need to create lib/theme.ts with design tokens
+- lib/api.ts:44-88 - fetch has no timeout
+- Requests can hang indefinitely
+- Need to add AbortController with 30s timeout
 
 
 ================================================================================
 COMPLETED TASKS
 ================================================================================
+
+#7 - No Theme System [2025-11-30T16:00:00Z]
+- Created lib/theme.ts with comprehensive design tokens
+- Set up NativeWind v4 with Tailwind CSS:
+  - tailwind.config.js with custom color palette
+  - global.css with Tailwind imports
+  - metro.config.js for NativeWind bundling
+  - babel.config.js for JSX transform
+  - nativewind-env.d.ts for TypeScript support
+- Updated _layout.tsx with theme imports and tokens
+- Updated +error.tsx to use theme tokens
+- Updated group/[id].tsx styles to use theme
+- Updated LoadingSpinner.tsx to use theme tokens
+- Updated EmptyState.tsx to use theme tokens
+- Updated ExpensesTab.tsx to use theme tokens
+- Updated BalancesTab.tsx to use theme tokens
+- Updated MembersTab.tsx to use theme tokens
+- Updated SettleModal.tsx to use theme tokens
+- Replaced all hardcoded colors with theme references
+- Pre-check: 0 errors, 0 warnings | Post-check: 0 errors, 19 warnings (new config files)
+- Tests: 78/78 mobile passed
 
 #6 - Zero Component Test Coverage [2025-11-30T16:20:00Z]
 - Added LoadingSpinner component tests (5 tests)

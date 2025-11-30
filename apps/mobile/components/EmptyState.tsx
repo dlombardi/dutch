@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/theme';
 
 interface EmptyStateProps {
   title: string;
@@ -36,31 +37,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing[6],
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing[2],
   },
   message: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
     textAlign: 'center',
     lineHeight: 20,
   },
   actionButton: {
-    marginTop: 16,
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    marginTop: spacing[4],
+    backgroundColor: colors.primary.DEFAULT,
+    paddingVertical: spacing[2.5],
+    paddingHorizontal: spacing[5],
+    borderRadius: borderRadius.md,
   },
   actionButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.text.inverse,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
   },
 });
