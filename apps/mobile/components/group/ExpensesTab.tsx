@@ -1,7 +1,7 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { LoadingSpinner } from '../LoadingSpinner';
 import { formatAmount, getCurrencySymbol } from '../../lib/formatters';
-import { colors, fontSize, fontWeight, spacing } from '../../lib/theme';
 import type { Expense } from '../../stores/expensesStore';
 
 interface ExpensesTabProps {
@@ -11,16 +11,23 @@ interface ExpensesTabProps {
 }
 
 export function ExpensesTab({ expenses, isLoading, onExpensePress }: ExpensesTabProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   if (isLoading && expenses.length === 0) {
     return <LoadingSpinner size="small" />;
   }
 
   if (expenses.length === 0) {
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyEmoji}>💸</Text>
-        <Text style={styles.emptyTitle}>No expenses yet</Text>
-        <Text style={styles.emptySubtitle}>
+      <View className="flex-1 justify-center items-center py-12">
+        <View className="w-16 h-16 rounded-2xl items-center justify-center bg-dutch-orange/10 border border-dutch-orange/20 mb-4">
+          <Text className="text-3xl">💸</Text>
+        </View>
+        <Text className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+          No expenses yet
+        </Text>
+        <Text className={`text-sm text-center ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
           Add your first expense to start tracking
         </Text>
       </View>
@@ -28,20 +35,25 @@ export function ExpensesTab({ expenses, isLoading, onExpensePress }: ExpensesTab
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView className="flex-1">
       {expenses.map((expense) => (
         <TouchableOpacity
           key={expense.id}
-          style={styles.expenseItem}
+          className={`flex-row justify-between items-center p-4 border-b ${
+            isDark ? 'border-dark-border' : 'border-light-border'
+          }`}
           onPress={() => onExpensePress(expense.id)}
+          activeOpacity={0.7}
         >
-          <View style={styles.expenseInfo}>
-            <Text style={styles.expenseDescription}>{expense.description}</Text>
-            <Text style={styles.expenseDate}>
+          <View className="flex-1">
+            <Text className={`text-base mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
+              {expense.description}
+            </Text>
+            <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               {new Date(expense.date).toLocaleDateString()}
             </Text>
           </View>
-          <Text style={styles.expenseAmount}>
+          <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
             {getCurrencySymbol(expense.currency)}
             {formatAmount(expense.amount, expense.currency)}
           </Text>
@@ -50,55 +62,3 @@ export function ExpensesTab({ expenses, isLoading, onExpensePress }: ExpensesTab
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing[12],
-  },
-  emptyEmoji: {
-    fontSize: fontSize['5xl'],
-    marginBottom: spacing[4],
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  },
-  emptySubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  expenseItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  expenseInfo: {
-    flex: 1,
-  },
-  expenseDescription: {
-    fontSize: fontSize.base,
-    color: colors.text.primary,
-    marginBottom: spacing[1],
-  },
-  expenseDate: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  expenseAmount: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-  },
-});

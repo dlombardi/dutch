@@ -6,7 +6,6 @@ import {
   Modal,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,8 +13,10 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '../../../stores/authStore';
 import { api } from '../../../lib/api';
+import { colors } from '../../../constants/theme';
 
 // React Query hooks
 import { useGroup, useGroupMembers } from '../../../hooks/queries';
@@ -59,6 +60,9 @@ export default function AddExpenseScreen() {
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query hooks
   const { data: group } = useGroup(groupId);
@@ -254,14 +258,19 @@ export default function AddExpenseScreen() {
 
   const isCreating = createExpenseMutation.isPending;
 
+  // Create dynamic styles
+  const styles = useMemo(() => createStyles(isDark, themeColors), [isDark, themeColors]);
+
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`} edges={['bottom']}>
       <Stack.Screen
         options={{
           title: 'Add Expense',
+          headerStyle: { backgroundColor: themeColors.bgElevated },
+          headerTintColor: themeColors.textPrimary,
           headerLeft: () => (
             <TouchableOpacity onPress={handleCancel}>
-              <Text style={styles.cancelButton}>Cancel</Text>
+              <Text className="text-dutch-orange text-base">Cancel</Text>
             </TouchableOpacity>
           ),
           headerRight: () => (
@@ -270,13 +279,10 @@ export default function AddExpenseScreen() {
               disabled={!isValid || isCreating}
             >
               {isCreating ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color={themeColors.orange} />
               ) : (
                 <Text
-                  style={[
-                    styles.saveButton,
-                    !isValid && styles.saveButtonDisabled,
-                  ]}
+                  className={`text-base font-semibold ${isValid ? 'text-dutch-orange' : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}
                 >
                   Save
                 </Text>
@@ -313,7 +319,7 @@ export default function AddExpenseScreen() {
               value={amount}
               onChangeText={setAmount}
               placeholder="0.00"
-              placeholderTextColor="#ccc"
+              placeholderTextColor={themeColors.textTertiary}
               keyboardType="decimal-pad"
               autoFocus
             />
@@ -327,7 +333,7 @@ export default function AddExpenseScreen() {
               value={description}
               onChangeText={setDescription}
               placeholder="What was this for?"
-              placeholderTextColor="#999"
+              placeholderTextColor={themeColors.textTertiary}
             />
           </View>
 
@@ -339,7 +345,7 @@ export default function AddExpenseScreen() {
                   Exchange Rate (1 {currentCurrency.code} = ? {groupCurrency.code})
                 </Text>
                 {isFetchingRate && (
-                  <ActivityIndicator size="small" color="#007AFF" style={styles.rateLoader} />
+                  <ActivityIndicator size="small" color={themeColors.orange} style={styles.rateLoader} />
                 )}
               </View>
               <View style={styles.rateInputRow}>
@@ -351,7 +357,7 @@ export default function AddExpenseScreen() {
                     setRateAutoFetched(false);
                   }}
                   placeholder={isFetchingRate ? "Fetching rate..." : "Enter exchange rate"}
-                  placeholderTextColor="#999"
+                  placeholderTextColor={themeColors.textTertiary}
                   keyboardType="decimal-pad"
                   editable={!isFetchingRate}
                 />
@@ -565,7 +571,7 @@ export default function AddExpenseScreen() {
               value={currencySearch}
               onChangeText={setCurrencySearch}
               placeholder="Search currencies..."
-              placeholderTextColor="#999"
+              placeholderTextColor={themeColors.textTertiary}
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -602,127 +608,112 @@ export default function AddExpenseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+// Create dynamic styles based on theme
+const createStyles = (isDark: boolean, themeColors: typeof colors.dark | typeof colors.light) => ({
   keyboardView: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
   },
-  cancelButton: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  saveButton: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButtonDisabled: {
-    color: '#ccc',
-  },
   errorContainer: {
-    backgroundColor: '#FFE5E5',
+    backgroundColor: isDark ? 'rgba(255,69,58,0.15)' : '#FFE5E5',
     padding: 12,
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 8,
   },
   errorText: {
-    color: '#FF3B30',
+    color: themeColors.red,
     fontSize: 14,
   },
   amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     paddingVertical: 40,
     paddingHorizontal: 16,
   },
   currencyButton: {
-    alignItems: 'center',
+    alignItems: 'center' as const,
     marginRight: 8,
     padding: 8,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: isDark ? themeColors.bgCard : '#f0f0f0',
   },
   currencySymbol: {
     fontSize: 32,
-    fontWeight: '400',
-    color: '#1a1a1a',
+    fontWeight: '400' as const,
+    color: themeColors.textPrimary,
   },
   currencyCode: {
     fontSize: 12,
-    color: '#666',
+    color: themeColors.textSecondary,
     marginTop: 2,
   },
   amountInput: {
     fontSize: 64,
-    fontWeight: '200',
-    color: '#1a1a1a',
+    fontWeight: '200' as const,
+    color: themeColors.textPrimary,
     minWidth: 100,
-    textAlign: 'center',
+    textAlign: 'center' as const,
   },
   inputGroup: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: themeColors.border,
   },
   label: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.textSecondary,
     marginBottom: 8,
   },
   input: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: themeColors.textPrimary,
     paddingVertical: 8,
   },
   perPersonPreview: {
     marginTop: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: isDark ? themeColors.bgCard : '#f8f8f8',
     borderRadius: 8,
   },
   perPersonText: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.textSecondary,
   },
   conversionPreview: {
     marginTop: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#e8f4ff',
+    backgroundColor: isDark ? 'rgba(255,107,0,0.15)' : '#FFF5EB',
     borderRadius: 8,
   },
   conversionText: {
     fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '500',
+    color: themeColors.orange,
+    fontWeight: '500' as const,
   },
   labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
   },
   rateLoader: {
     marginLeft: 8,
   },
   rateInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
   },
   rateInput: {
     flex: 1,
   },
   autoFetchBadge: {
-    backgroundColor: '#34C759',
+    backgroundColor: themeColors.green,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -731,161 +722,161 @@ const styles = StyleSheet.create({
   autoFetchText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingVertical: 8,
   },
   pickerButtonText: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: themeColors.textPrimary,
   },
   pickerChevron: {
     fontSize: 20,
-    color: '#999',
+    color: themeColors.textTertiary,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: themeColors.bg,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: themeColors.border,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: '600' as const,
+    color: themeColors.textPrimary,
   },
   modalClose: {
     fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: themeColors.orange,
+    fontWeight: '600' as const,
   },
   memberOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: themeColors.border,
   },
   memberOptionAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: themeColors.orange,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     marginRight: 12,
   },
   memberOptionAvatarText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
   memberOptionName: {
     flex: 1,
     fontSize: 16,
-    color: '#1a1a1a',
+    color: themeColors.textPrimary,
   },
   memberOptionCheck: {
     fontSize: 18,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: themeColors.orange,
+    fontWeight: '600' as const,
   },
   emptyMembersList: {
     padding: 32,
-    alignItems: 'center',
+    alignItems: 'center' as const,
   },
   emptyMembersText: {
     fontSize: 16,
-    color: '#666',
+    color: themeColors.textSecondary,
   },
   memberOptionAvatarInactive: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: isDark ? themeColors.bgCard : '#e0e0e0',
   },
   memberOptionAvatarTextInactive: {
-    color: '#999',
+    color: themeColors.textTertiary,
   },
   memberOptionNameInactive: {
-    color: '#999',
+    color: themeColors.textTertiary,
   },
   searchContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: themeColors.border,
   },
   searchInput: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: themeColors.textPrimary,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: isDark ? themeColors.bgCard : '#f5f5f5',
     borderRadius: 8,
   },
   currencyOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: themeColors.border,
   },
   currencyInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
   },
   currencyOptionSymbol: {
     fontSize: 24,
     width: 40,
-    textAlign: 'center',
-    color: '#1a1a1a',
+    textAlign: 'center' as const,
+    color: themeColors.textPrimary,
     marginRight: 12,
   },
   currencyTextContainer: {
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
   },
   currencyOptionCode: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: '600' as const,
+    color: themeColors.textPrimary,
   },
   currencyOptionName: {
     fontSize: 14,
-    color: '#666',
+    color: themeColors.textSecondary,
   },
   currencyOptionCheck: {
     fontSize: 18,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: themeColors.orange,
+    fontWeight: '600' as const,
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    backgroundColor: '#fff',
+    borderTopColor: themeColors.border,
+    backgroundColor: themeColors.bg,
   },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: themeColors.orange,
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: 'center' as const,
   },
   addButtonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: isDark ? themeColors.bgCard : '#ccc',
   },
   addButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
 });

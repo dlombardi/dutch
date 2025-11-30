@@ -1,21 +1,25 @@
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '../../stores/authStore';
+import { GhostButton, PrimaryButton } from '../../components';
+import { colors, gradients } from '../../constants/theme';
 
 export default function GuestJoinScreen() {
   const [name, setName] = useState('');
   const { loginAsGuest, isLoading, error, clearError } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   const isValidName = (value: string) => {
     return value.trim().length >= 1;
@@ -31,34 +35,60 @@ export default function GuestJoinScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+      {/* Ambient gradient */}
+      <LinearGradient
+        colors={gradients.orangeAmbient.colors}
+        locations={gradients.orangeAmbient.locations}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+        }}
+        pointerEvents="none"
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        className="flex-1"
       >
-        <View style={styles.content}>
-          <TouchableOpacity
-            style={styles.backButton}
+        <View className="flex-1 px-6 justify-between">
+          {/* Back Button */}
+          <GhostButton
             onPress={() => router.back()}
+            className="self-start -ml-2 mt-2"
+            size="sm"
           >
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
+            Back
+          </GhostButton>
 
-          <View style={styles.header}>
-            <Text style={styles.logo}>evn</Text>
-            <Text style={styles.tagline}>Join as a guest</Text>
+          {/* Header */}
+          <View className="items-center mt-5">
+            <Text className="text-5xl font-bold text-dutch-orange">dutch</Text>
+            <Text className={`text-base mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Join as a guest
+            </Text>
           </View>
 
-          <View style={styles.form}>
-            <Text style={styles.title}>What's your name?</Text>
-            <Text style={styles.subtitle}>
+          {/* Form */}
+          <View className="flex-1 justify-center">
+            <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              What's your name?
+            </Text>
+            <Text className={`text-base mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               This is how others will see you in the group
             </Text>
 
             <TextInput
-              style={[styles.input, error ? styles.inputError : null]}
+              className={`border rounded-2xl p-4 text-base mb-2 ${
+                isDark
+                  ? 'bg-dark-card border-dark-border text-white'
+                  : 'bg-light-card border-light-border text-black'
+              } ${error ? 'border-dutch-red' : ''}`}
               placeholder="Enter your name"
-              placeholderTextColor="#999"
+              placeholderTextColor={themeColors.textTertiary}
               value={name}
               onChangeText={(text) => {
                 setName(text);
@@ -70,25 +100,22 @@ export default function GuestJoinScreen() {
               autoFocus
             />
 
-            {error && <Text style={styles.errorText}>{error}</Text>}
+            {error && (
+              <Text className="text-dutch-red text-sm mb-4">{error}</Text>
+            )}
 
-            <TouchableOpacity
-              style={[
-                styles.button,
-                (!isValidName(name) || isLoading) && styles.buttonDisabled,
-              ]}
+            <PrimaryButton
               onPress={handleJoinAsGuest}
               disabled={!isValidName(name) || isLoading}
+              isLoading={isLoading}
+              className="mt-2"
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Join Group</Text>
-              )}
-            </TouchableOpacity>
+              Join Group
+            </PrimaryButton>
           </View>
 
-          <Text style={styles.footer}>
+          {/* Footer */}
+          <Text className={`text-center text-xs leading-5 pb-4 ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
             Your identity is tied to this device. You can claim your account
             later to sync across devices.
           </Text>
@@ -97,92 +124,3 @@ export default function GuestJoinScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    padding: 8,
-    marginLeft: -8,
-  },
-  backButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  tagline: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 8,
-  },
-  form: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  inputError: {
-    borderColor: '#ff3b30',
-  },
-  errorText: {
-    color: '#ff3b30',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-});

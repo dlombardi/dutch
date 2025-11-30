@@ -1,6 +1,6 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import { formatAmount, getCurrencySymbol } from '../../lib/formatters';
-import { borderRadius, colors, fontSize, fontWeight, spacing } from '../../lib/theme';
 import type { Balance, BalancesData } from '../../stores/groupsStore';
 
 interface BalancesTabProps {
@@ -10,12 +10,19 @@ interface BalancesTabProps {
 }
 
 export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTabProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   if (!balances || balances.balances.length === 0) {
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyEmoji}>✨</Text>
-        <Text style={styles.emptyTitle}>All settled up!</Text>
-        <Text style={styles.emptySubtitle}>
+      <View className="flex-1 justify-center items-center py-12">
+        <View className="w-16 h-16 rounded-2xl items-center justify-center bg-dutch-green/10 border border-dutch-green/20 mb-4">
+          <Text className="text-3xl">✨</Text>
+        </View>
+        <Text className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+          All settled up!
+        </Text>
+        <Text className={`text-sm text-center ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
           No outstanding balances in this group
         </Text>
       </View>
@@ -23,32 +30,47 @@ export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTa
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Who pays whom</Text>
+    <ScrollView className="flex-1">
+      <Text className={`text-xs font-semibold uppercase tracking-wider p-4 pb-2 ${
+        isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'
+      }`}>
+        Who pays whom
+      </Text>
       {balances.balances.map((balance, index) => (
-        <View key={`${balance.from}-${balance.to}-${index}`} style={styles.balanceItem}>
-          <View style={styles.balanceParties}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
+        <View
+          key={`${balance.from}-${balance.to}-${index}`}
+          className={`flex-row justify-between items-center p-4 border-b ${
+            isDark ? 'border-dark-border' : 'border-light-border'
+          }`}
+        >
+          <View className="flex-row items-center flex-1">
+            <View className="w-10 h-10 rounded-full bg-dutch-orange items-center justify-center mr-3">
+              <Text className="text-white text-sm font-semibold">
                 {balance.from.substring(0, 2).toUpperCase()}
               </Text>
             </View>
-            <View style={styles.details}>
-              <Text style={styles.fromText}>{getDisplayName(balance.from)}</Text>
-              <Text style={styles.arrowText}>owes</Text>
-              <Text style={styles.toText}>{getDisplayName(balance.to)}</Text>
+            <View className="flex-row items-center flex-wrap flex-1">
+              <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                {getDisplayName(balance.from)}
+              </Text>
+              <Text className={`text-sm mx-1 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                owes
+              </Text>
+              <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+                {getDisplayName(balance.to)}
+              </Text>
             </View>
           </View>
-          <View style={styles.actions}>
-            <Text style={styles.amount}>
+          <View className="items-end">
+            <Text className={`text-base font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
               {getCurrencySymbol(balance.currency)}
               {formatAmount(balance.amount, balance.currency)}
             </Text>
             <TouchableOpacity
-              style={styles.settleButton}
+              className="bg-dutch-green px-3 py-1.5 rounded"
               onPress={() => onSettleUp(balance)}
             >
-              <Text style={styles.settleButtonText}>Settle</Text>
+              <Text className="text-white text-xs font-semibold">Settle</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -56,106 +78,3 @@ export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTa
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing[12],
-  },
-  emptyEmoji: {
-    fontSize: fontSize['5xl'],
-    marginBottom: spacing[4],
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  },
-  emptySubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  header: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.secondary,
-    textTransform: 'uppercase',
-    padding: spacing[4],
-    paddingBottom: spacing[2],
-  },
-  balanceItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  balanceParties: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary.DEFAULT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing[3],
-  },
-  avatarText: {
-    color: colors.text.inverse,
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
-  },
-  details: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    flex: 1,
-  },
-  fromText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: colors.text.primary,
-  },
-  arrowText: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginHorizontal: spacing[1],
-  },
-  toText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: colors.text.primary,
-  },
-  actions: {
-    alignItems: 'flex-end',
-  },
-  amount: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing[1],
-  },
-  settleButton: {
-    backgroundColor: colors.success.DEFAULT,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1.5],
-    borderRadius: borderRadius.sm,
-  },
-  settleButtonText: {
-    color: colors.text.inverse,
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.semibold,
-  },
-});

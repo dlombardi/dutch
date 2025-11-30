@@ -1,22 +1,23 @@
 import {
   Alert,
   Share,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '../../stores/authStore';
 import { useSyncStore } from '../../stores/syncStore';
 import { queryKeys } from '../../lib/queryClient';
 import type { Balance } from '../../stores/groupsStore';
-import { BalancesTab, ExpensesTab, LoadingSpinner, MembersTab, SettleModal } from '../../components';
+import { BalancesTab, ExpensesTab, LoadingSpinner, MembersTab, PrimaryButton, SettleModal } from '../../components';
 import { formatBalance, getUserDisplayName } from '../../lib/formatters';
-import { borderRadius, colors, fontSize, fontWeight, shadows, spacing } from '../../lib/theme';
+import { colors, gradients, shadows } from '../../constants/theme';
 
 // React Query hooks
 import { useGroupData, useGroupExpenses } from '../../hooks/queries';
@@ -35,6 +36,9 @@ export default function GroupDetailScreen() {
   const [selectedBalance, setSelectedBalance] = useState<Balance | null>(null);
   const [settleAmount, setSettleAmount] = useState('');
   const { user } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query hooks
   const {
@@ -132,9 +136,9 @@ export default function GroupDetailScreen() {
   const handleShareInvite = useCallback(async () => {
     if (!group) return;
     const inviteLink = `${WEB_URL}/join/${group.inviteCode}`;
-    const message = `Join my group "${group.name}" on Evn!\n\n${inviteLink}`;
+    const message = `Join my group "${group.name}" on Dutch!\n\n${inviteLink}`;
     try {
-      await Share.share({ message, title: `Join ${group.name} on Evn` });
+      await Share.share({ message, title: `Join ${group.name} on Dutch` });
     } catch (err) {
       if (err instanceof Error && err.message !== 'User did not share') {
         Alert.alert('Error', 'Failed to open share sheet');
@@ -188,7 +192,7 @@ export default function GroupDetailScreen() {
   // Loading state
   if (isLoadingGroup && !group) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
         <LoadingSpinner fullScreen />
       </SafeAreaView>
     );
@@ -197,15 +201,19 @@ export default function GroupDetailScreen() {
   // Error state
   if (groupError || !group) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
         <Stack.Screen options={{ title: 'Group' }} />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>😕</Text>
-          <Text style={styles.errorTitle}>Unable to load group</Text>
-          <Text style={styles.errorText}>{groupError?.message || 'Group not found'}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={refetchAll}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
+        <View className="flex-1 justify-center items-center px-8">
+          <Text className="text-5xl mb-4">😕</Text>
+          <Text className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+            Unable to load group
+          </Text>
+          <Text className={`text-base text-center mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            {groupError?.message || 'Group not found'}
+          </Text>
+          <PrimaryButton onPress={refetchAll}>
+            Try Again
+          </PrimaryButton>
         </View>
       </SafeAreaView>
     );
@@ -214,17 +222,41 @@ export default function GroupDetailScreen() {
   const userBalance = getUserBalance();
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`} edges={['bottom']}>
+      {/* Ambient gradient based on balance */}
+      <LinearGradient
+        colors={
+          userBalance > 0
+            ? gradients.greenAmbient.colors
+            : userBalance < 0
+              ? gradients.redAmbient.colors
+              : gradients.orangeAmbient.colors
+        }
+        locations={gradients.orangeAmbient.locations}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+        }}
+        pointerEvents="none"
+      />
+
       <Stack.Screen
         options={{
           title: `${group.emoji} ${group.name}`,
+          headerStyle: {
+            backgroundColor: themeColors.bgElevated,
+          },
+          headerTintColor: themeColors.textPrimary,
           headerRight: () => (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity onPress={handleShareInvite} style={styles.headerInviteButton}>
-                <Text style={styles.headerButton}>Invite</Text>
+            <View className="flex-row items-center gap-3">
+              <TouchableOpacity onPress={handleShareInvite} className="px-2">
+                <Text className="text-dutch-orange text-base">Invite</Text>
               </TouchableOpacity>
               <TouchableOpacity>
-                <Text style={styles.headerButton}>Settings</Text>
+                <Text className="text-dutch-orange text-base">Settings</Text>
               </TouchableOpacity>
             </View>
           ),
@@ -232,54 +264,67 @@ export default function GroupDetailScreen() {
       />
 
       {/* Balance Summary */}
-      <View style={styles.balanceSummary}>
-        <Text style={styles.balanceLabel}>Your balance</Text>
-        <Text style={[
-          styles.balanceAmount,
-          userBalance > 0 && styles.balancePositive,
-          userBalance < 0 && styles.balanceNegative,
-        ]}>
+      <View className={`items-center py-6 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+        <Text className={`text-sm mb-1 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          Your balance
+        </Text>
+        <Text
+          className={`text-4xl font-bold ${
+            userBalance > 0
+              ? 'text-dutch-green'
+              : userBalance < 0
+                ? 'text-dutch-red'
+                : isDark
+                  ? 'text-white'
+                  : 'text-black'
+          }`}
+        >
           {formatBalance(userBalance, group.defaultCurrency)}
         </Text>
-        <Text style={[
-          styles.balanceHint,
-          userBalance > 0 && styles.balanceHintPositive,
-          userBalance < 0 && styles.balanceHintNegative,
-        ]}>
+        <Text
+          className={`text-sm mt-1 ${
+            userBalance > 0
+              ? 'text-dutch-green'
+              : userBalance < 0
+                ? 'text-dutch-red'
+                : isDark
+                  ? 'text-dark-text-secondary'
+                  : 'text-light-text-secondary'
+          }`}
+        >
           {getBalanceText(userBalance)}
         </Text>
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'expenses' && styles.activeTab]}
-          onPress={() => setActiveTab('expenses')}
-        >
-          <Text style={[styles.tabText, activeTab === 'expenses' && styles.activeTabText]}>
-            Expenses
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'balances' && styles.activeTab]}
-          onPress={() => setActiveTab('balances')}
-        >
-          <Text style={[styles.tabText, activeTab === 'balances' && styles.activeTabText]}>
-            Balances
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'members' && styles.activeTab]}
-          onPress={() => setActiveTab('members')}
-        >
-          <Text style={[styles.tabText, activeTab === 'members' && styles.activeTabText]}>
-            Members ({members.length})
-          </Text>
-        </TouchableOpacity>
+      <View className={`flex-row border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+        {(['expenses', 'balances', 'members'] as const).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            className={`flex-1 py-3 items-center ${
+              activeTab === tab
+                ? 'border-b-2 border-dutch-orange'
+                : ''
+            }`}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text
+              className={`text-sm ${
+                activeTab === tab
+                  ? 'text-dutch-orange font-semibold'
+                  : isDark
+                    ? 'text-dark-text-secondary'
+                    : 'text-light-text-secondary'
+              }`}
+            >
+              {tab === 'members' ? `Members (${members.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Tab Content */}
-      <View style={styles.content}>
+      <View className="flex-1">
         {activeTab === 'expenses' && (
           <ExpensesTab
             expenses={expenses}
@@ -300,8 +345,13 @@ export default function GroupDetailScreen() {
       </View>
 
       {/* Add Expense FAB */}
-      <TouchableOpacity style={styles.fab} onPress={handleAddExpense}>
-        <Text style={styles.fabText}>+ Add Expense</Text>
+      <TouchableOpacity
+        className="absolute bottom-6 right-6 bg-dutch-orange px-5 py-3.5 rounded-3xl"
+        style={shadows.orangeGlow}
+        onPress={handleAddExpense}
+        activeOpacity={0.9}
+      >
+        <Text className="text-white text-base font-semibold">+ Add Expense</Text>
       </TouchableOpacity>
 
       {/* Settle Up Modal */}
@@ -318,128 +368,3 @@ export default function GroupDetailScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background.DEFAULT,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing[8],
-  },
-  errorEmoji: {
-    fontSize: fontSize['5xl'],
-    marginBottom: spacing[4],
-  },
-  errorTitle: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  },
-  errorText: {
-    fontSize: fontSize.base,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: spacing[6],
-  },
-  retryButton: {
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: spacing[6],
-    paddingVertical: spacing[3],
-    borderRadius: borderRadius.md,
-  },
-  retryButtonText: {
-    color: colors.text.inverse,
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[3],
-  },
-  headerInviteButton: {
-    paddingHorizontal: spacing[2],
-  },
-  headerButton: {
-    color: colors.primary.DEFAULT,
-    fontSize: fontSize.base,
-  },
-  balanceSummary: {
-    alignItems: 'center',
-    paddingVertical: spacing[6],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  balanceLabel: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginBottom: spacing[1],
-  },
-  balanceAmount: {
-    fontSize: fontSize['4xl'],
-    fontWeight: fontWeight.bold,
-    color: colors.text.primary,
-  },
-  balancePositive: {
-    color: colors.success.DEFAULT,
-  },
-  balanceNegative: {
-    color: colors.error.DEFAULT,
-  },
-  balanceHint: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    marginTop: spacing[1],
-  },
-  balanceHintPositive: {
-    color: colors.success.DEFAULT,
-  },
-  balanceHintNegative: {
-    color: colors.error.DEFAULT,
-  },
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing[3],
-    alignItems: 'center',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: colors.primary.DEFAULT,
-  },
-  tabText: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  activeTabText: {
-    color: colors.primary.DEFAULT,
-    fontWeight: fontWeight.semibold,
-  },
-  content: {
-    flex: 1,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: spacing[6],
-    right: spacing[6],
-    backgroundColor: colors.primary.DEFAULT,
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[3.5],
-    borderRadius: borderRadius['2xl'],
-    ...shadows.lg,
-  },
-  fabText: {
-    color: colors.text.inverse,
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
-});

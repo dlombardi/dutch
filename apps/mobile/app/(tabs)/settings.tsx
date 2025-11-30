@@ -1,8 +1,17 @@
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { useColorScheme } from 'nativewind';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { useOfflineQueueStore } from '../../stores/offlineQueueStore';
 import { useAuthStore } from '../../stores/authStore';
+import { type ThemePreference, useThemeStore } from '../../stores/themeStore';
+import { DangerButton } from '../../components';
+
+const themeLabels: Record<ThemePreference, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
 
 export default function SettingsScreen() {
   const queryClient = useQueryClient();
@@ -10,6 +19,10 @@ export default function SettingsScreen() {
   const pendingExpenses = useOfflineQueueStore((state) => state.pendingExpenses);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themePreference = useThemeStore((state) => state.preference);
+  const setThemePreference = useThemeStore((state) => state.setPreference);
 
   const handleClearLocalData = () => {
     const hasPending = pendingExpenses.length > 0;
@@ -54,122 +67,110 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleChangeAppearance = () => {
+    Alert.alert(
+      'Appearance',
+      'Choose your preferred theme',
+      [
+        {
+          text: 'System',
+          onPress: () => setThemePreference('system'),
+        },
+        {
+          text: 'Light',
+          onPress: () => setThemePreference('light'),
+        },
+        {
+          text: 'Dark',
+          onPress: () => setThemePreference('dark'),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const SettingItem = ({
+    label,
+    value,
+    hint,
+    onPress,
+  }: {
+    label: string;
+    value?: string;
+    hint?: string;
+    onPress?: () => void;
+  }) => (
+    <TouchableOpacity
+      className={`flex-row justify-between items-center py-3.5 px-4 border-b ${
+        isDark ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'
+      }`}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
+        {label}
+      </Text>
+      {value && (
+        <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          {value}
+        </Text>
+      )}
+      {hint && (
+        <Text className="text-sm text-dutch-orange">
+          {hint}
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+
+  const SectionTitle = ({ children }: { children: string }) => (
+    <Text
+      className={`text-xs font-semibold uppercase tracking-wider px-4 mb-2 mt-6 ${
+        isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'
+      }`}
+    >
+      {children}
+    </Text>
+  );
+
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.content}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Profile</Text>
-            <Text style={styles.settingValue}>{user?.name || 'Guest User'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Add Email</Text>
-            <Text style={styles.settingHint}>Claim your account</Text>
-          </TouchableOpacity>
+    <View className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+        <SectionTitle>Account</SectionTitle>
+        <View className={`rounded-xl mx-4 overflow-hidden ${isDark ? 'bg-dark-card' : 'bg-light-card'}`}>
+          <SettingItem label="Profile" value={user?.name || 'Guest User'} />
+          <SettingItem label="Add Email" hint="Claim your account" />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Default Currency</Text>
-            <Text style={styles.settingValue}>USD ($)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Notifications</Text>
-            <Text style={styles.settingValue}>On</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Appearance</Text>
-            <Text style={styles.settingValue}>System</Text>
-          </TouchableOpacity>
+        <SectionTitle>Preferences</SectionTitle>
+        <View className={`rounded-xl mx-4 overflow-hidden ${isDark ? 'bg-dark-card' : 'bg-light-card'}`}>
+          <SettingItem label="Default Currency" value="USD ($)" />
+          <SettingItem label="Notifications" value="On" />
+          <SettingItem label="Appearance" value={themeLabels[themePreference]} onPress={handleChangeAppearance} />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Version</Text>
-            <Text style={styles.settingValue}>1.0.0</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Privacy Policy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Terms of Service</Text>
-          </TouchableOpacity>
+        <SectionTitle>About</SectionTitle>
+        <View className={`rounded-xl mx-4 overflow-hidden ${isDark ? 'bg-dark-card' : 'bg-light-card'}`}>
+          <SettingItem label="Version" value="1.0.0" />
+          <SettingItem label="Privacy Policy" />
+          <SettingItem label="Terms of Service" />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Developer</Text>
-          <TouchableOpacity style={styles.settingItem} onPress={handleClearLocalData}>
-            <Text style={styles.settingLabel}>Clear Local Data</Text>
-            <Text style={styles.settingHint}>Remove cached groups</Text>
-          </TouchableOpacity>
+        <SectionTitle>Developer</SectionTitle>
+        <View className={`rounded-xl mx-4 overflow-hidden ${isDark ? 'bg-dark-card' : 'bg-light-card'}`}>
+          <SettingItem
+            label="Clear Local Data"
+            hint="Remove cached groups"
+            onPress={handleClearLocalData}
+          />
         </View>
 
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Sign Out</Text>
-          </TouchableOpacity>
+        <View className="mx-4 mt-8">
+          <DangerButton onPress={handleLogout}>
+            Sign Out
+          </DangerButton>
         </View>
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  settingLabel: {
-    fontSize: 16,
-  },
-  settingValue: {
-    fontSize: 16,
-    color: '#666',
-  },
-  settingHint: {
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  logoutButton: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF3B30',
-  },
-});

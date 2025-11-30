@@ -4,14 +4,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { router, Stack, useRootNavigationState, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Appearance, Text, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { useColorScheme } from 'nativewind';
 import { getQueryClient } from '../lib/queryClient';
 import { useAuthStore } from '../stores/authStore';
 import { useSyncStore } from '../stores/syncStore';
 import { setOnOnlineCallback, useNetworkStore } from '../stores/networkStore';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
-import { colors } from '../lib/theme';
+import { useThemeStore } from '../stores/themeStore';
+import { colors } from '../constants/theme';
 
 // Offline banner as a pure presentational component (no hooks)
 function OfflineBannerView({
@@ -31,14 +33,14 @@ function OfflineBannerView({
   if (!isOffline && !hasPending) return null;
 
   let message = "You're offline. Data shown may be outdated.";
-  let bgColor: string = colors.warning.DEFAULT;
-  let textColor: string = colors.warning[900];
+  let bgColor = '#F59E0B'; // warning orange
+  let textColor = '#78350F'; // dark warning
 
   if (hasPending && !isOffline) {
     if (isSyncing) {
       message = `Syncing ${pendingCount} pending expense${pendingCount > 1 ? 's' : ''}...`;
-      bgColor = colors.info.DEFAULT;
-      textColor = colors.text.inverse;
+      bgColor = colors.dark.blue;
+      textColor = '#FFFFFF';
     } else {
       message = `${pendingCount} expense${pendingCount > 1 ? 's' : ''} pending sync`;
     }
@@ -67,11 +69,12 @@ function OfflineBannerView({
   );
 }
 
-// Loading screen component (no hooks)
-function LoadingScreen() {
+// Loading screen component
+function LoadingScreen({ isDark }: { isDark: boolean }) {
+  const themeColors = isDark ? colors.dark : colors.light;
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background.DEFAULT }}>
-      <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeColors.bg }}>
+      <ActivityIndicator size="large" color={themeColors.orange} />
     </View>
   );
 }
@@ -82,15 +85,19 @@ function AppContent({
   isInternetReachable,
   pendingCount,
   isSyncing,
+  isDark,
 }: {
   isConnected: boolean;
   isInternetReachable: boolean | null;
   pendingCount: number;
   isSyncing: boolean;
+  isDark: boolean;
 }) {
+  const themeColors = isDark ? colors.dark : colors.light;
+
   return (
     <>
-      <StatusBar style="auto" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <OfflineBannerView
         isConnected={isConnected}
         isInternetReachable={isInternetReachable}
@@ -101,8 +108,9 @@ function AppContent({
         screenOptions={{
           headerShadowVisible: false,
           headerStyle: {
-            backgroundColor: colors.background.DEFAULT,
+            backgroundColor: themeColors.bgElevated,
           },
+          headerTintColor: themeColors.textPrimary,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -152,6 +160,7 @@ export default function RootLayout() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
   const [isMounted, setIsMounted] = useState(false);
+  const { colorScheme, setColorScheme } = useColorScheme();
 
   // Zustand store hooks - called unconditionally
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -164,6 +173,11 @@ export default function RootLayout() {
   const syncPendingExpenses = useOfflineQueueStore((state) => state.syncPendingExpenses);
   const pendingExpenses = useOfflineQueueStore((state) => state.pendingExpenses);
   const isSyncing = useOfflineQueueStore((state) => state.isSyncing);
+  const themePreference = useThemeStore((state) => state.preference);
+  const themeHasHydrated = useThemeStore((state) => state._hasHydrated);
+
+  // Determine if we're in dark mode
+  const isDark = colorScheme === 'dark';
 
   // Memoize callbacks to avoid re-creating functions
   const handleOnline = useCallback(() => {
@@ -173,6 +187,20 @@ export default function RootLayout() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Apply theme preference when it changes
+  useEffect(() => {
+    if (!themeHasHydrated) return;
+
+    if (themePreference === 'system') {
+      // Use system preference
+      const systemScheme = Appearance.getColorScheme() || 'dark';
+      setColorScheme(systemScheme);
+    } else {
+      // Use explicit preference
+      setColorScheme(themePreference);
+    }
+  }, [themePreference, themeHasHydrated, setColorScheme]);
 
   // Initialize network monitoring
   useEffect(() => {
@@ -217,13 +245,14 @@ export default function RootLayout() {
     <QueryClientProvider client={getQueryClient()}>
       <SafeAreaProvider>
         {!_hasHydrated ? (
-          <LoadingScreen />
+          <LoadingScreen isDark={isDark} />
         ) : (
           <AppContent
             isConnected={isConnected}
             isInternetReachable={isInternetReachable}
             pendingCount={pendingExpenses.length}
             isSyncing={isSyncing}
+            isDark={isDark}
           />
         )}
       </SafeAreaProvider>

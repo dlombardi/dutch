@@ -1,5 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, fontSize, fontWeight, spacing } from '../../lib/theme';
+import { ScrollView, Text, View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import type { GroupMember } from '../../stores/groupsStore';
 
 interface MembersTabProps {
@@ -8,12 +8,19 @@ interface MembersTabProps {
 }
 
 export function MembersTab({ members, createdById }: MembersTabProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   if (members.length === 0) {
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyEmoji}>👥</Text>
-        <Text style={styles.emptyTitle}>No members yet</Text>
-        <Text style={styles.emptySubtitle}>
+      <View className="flex-1 justify-center items-center py-12">
+        <View className="w-16 h-16 rounded-2xl items-center justify-center bg-dutch-orange/10 border border-dutch-orange/20 mb-4">
+          <Text className="text-3xl">👥</Text>
+        </View>
+        <Text className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+          No members yet
+        </Text>
+        <Text className={`text-sm text-center ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
           Invite friends to join this group
         </Text>
       </View>
@@ -21,27 +28,34 @@ export function MembersTab({ members, createdById }: MembersTabProps) {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView className="flex-1">
       {members.map((member) => (
-        <View key={member.userId} style={styles.memberItem}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
+        <View
+          key={member.userId}
+          className={`flex-row items-center p-4 border-b ${
+            isDark ? 'border-dark-border' : 'border-light-border'
+          }`}
+        >
+          <View className="w-11 h-11 rounded-full bg-dutch-orange items-center justify-center mr-3">
+            <Text className="text-white text-base font-semibold">
               {member.userId.substring(0, 2).toUpperCase()}
             </Text>
           </View>
-          <View style={styles.info}>
-            <Text style={styles.name}>
+          <View className="flex-1">
+            <Text className={`text-base font-medium mb-0.5 ${isDark ? 'text-white' : 'text-black'}`}>
               {member.userId}
               {member.userId === createdById && ' (Creator)'}
             </Text>
-            <Text style={styles.role}>
+            <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               {member.role === 'admin' ? 'Admin' : 'Member'} · Joined{' '}
               {new Date(member.joinedAt).toLocaleDateString()}
             </Text>
           </View>
           {member.role === 'admin' && (
-            <View style={styles.adminBadge}>
-              <Text style={styles.adminBadgeText}>Admin</Text>
+            <View className={`px-2 py-1 rounded ${isDark ? 'bg-dark-card' : 'bg-light-border'}`}>
+              <Text className={`text-xs font-medium ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                Admin
+              </Text>
             </View>
           )}
         </View>
@@ -49,75 +63,3 @@ export function MembersTab({ members, createdById }: MembersTabProps) {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing[12],
-  },
-  emptyEmoji: {
-    fontSize: fontSize['5xl'],
-    marginBottom: spacing[4],
-  },
-  emptyTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.text.primary,
-    marginBottom: spacing[2],
-  },
-  emptySubtitle: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  memberItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.primary.DEFAULT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing[3],
-  },
-  avatarText: {
-    color: colors.text.inverse,
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
-    color: colors.text.primary,
-    marginBottom: spacing[0.5],
-  },
-  role: {
-    fontSize: fontSize.sm,
-    color: colors.text.secondary,
-  },
-  adminBadge: {
-    backgroundColor: colors.border.light,
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderRadius: borderRadius.sm,
-  },
-  adminBadgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.medium,
-    color: colors.text.secondary,
-  },
-});

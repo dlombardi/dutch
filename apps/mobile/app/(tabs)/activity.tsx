@@ -1,42 +1,23 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { useColorScheme } from 'nativewind';
 
 export default function ActivityScreen() {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyEmoji}>📋</Text>
-        <Text style={styles.emptyTitle}>No activity yet</Text>
-        <Text style={styles.emptySubtitle}>
+    <View className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+      <View className="flex-1 justify-center items-center px-8">
+        <View className="w-20 h-20 rounded-3xl items-center justify-center bg-dutch-orange/10 border border-dutch-orange/20 mb-4">
+          <Text className="text-5xl">📋</Text>
+        </View>
+        <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+          No activity yet
+        </Text>
+        <Text className={`text-base text-center ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
           Your expense and settlement activity will appear here
         </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-});

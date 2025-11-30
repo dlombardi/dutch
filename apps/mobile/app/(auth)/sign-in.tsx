@@ -1,21 +1,25 @@
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '../../stores/authStore';
+import { PrimaryButton, SecondaryButton } from '../../components';
+import { colors, gradients } from '../../constants/theme';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const { requestMagicLink, isLoading, error, clearError } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   const isValidEmail = (value: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -33,27 +37,51 @@ export default function SignInScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+      {/* Ambient gradient */}
+      <LinearGradient
+        colors={gradients.orangeAmbient.colors}
+        locations={gradients.orangeAmbient.locations}
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: 0,
+        }}
+        pointerEvents="none"
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        className="flex-1"
       >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.logo}>evn</Text>
-            <Text style={styles.tagline}>Split expenses, not friendships</Text>
+        <View className="flex-1 px-6 justify-between">
+          {/* Header */}
+          <View className="items-center mt-10">
+            <Text className="text-5xl font-bold text-dutch-orange">dutch</Text>
+            <Text className={`text-base mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Split expenses, not friendships
+            </Text>
           </View>
 
-          <View style={styles.form}>
-            <Text style={styles.title}>Sign in with email</Text>
-            <Text style={styles.subtitle}>
+          {/* Form */}
+          <View className="flex-1 justify-center">
+            <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              Sign in with email
+            </Text>
+            <Text className={`text-base mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               We'll send you a magic link to sign in instantly
             </Text>
 
             <TextInput
-              style={[styles.input, error ? styles.inputError : null]}
+              className={`border rounded-2xl p-4 text-base mb-2 ${
+                isDark
+                  ? 'bg-dark-card border-dark-border text-white'
+                  : 'bg-light-card border-light-border text-black'
+              } ${error ? 'border-dutch-red' : ''}`}
               placeholder="your@email.com"
-              placeholderTextColor="#999"
+              placeholderTextColor={themeColors.textTertiary}
               value={email}
               onChangeText={(text) => {
                 setEmail(text);
@@ -66,38 +94,35 @@ export default function SignInScreen() {
               editable={!isLoading}
             />
 
-            {error && <Text style={styles.errorText}>{error}</Text>}
+            {error && (
+              <Text className="text-dutch-red text-sm mb-4">{error}</Text>
+            )}
 
-            <TouchableOpacity
-              style={[
-                styles.button,
-                (!isValidEmail(email) || isLoading) && styles.buttonDisabled,
-              ]}
+            <PrimaryButton
               onPress={handleSendMagicLink}
               disabled={!isValidEmail(email) || isLoading}
+              isLoading={isLoading}
+              className="mt-2"
             >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Send Magic Link</Text>
-              )}
-            </TouchableOpacity>
+              Send Magic Link
+            </PrimaryButton>
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
+            {/* Divider */}
+            <View className="flex-row items-center my-6">
+              <View className={`flex-1 h-px ${isDark ? 'bg-dark-border' : 'bg-light-border'}`} />
+              <Text className={`px-4 ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+                or
+              </Text>
+              <View className={`flex-1 h-px ${isDark ? 'bg-dark-border' : 'bg-light-border'}`} />
             </View>
 
-            <TouchableOpacity
-              style={styles.guestButton}
-              onPress={() => router.push('/(auth)/guest-join')}
-            >
-              <Text style={styles.guestButtonText}>Continue as guest</Text>
-            </TouchableOpacity>
+            <SecondaryButton onPress={() => router.push('/(auth)/guest-join')}>
+              Continue as guest
+            </SecondaryButton>
           </View>
 
-          <Text style={styles.footer}>
+          {/* Footer */}
+          <Text className={`text-center text-xs leading-5 pb-4 ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Text>
         </View>
@@ -105,109 +130,3 @@ export default function SignInScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'space-between',
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#007AFF',
-  },
-  tagline: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 8,
-  },
-  form: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 24,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  inputError: {
-    borderColor: '#ff3b30',
-  },
-  errorText: {
-    color: '#ff3b30',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    color: '#999',
-    paddingHorizontal: 16,
-  },
-  guestButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  guestButtonText: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-});

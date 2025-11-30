@@ -6,7 +6,6 @@ import {
   Modal,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,9 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '../stores/authStore';
 import { type Currency, getDefaultCurrency, searchCurrencies } from '@evn/shared';
 import { VALIDATION } from '@evn/shared';
+import { colors } from '../constants/theme';
 
 // React Query hooks
 import { useCreateGroup } from '../hooks/mutations';
@@ -30,6 +31,9 @@ export default function CreateGroupScreen() {
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [currencySearch, setCurrencySearch] = useState('');
   const { user } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query mutation
   const createGroupMutation = useCreateGroup();
@@ -73,28 +77,30 @@ export default function CreateGroupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        className="flex-1"
       >
-        <View style={styles.header}>
+        {/* Header */}
+        <View className={`flex-row justify-between items-center p-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text className="text-dutch-orange text-base">Cancel</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Group</Text>
+          <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+            New Group
+          </Text>
           <TouchableOpacity
             onPress={handleCreateGroup}
             disabled={!isValidName(name) || isCreating}
           >
             {isCreating ? (
-              <ActivityIndicator size="small" color="#007AFF" />
+              <ActivityIndicator size="small" color="#FF6B00" />
             ) : (
               <Text
-                style={[
-                  styles.createText,
-                  !isValidName(name) && styles.createTextDisabled,
-                ]}
+                className={`text-base font-semibold ${
+                  isValidName(name) ? 'text-dutch-orange' : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'
+                }`}
               >
                 Create
               </Text>
@@ -102,35 +108,47 @@ export default function CreateGroupScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content}>
-          <View style={styles.emojiSection}>
-            <TouchableOpacity style={styles.emojiPreview}>
-              <Text style={styles.emojiPreviewText}>{selectedEmoji}</Text>
-            </TouchableOpacity>
-            <Text style={styles.emojiHint}>Tap to select emoji</Text>
+        <ScrollView className="flex-1 px-6 pt-6">
+          {/* Emoji Section */}
+          <View className="items-center mb-6">
+            <View className={`w-24 h-24 rounded-full items-center justify-center mb-2 ${isDark ? 'bg-dark-card' : 'bg-light-border'}`}>
+              <Text className="text-5xl">{selectedEmoji}</Text>
+            </View>
+            <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Tap to select emoji
+            </Text>
           </View>
 
-          <View style={styles.emojiPicker}>
+          {/* Emoji Picker */}
+          <View className="flex-row flex-wrap justify-center mb-8">
             {POPULAR_EMOJIS.map((emoji) => (
               <TouchableOpacity
                 key={emoji}
-                style={[
-                  styles.emojiOption,
-                  selectedEmoji === emoji && styles.emojiOptionSelected,
-                ]}
+                className={`w-12 h-12 justify-center items-center rounded-lg m-1 ${
+                  selectedEmoji === emoji
+                    ? 'bg-dutch-orange/20'
+                    : ''
+                }`}
                 onPress={() => setSelectedEmoji(emoji)}
               >
-                <Text style={styles.emojiOptionText}>{emoji}</Text>
+                <Text className="text-3xl">{emoji}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Group Name</Text>
+          {/* Group Name Input */}
+          <View className="mb-6">
+            <Text className={`text-base font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              Group Name
+            </Text>
             <TextInput
-              style={[styles.input, createError ? styles.inputError : null]}
+              className={`border rounded-2xl p-4 text-base ${
+                isDark
+                  ? 'bg-dark-card border-dark-border text-white'
+                  : 'bg-light-card border-light-border text-black'
+              } ${createError ? 'border-dutch-red' : ''}`}
               placeholder="e.g., Trip to Paris"
-              placeholderTextColor="#999"
+              placeholderTextColor={themeColors.textTertiary}
               value={name}
               onChangeText={(text) => {
                 setName(text);
@@ -141,52 +159,72 @@ export default function CreateGroupScreen() {
               editable={!isCreating}
               autoFocus
             />
-            {createError && <Text style={styles.errorText}>{createError}</Text>}
+            {createError && (
+              <Text className="text-dutch-red text-sm mt-2">{createError}</Text>
+            )}
           </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>Default Currency</Text>
+          {/* Currency Selector */}
+          <View className="mb-6">
+            <Text className={`text-base font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+              Default Currency
+            </Text>
             <TouchableOpacity
-              style={styles.currencySelector}
+              className={`flex-row items-center justify-between border rounded-2xl p-4 ${
+                isDark ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'
+              }`}
               onPress={() => setCurrencyModalVisible(true)}
               disabled={isCreating}
             >
-              <View style={styles.currencyInfo}>
-                <Text style={styles.currencySymbol}>{selectedCurrency.symbol}</Text>
+              <View className="flex-row items-center gap-3">
+                <Text className={`text-2xl font-semibold w-10 text-center ${isDark ? 'text-white' : 'text-black'}`}>
+                  {selectedCurrency.symbol}
+                </Text>
                 <View>
-                  <Text style={styles.currencyCode}>{selectedCurrency.code}</Text>
-                  <Text style={styles.currencyName}>{selectedCurrency.name}</Text>
+                  <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                    {selectedCurrency.code}
+                  </Text>
+                  <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                    {selectedCurrency.name}
+                  </Text>
                 </View>
               </View>
-              <Text style={styles.currencyChevron}>›</Text>
+              <Text className={`text-2xl ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>›</Text>
             </TouchableOpacity>
-            <Text style={styles.currencyHint}>
+            <Text className={`text-xs mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               New expenses will default to this currency
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* Currency Modal */}
       <Modal
         visible={currencyModalVisible}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setCurrencyModalVisible(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+          {/* Modal Header */}
+          <View className={`flex-row justify-between items-center p-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
             <TouchableOpacity onPress={() => setCurrencyModalVisible(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text className="text-dutch-orange text-base">Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Currency</Text>
-            <View style={styles.modalHeaderSpacer} />
+            <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              Select Currency
+            </Text>
+            <View className="w-12" />
           </View>
 
-          <View style={styles.searchContainer}>
+          {/* Search */}
+          <View className={`p-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
             <TextInput
-              style={styles.searchInput}
+              className={`rounded-xl p-3 text-base ${
+                isDark ? 'bg-dark-card text-white' : 'bg-light-border text-black'
+              }`}
               placeholder="Search currencies..."
-              placeholderTextColor="#999"
+              placeholderTextColor={themeColors.textTertiary}
               value={currencySearch}
               onChangeText={setCurrencySearch}
               autoCapitalize="none"
@@ -194,30 +232,38 @@ export default function CreateGroupScreen() {
             />
           </View>
 
+          {/* Currency List */}
           <FlatList
             data={filteredCurrencies}
             keyExtractor={(item) => item.code}
             renderItem={({ item }) => (
               <TouchableOpacity
-                style={[
-                  styles.currencyItem,
-                  selectedCurrency.code === item.code && styles.currencyItemSelected,
-                ]}
+                className={`flex-row items-center p-4 border-b ${
+                  isDark ? 'border-dark-border' : 'border-light-border'
+                } ${selectedCurrency.code === item.code ? (isDark ? 'bg-dutch-orange/10' : 'bg-dutch-orange/5') : ''}`}
                 onPress={() => handleSelectCurrency(item)}
               >
-                <Text style={styles.currencyItemSymbol}>{item.symbol}</Text>
-                <View style={styles.currencyItemInfo}>
-                  <Text style={styles.currencyItemCode}>{item.code}</Text>
-                  <Text style={styles.currencyItemName}>{item.name}</Text>
+                <Text className={`text-xl font-semibold w-12 text-center ${isDark ? 'text-white' : 'text-black'}`}>
+                  {item.symbol}
+                </Text>
+                <View className="flex-1 ml-2">
+                  <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                    {item.code}
+                  </Text>
+                  <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                    {item.name}
+                  </Text>
                 </View>
                 {selectedCurrency.code === item.code && (
-                  <Text style={styles.currencyItemCheck}>✓</Text>
+                  <Text className="text-xl text-dutch-orange font-semibold">✓</Text>
                 )}
               </TouchableOpacity>
             )}
             ListEmptyComponent={
-              <View style={styles.emptySearch}>
-                <Text style={styles.emptySearchText}>No currencies found</Text>
+              <View className="p-8 items-center">
+                <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                  No currencies found
+                </Text>
               </View>
             }
           />
@@ -226,217 +272,3 @@ export default function CreateGroupScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  cancelText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  createText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  createTextDisabled: {
-    color: '#ccc',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  emojiSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  emojiPreview: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  emojiPreviewText: {
-    fontSize: 48,
-  },
-  emojiHint: {
-    color: '#666',
-    fontSize: 14,
-  },
-  emojiPicker: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 32,
-  },
-  emojiOption: {
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    margin: 4,
-  },
-  emojiOptionSelected: {
-    backgroundColor: '#e0e0e0',
-  },
-  emojiOptionText: {
-    fontSize: 28,
-  },
-  inputSection: {
-    marginBottom: 24,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-  },
-  inputError: {
-    borderColor: '#ff3b30',
-  },
-  errorText: {
-    color: '#ff3b30',
-    fontSize: 14,
-    marginTop: 8,
-  },
-  currencySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    padding: 16,
-  },
-  currencyInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  currencySymbol: {
-    fontSize: 24,
-    fontWeight: '600',
-    width: 40,
-    textAlign: 'center',
-  },
-  currencyCode: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  currencyName: {
-    fontSize: 14,
-    color: '#666',
-  },
-  currencyChevron: {
-    fontSize: 24,
-    color: '#999',
-  },
-  currencyHint: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 8,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalCancel: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  modalHeaderSpacer: {
-    width: 50,
-  },
-  searchContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  searchInput: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-  },
-  currencyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  currencyItemSelected: {
-    backgroundColor: '#f0f8ff',
-  },
-  currencyItemSymbol: {
-    fontSize: 20,
-    fontWeight: '600',
-    width: 50,
-    textAlign: 'center',
-  },
-  currencyItemInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  currencyItemCode: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  currencyItemName: {
-    fontSize: 14,
-    color: '#666',
-  },
-  currencyItemCheck: {
-    fontSize: 20,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  emptySearch: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptySearchText: {
-    fontSize: 16,
-    color: '#666',
-  },
-});
