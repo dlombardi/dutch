@@ -15,7 +15,7 @@ export function LoadingSpinner({
 }: LoadingSpinnerProps) {
   const content = (
     <>
-      <ActivityIndicator size={size} color={color} />
+      <ActivityIndicator size={size} color={color} testID="activity-indicator" />
       {message && <Text style={styles.message}>{message}</Text>}
     </>
   );
