@@ -31,8 +31,8 @@ function OfflineBannerView({
   if (!isOffline && !hasPending) return null;
 
   let message = "You're offline. Data shown may be outdated.";
-  let bgColor = colors.warning.DEFAULT;
-  let textColor = colors.warning[900];
+  let bgColor: string = colors.warning.DEFAULT;
+  let textColor: string = colors.warning[900];
 
   if (hasPending && !isOffline) {
     if (isSyncing) {

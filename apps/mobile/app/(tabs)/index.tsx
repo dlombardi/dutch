@@ -1,6 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ListRenderItemInfo } from 'react-native';
 import { Link, router, Stack } from 'expo-router';
-import { useGroupsStore } from '../../stores/groupsStore';
+import { useGroupsStore, Group } from '../../stores/groupsStore';
+
+// Fixed height for FlatList optimization (padding 16*2 + content ~32 + border 1)
+const GROUP_ITEM_HEIGHT = 65;
 
 export default function GroupsScreen() {
   const { groups } = useGroupsStore();
@@ -12,6 +16,28 @@ export default function GroupsScreen() {
   const handleJoinGroup = () => {
     router.push('/join-group');
   };
+
+  // Memoized render function for FlatList optimization
+  const renderGroup = useCallback(({ item }: ListRenderItemInfo<Group>) => (
+    <Link href={`/group/${item.id}`} asChild>
+      <TouchableOpacity style={styles.groupItem}>
+        <Text style={styles.groupEmoji}>{item.emoji}</Text>
+        <View style={styles.groupInfo}>
+          <Text style={styles.groupName}>{item.name}</Text>
+          <Text style={styles.groupCurrency}>{item.defaultCurrency}</Text>
+        </View>
+      </TouchableOpacity>
+    </Link>
+  ), []);
+
+  // Pre-computed layout for FlatList virtualization
+  const getItemLayout = useCallback((_: ArrayLike<Group> | null | undefined, index: number) => ({
+    length: GROUP_ITEM_HEIGHT,
+    offset: GROUP_ITEM_HEIGHT * index,
+    index,
+  }), []);
+
+  const keyExtractor = useCallback((item: Group) => item.id, []);
 
   return (
     <View style={styles.container}>
@@ -47,18 +73,14 @@ export default function GroupsScreen() {
       ) : (
         <FlatList
           data={groups}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Link href={`/group/${item.id}`} asChild>
-              <TouchableOpacity style={styles.groupItem}>
-                <Text style={styles.groupEmoji}>{item.emoji}</Text>
-                <View style={styles.groupInfo}>
-                  <Text style={styles.groupName}>{item.name}</Text>
-                  <Text style={styles.groupCurrency}>{item.defaultCurrency}</Text>
-                </View>
-              </TouchableOpacity>
-            </Link>
-          )}
+          keyExtractor={keyExtractor}
+          renderItem={renderGroup}
+          // Performance optimizations for large lists
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          getItemLayout={getItemLayout}
+          removeClippedSubviews={true}
         />
       )}
     </View>
