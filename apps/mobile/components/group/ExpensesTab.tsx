@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LoadingSpinner } from '../LoadingSpinner';
-import { getCurrencySymbol, formatAmount } from '../../lib/formatters';
-import { colors, spacing, fontSize, fontWeight } from '../../lib/theme';
+import { formatAmount, getCurrencySymbol } from '../../lib/formatters';
+import { colors, fontSize, fontWeight, spacing } from '../../lib/theme';
 import type { Expense } from '../../stores/expensesStore';
 
 interface ExpensesTabProps {

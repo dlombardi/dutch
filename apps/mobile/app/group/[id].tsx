@@ -1,22 +1,22 @@
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Share,
   Alert,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/authStore';
 import { useSyncStore } from '../../stores/syncStore';
 import { queryKeys } from '../../lib/queryClient';
 import type { Balance } from '../../stores/groupsStore';
-import { LoadingSpinner, ExpensesTab, BalancesTab, MembersTab, SettleModal } from '../../components';
+import { BalancesTab, ExpensesTab, LoadingSpinner, MembersTab, SettleModal } from '../../components';
 import { formatBalance, getUserDisplayName } from '../../lib/formatters';
-import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../lib/theme';
+import { borderRadius, colors, fontSize, fontWeight, shadows, spacing } from '../../lib/theme';
 
 // React Query hooks
 import { useGroupData, useGroupExpenses } from '../../hooks/queries';

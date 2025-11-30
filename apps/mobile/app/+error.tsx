@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ErrorBoundaryProps, useRouter } from 'expo-router';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/theme';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '../lib/theme';
 import { logger } from '../lib/logger';
 
 export default function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {

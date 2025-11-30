@@ -1,14 +1,14 @@
 import {
-  isExpense,
-  validateExpenses,
-  validateExpense,
-  isGroup,
-  validateGroup,
-  isGroupMember,
-  validateGroupMembers,
   isBalance,
   isBalancesData,
+  isExpense,
+  isGroup,
+  isGroupMember,
   validateBalancesData,
+  validateExpense,
+  validateExpenses,
+  validateGroup,
+  validateGroupMembers,
 } from '../validators';
 
 describe('validators', () => {

@@ -1,21 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  ScrollView,
-  Modal,
-  FlatList,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '../stores/authStore';
-import { searchCurrencies, getDefaultCurrency, type Currency } from '@evn/shared';
+import { type Currency, getDefaultCurrency, searchCurrencies } from '@evn/shared';
 import { VALIDATION } from '@evn/shared';
 
 // React Query hooks

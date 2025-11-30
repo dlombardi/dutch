@@ -5,7 +5,7 @@
  */
 
 import type { Expense } from '../stores/expensesStore';
-import type { Group, GroupMember, Balance, BalancesData } from '../stores/groupsStore';
+import type { Balance, BalancesData, Group, GroupMember } from '../stores/groupsStore';
 
 /**
  * Validate that a value is a non-null object

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ListRenderItemInfo } from 'react-native';
+import { FlatList, ListRenderItemInfo, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Link, router, Stack } from 'expo-router';
-import { useGroupsStore, Group } from '../../stores/groupsStore';
+import { Group, useGroupsStore } from '../../stores/groupsStore';
 
 // Fixed height for FlatList optimization (padding 16*2 + content ~32 + border 1)
 const GROUP_ITEM_HEIGHT = 65;

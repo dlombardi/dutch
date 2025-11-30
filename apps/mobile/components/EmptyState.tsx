@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../lib/theme';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '../lib/theme';
 
 interface EmptyStateProps {
   title: string;

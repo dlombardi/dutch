@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { useGroupsStore } from '../stores/groupsStore';
 import { useAuthStore } from '../stores/authStore';
 

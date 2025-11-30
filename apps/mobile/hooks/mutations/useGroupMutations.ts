@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
-import { useGroupsStore, type Group } from '../../stores/groupsStore';
+import { type Group, useGroupsStore } from '../../stores/groupsStore';
 
 // Type for create group input
 interface CreateGroupInput {

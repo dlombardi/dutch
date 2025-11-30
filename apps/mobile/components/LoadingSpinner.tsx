@@ -1,5 +1,5 @@
-import { ActivityIndicator, View, StyleSheet, Text } from 'react-native';
-import { colors, spacing, fontSize } from '../lib/theme';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { colors, fontSize, spacing } from '../lib/theme';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';

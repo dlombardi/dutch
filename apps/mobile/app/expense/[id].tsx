@@ -1,18 +1,18 @@
 import { useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../stores/authStore';
 import { LoadingSpinner } from '../../components';
-import { getCurrencySymbol, formatAmount, getUserDisplayName } from '../../lib/formatters';
+import { formatAmount, getCurrencySymbol, getUserDisplayName } from '../../lib/formatters';
 
 // React Query hooks
 import { useExpense, useGroup, useGroupMembers } from '../../hooks/queries';

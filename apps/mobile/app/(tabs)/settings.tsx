@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useGroupsStore } from '../../stores/groupsStore';
 import { useExpensesStore } from '../../stores/expensesStore';
 import { useAuthStore } from '../../stores/authStore';

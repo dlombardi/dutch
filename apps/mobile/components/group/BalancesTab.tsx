@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { getCurrencySymbol, formatAmount } from '../../lib/formatters';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/theme';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { formatAmount, getCurrencySymbol } from '../../lib/formatters';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '../../lib/theme';
 import type { Balance, BalancesData } from '../../stores/groupsStore';
 
 interface BalancesTabProps {

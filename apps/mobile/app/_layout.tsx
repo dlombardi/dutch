@@ -1,15 +1,15 @@
 import '../global.css';
 
-import { useEffect, useState, useCallback } from 'react';
-import { Stack, router, useSegments, useRootNavigationState } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { router, Stack, useRootNavigationState, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { useAuthStore } from '../stores/authStore';
 import { useSyncStore } from '../stores/syncStore';
-import { useNetworkStore, setOnOnlineCallback } from '../stores/networkStore';
+import { setOnOnlineCallback, useNetworkStore } from '../stores/networkStore';
 import { useExpensesStore } from '../stores/expensesStore';
 import { colors } from '../lib/theme';
 

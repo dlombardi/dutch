@@ -1,14 +1,14 @@
 import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  TextInput,
   ActivityIndicator,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { getCurrencySymbol, formatAmount } from '../../lib/formatters';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/theme';
+import { formatAmount, getCurrencySymbol } from '../../lib/formatters';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '../../lib/theme';
 import type { Balance } from '../../stores/groupsStore';
 
 interface SettleModalProps {

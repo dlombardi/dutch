@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { queryKeys } from '../../lib/queryClient';
 import { useAuthStore } from '../../stores/authStore';
-import { validateGroup, validateGroupMembers, validateBalancesData } from '../../lib/validators';
+import { validateBalancesData, validateGroup, validateGroupMembers } from '../../lib/validators';
 
 /**
  * Query hook to fetch a single group by ID.

@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../lib/theme';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '../../lib/theme';
 import type { GroupMember } from '../../stores/groupsStore';
 
 interface MembersTabProps {
