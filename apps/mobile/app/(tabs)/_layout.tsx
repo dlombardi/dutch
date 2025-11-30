@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { Platform, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useColorScheme } from 'nativewind';
-import { colors, glassStyle } from '../../constants/theme';
+import { colors, glassStyle } from '@/constants/theme';
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const { colorScheme } = useColorScheme();

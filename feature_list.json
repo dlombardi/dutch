@@ -31,20 +31,6 @@
       "passes": true
     },
     {
-      "id": "auth-magic-link-expiry",
-      "category": "auth",
-      "priority": 2,
-      "description": "Magic links expire after 15 minutes for security",
-      "steps": [
-        "Request a magic link",
-        "Wait more than 15 minutes",
-        "Click the magic link",
-        "See error message that link has expired",
-        "Be prompted to request a new link"
-      ],
-      "passes": true
-    },
-    {
       "id": "auth-guest-name-entry",
       "category": "auth",
       "priority": 1,
@@ -70,86 +56,6 @@
         "Can still see and interact with group"
       ],
       "passes": true
-    },
-    {
-      "id": "auth-guest-upgrade-prompt",
-      "category": "auth",
-      "priority": 2,
-      "description": "Guest users see contextual prompts to claim their account",
-      "steps": [
-        "Use app as guest for multiple sessions",
-        "See non-intrusive prompt to add email",
-        "Prompt explains benefits (cross-device, notifications)",
-        "Can dismiss prompt without friction"
-      ],
-      "passes": false
-    },
-    {
-      "id": "auth-guest-claim-account",
-      "category": "auth",
-      "priority": 2,
-      "description": "Guest can claim their account by adding an email",
-      "steps": [
-        "As guest, go to settings",
-        "Tap 'Add Email' or 'Claim Account'",
-        "Enter email address",
-        "Verify via magic link",
-        "Account upgraded, all data preserved"
-      ],
-      "passes": false
-    },
-    {
-      "id": "auth-google-oauth",
-      "category": "auth",
-      "priority": 3,
-      "description": "User can sign in with Google account",
-      "steps": [
-        "Tap 'Continue with Google' button",
-        "Complete Google OAuth flow",
-        "Successfully authenticated",
-        "Profile photo and name imported from Google"
-      ],
-      "passes": false
-    },
-    {
-      "id": "auth-apple-signin",
-      "category": "auth",
-      "priority": 3,
-      "description": "User can sign in with Apple ID (iOS only)",
-      "steps": [
-        "On iOS device, tap 'Continue with Apple'",
-        "Complete Apple Sign In flow",
-        "Successfully authenticated",
-        "Can hide email if desired"
-      ],
-      "passes": false
-    },
-    {
-      "id": "auth-logout",
-      "category": "auth",
-      "priority": 2,
-      "description": "Authenticated user can log out of their account",
-      "steps": [
-        "Go to Settings",
-        "Tap 'Log Out'",
-        "Confirm logout action",
-        "Returned to welcome/login screen",
-        "Session cleared from device"
-      ],
-      "passes": true
-    },
-    {
-      "id": "auth-session-refresh",
-      "category": "auth",
-      "priority": 2,
-      "description": "Authentication tokens refresh automatically before expiry",
-      "steps": [
-        "Log in and use app",
-        "Keep app open past token expiry time",
-        "Continue using app without interruption",
-        "No re-authentication required"
-      ],
-      "passes": false
     },
     {
       "id": "groups-create-basic",
@@ -221,19 +127,6 @@
       "passes": true
     },
     {
-      "id": "groups-invite-code-manual",
-      "category": "groups",
-      "priority": 2,
-      "description": "User can join group by manually entering invite code",
-      "steps": [
-        "From groups screen, tap 'Join Group'",
-        "Enter 6-character invite code",
-        "Tap 'Join'",
-        "Successfully added to group"
-      ],
-      "passes": true
-    },
-    {
       "id": "groups-view-list",
       "category": "groups",
       "priority": 1,
@@ -261,20 +154,6 @@
       "passes": true
     },
     {
-      "id": "groups-edit-details",
-      "category": "groups",
-      "priority": 2,
-      "description": "Group creator can edit group name, emoji, and currency",
-      "steps": [
-        "Open group settings",
-        "Tap 'Edit Group'",
-        "Modify name, emoji, or default currency",
-        "Save changes",
-        "Changes reflected immediately"
-      ],
-      "passes": false
-    },
-    {
       "id": "groups-view-members",
       "category": "groups",
       "priority": 1,
@@ -287,76 +166,6 @@
         "See member join dates"
       ],
       "passes": true
-    },
-    {
-      "id": "groups-remove-member",
-      "category": "groups",
-      "priority": 3,
-      "description": "Group creator can remove a member from the group",
-      "steps": [
-        "As group creator, open members list",
-        "Select member to remove",
-        "Tap 'Remove from Group'",
-        "Confirm action",
-        "Member removed, their balances handled appropriately"
-      ],
-      "passes": false
-    },
-    {
-      "id": "groups-leave",
-      "category": "groups",
-      "priority": 2,
-      "description": "User can leave a group they are member of",
-      "steps": [
-        "Open group settings",
-        "Tap 'Leave Group'",
-        "See warning if balances exist",
-        "Confirm leaving",
-        "Group removed from user's list"
-      ],
-      "passes": false
-    },
-    {
-      "id": "groups-archive",
-      "category": "groups",
-      "priority": 4,
-      "description": "User can archive a group to hide it from main list",
-      "steps": [
-        "Open group settings",
-        "Tap 'Archive Group'",
-        "Group moves to archived section",
-        "Not visible in main groups list",
-        "Can unarchive later"
-      ],
-      "passes": false
-    },
-    {
-      "id": "groups-delete",
-      "category": "groups",
-      "priority": 3,
-      "description": "Group creator can delete a group permanently",
-      "steps": [
-        "Open group settings as creator",
-        "Tap 'Delete Group'",
-        "See warning about permanent deletion",
-        "Type group name to confirm",
-        "Group and all data permanently deleted"
-      ],
-      "passes": false
-    },
-    {
-      "id": "groups-regenerate-invite",
-      "category": "groups",
-      "priority": 3,
-      "description": "Group creator can regenerate invite code to invalidate old links",
-      "steps": [
-        "Open group settings",
-        "Tap 'Regenerate Invite Code'",
-        "Confirm action",
-        "New code generated",
-        "Old invite links no longer work"
-      ],
-      "passes": false
     },
     {
       "id": "expenses-create-basic",
@@ -398,20 +207,6 @@
         "See list of group members",
         "Select the member who paid",
         "Selection saved with expense"
-      ],
-      "passes": true
-    },
-    {
-      "id": "expenses-select-category",
-      "category": "expenses",
-      "priority": 2,
-      "description": "User can categorize expense (Food, Transport, Accommodation, etc.)",
-      "steps": [
-        "Creating or editing expense",
-        "Tap category selector",
-        "See category options with icons",
-        "Select appropriate category",
-        "Category saved and shown on expense"
       ],
       "passes": true
     },
@@ -472,102 +267,6 @@
       "passes": true
     },
     {
-      "id": "expenses-add-notes",
-      "category": "expenses",
-      "priority": 3,
-      "description": "User can add notes to an expense",
-      "steps": [
-        "Creating or editing expense",
-        "Tap 'Add Notes' field",
-        "Enter additional context/details",
-        "Save expense",
-        "Notes visible in expense detail"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expenses-add-photo",
-      "category": "expenses",
-      "priority": 4,
-      "description": "User can attach a photo (receipt) to expense",
-      "steps": [
-        "Creating or editing expense",
-        "Tap 'Add Photo'",
-        "Take photo or select from gallery",
-        "Photo attached to expense",
-        "Photo viewable in expense detail"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expenses-date-selection",
-      "category": "expenses",
-      "priority": 2,
-      "description": "User can set a custom date for expense (not just today)",
-      "steps": [
-        "Creating expense",
-        "Tap date field (defaults to today)",
-        "Date picker appears",
-        "Select past or future date",
-        "Expense saved with selected date"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expenses-duplicate",
-      "category": "expenses",
-      "priority": 4,
-      "description": "User can duplicate an existing expense",
-      "steps": [
-        "Open expense detail",
-        "Tap 'Duplicate' option",
-        "New expense created with same details",
-        "Date set to today",
-        "Can edit before saving"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expenses-filter-by-category",
-      "category": "expenses",
-      "priority": 4,
-      "description": "User can filter expenses by category",
-      "steps": [
-        "In expenses list, tap filter icon",
-        "Select one or more categories",
-        "List shows only matching expenses",
-        "Clear filter shows all expenses"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expenses-filter-by-member",
-      "category": "expenses",
-      "priority": 4,
-      "description": "User can filter expenses by who paid or who's involved",
-      "steps": [
-        "In expenses list, tap filter icon",
-        "Select member to filter by",
-        "See expenses that member paid or is part of",
-        "Clear filter shows all"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expenses-search",
-      "category": "expenses",
-      "priority": 4,
-      "description": "User can search expenses by description",
-      "steps": [
-        "In expenses list, tap search icon",
-        "Enter search term",
-        "Results filter in real-time",
-        "Matching text highlighted",
-        "Clear search to see all"
-      ],
-      "passes": false
-    },
-    {
       "id": "splits-equal",
       "category": "splits",
       "priority": 1,
@@ -608,73 +307,6 @@
         "See warning if amounts don't match total"
       ],
       "passes": true
-    },
-    {
-      "id": "splits-percentages",
-      "category": "splits",
-      "priority": 2,
-      "description": "User can split by percentages",
-      "steps": [
-        "Creating expense",
-        "Select 'Percentages' split type",
-        "Enter percentage for each person",
-        "Percentages must sum to 100%",
-        "See calculated amounts before saving"
-      ],
-      "passes": false
-    },
-    {
-      "id": "splits-shares",
-      "category": "splits",
-      "priority": 2,
-      "description": "User can split by shares (e.g., 2:1 ratio)",
-      "steps": [
-        "Creating expense",
-        "Select 'By Shares' split type",
-        "Enter number of shares per person",
-        "See calculated amounts based on ratios",
-        "Save expense with share-based split"
-      ],
-      "passes": false
-    },
-    {
-      "id": "splits-adjustment",
-      "category": "splits",
-      "priority": 3,
-      "description": "User can make small adjustments to equal split",
-      "steps": [
-        "Start with equal split",
-        "Tap '+' or '-' to adjust individual amounts",
-        "Other amounts adjust to maintain total",
-        "Quick way to handle 'I had more' scenarios"
-      ],
-      "passes": false
-    },
-    {
-      "id": "splits-remember-preference",
-      "category": "splits",
-      "priority": 4,
-      "description": "App remembers last used split type per group",
-      "steps": [
-        "Create expense with specific split type",
-        "Create another expense",
-        "Same split type pre-selected",
-        "Preference persists across sessions"
-      ],
-      "passes": false
-    },
-    {
-      "id": "splits-default-group-ratio",
-      "category": "splits",
-      "priority": 5,
-      "description": "Group can have default split ratio (e.g., always 60/40)",
-      "steps": [
-        "In group settings, set default split ratio",
-        "Create new expense",
-        "Split pre-populated with default ratio",
-        "Can still modify for individual expenses"
-      ],
-      "passes": false
     },
     {
       "id": "currency-multi-support",
@@ -718,58 +350,6 @@
       "passes": true
     },
     {
-      "id": "currency-manual-rate",
-      "category": "currency",
-      "priority": 3,
-      "description": "User can override exchange rate for specific expense",
-      "steps": [
-        "Creating expense in foreign currency",
-        "Tap to expand conversion details",
-        "Enter custom exchange rate",
-        "Custom rate used for this expense only"
-      ],
-      "passes": false
-    },
-    {
-      "id": "currency-historical-rate",
-      "category": "currency",
-      "priority": 4,
-      "description": "Expenses use exchange rate from expense date, not current",
-      "steps": [
-        "Create expense dated last week",
-        "Select foreign currency",
-        "Exchange rate from that date used",
-        "More accurate for past transactions"
-      ],
-      "passes": false
-    },
-    {
-      "id": "currency-search",
-      "category": "currency",
-      "priority": 2,
-      "description": "User can search currencies by name or code",
-      "steps": [
-        "Open currency selector",
-        "Start typing 'yen' or 'JPY'",
-        "Results filter in real-time",
-        "Can find any world currency quickly"
-      ],
-      "passes": false
-    },
-    {
-      "id": "currency-recent",
-      "category": "currency",
-      "priority": 3,
-      "description": "Recently used currencies appear at top of selector",
-      "steps": [
-        "Use EUR for an expense",
-        "Create new expense",
-        "Open currency selector",
-        "EUR appears in 'Recent' section at top"
-      ],
-      "passes": false
-    },
-    {
       "id": "balances-view-simplified",
       "category": "settlements",
       "priority": 1,
@@ -796,20 +376,6 @@
       "passes": true
     },
     {
-      "id": "balances-individual-view",
-      "category": "settlements",
-      "priority": 2,
-      "description": "User can see their personal balance (what they owe/are owed)",
-      "steps": [
-        "Open group",
-        "See personal balance at a glance",
-        "Positive = others owe you",
-        "Negative = you owe others",
-        "Breakdown by person available"
-      ],
-      "passes": false
-    },
-    {
       "id": "settlements-record-payment",
       "category": "settlements",
       "priority": 1,
@@ -822,86 +388,6 @@
         "Payment recorded, balances updated"
       ],
       "passes": true
-    },
-    {
-      "id": "settlements-partial-payment",
-      "category": "settlements",
-      "priority": 2,
-      "description": "User can record partial settlement",
-      "steps": [
-        "Owe $100 to another user",
-        "Record $50 payment",
-        "Balance updated to $50 remaining",
-        "Settlement history shows partial payment"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settlements-venmo-deeplink",
-      "category": "settlements",
-      "priority": 2,
-      "description": "User can settle via Venmo with pre-filled amount",
-      "steps": [
-        "View amount owed to another user",
-        "Tap 'Pay via Venmo'",
-        "Venmo app opens with amount pre-filled",
-        "Complete payment in Venmo",
-        "Return to app, confirm settlement"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settlements-paypal-deeplink",
-      "category": "settlements",
-      "priority": 3,
-      "description": "User can settle via PayPal with pre-filled amount",
-      "steps": [
-        "View amount owed",
-        "Tap 'Pay via PayPal'",
-        "PayPal app opens",
-        "Complete payment",
-        "Return and confirm settlement"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settlements-cash-record",
-      "category": "settlements",
-      "priority": 2,
-      "description": "User can record cash payment",
-      "steps": [
-        "Tap 'Record Cash Payment'",
-        "Enter amount paid in cash",
-        "Both parties see settlement",
-        "Balances updated"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settlements-history",
-      "category": "settlements",
-      "priority": 3,
-      "description": "User can view settlement history",
-      "steps": [
-        "Go to group settlements section",
-        "See list of past settlements",
-        "Each shows amount, date, method, parties",
-        "Can see full payment history"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settlements-remind",
-      "category": "settlements",
-      "priority": 4,
-      "description": "User can send payment reminder to someone who owes them",
-      "steps": [
-        "View balance where someone owes you",
-        "Tap 'Send Reminder'",
-        "Notification sent to that person",
-        "Reminder shows amount owed"
-      ],
-      "passes": false
     },
     {
       "id": "sync-realtime-expenses",
@@ -954,15 +440,326 @@
       "passes": true
     },
     {
-      "id": "sync-connection-status",
-      "category": "sync",
-      "priority": 3,
-      "description": "User can see sync status indicator",
+      "id": "web-pwa-access",
+      "category": "web-pwa",
+      "priority": 4,
+      "description": "Users can access app via web browser without installation",
       "steps": [
-        "Look for sync indicator in app",
-        "When connected, shows synced status",
-        "When offline, shows offline indicator",
-        "When syncing, shows activity"
+        "Open invite link on device without app",
+        "Web version loads in browser",
+        "Can view group and expenses",
+        "Core functionality works in browser"
+      ],
+      "passes": false
+    },
+    {
+      "id": "web-pwa-responsive",
+      "category": "web-pwa",
+      "priority": 4,
+      "description": "Web app is responsive and works on mobile browsers",
+      "steps": [
+        "Open web app on mobile browser",
+        "UI adapts to screen size",
+        "Touch targets appropriately sized",
+        "No horizontal scrolling needed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "offline-expense-queue",
+      "category": "offline",
+      "priority": 1,
+      "description": "Expenses created offline are queued and sync when online",
+      "steps": [
+        "Go offline",
+        "Create new expense",
+        "Expense saved locally with pending indicator",
+        "Come back online",
+        "Expense syncs automatically"
+      ],
+      "passes": true
+    },
+    {
+      "id": "offline-view-data",
+      "category": "offline",
+      "priority": 1,
+      "description": "User can view existing data while offline",
+      "steps": [
+        "View groups and expenses while online",
+        "Go offline",
+        "Can still view all previously loaded data",
+        "Groups, expenses, balances all accessible"
+      ],
+      "passes": true
+    },
+    {
+      "id": "offline-local-storage",
+      "category": "offline",
+      "priority": 1,
+      "description": "Data persists in local database",
+      "steps": [
+        "Use app and create data",
+        "Force close app completely",
+        "Reopen app offline",
+        "All previous data still present"
+      ],
+      "passes": true
+    },
+    {
+      "id": "security-https-only",
+      "category": "edge-cases",
+      "priority": 1,
+      "description": "All API communication over HTTPS",
+      "steps": [
+        "Monitor network traffic",
+        "All requests use HTTPS",
+        "No plain HTTP requests",
+        "Certificate validation enforced"
+      ],
+      "passes": true
+    },
+    {
+      "id": "api-input-validation",
+      "category": "edge-cases",
+      "priority": 1,
+      "description": "API validates all input to prevent injection",
+      "steps": [
+        "Try submitting malformed data",
+        "API rejects with validation error",
+        "No SQL injection possible",
+        "No XSS via stored content"
+      ],
+      "passes": true
+    },
+    {
+      "id": "auth-magic-link-expiry",
+      "category": "auth",
+      "priority": 2,
+      "description": "Magic links expire after 15 minutes for security",
+      "steps": [
+        "Request a magic link",
+        "Wait more than 15 minutes",
+        "Click the magic link",
+        "See error message that link has expired",
+        "Be prompted to request a new link"
+      ],
+      "passes": true
+    },
+    {
+      "id": "auth-guest-upgrade-prompt",
+      "category": "auth",
+      "priority": 2,
+      "description": "Guest users see contextual prompts to claim their account",
+      "steps": [
+        "Use app as guest for multiple sessions",
+        "See non-intrusive prompt to add email",
+        "Prompt explains benefits (cross-device, notifications)",
+        "Can dismiss prompt without friction"
+      ],
+      "passes": false
+    },
+    {
+      "id": "auth-guest-claim-account",
+      "category": "auth",
+      "priority": 2,
+      "description": "Guest can claim their account by adding an email",
+      "steps": [
+        "As guest, go to settings",
+        "Tap 'Add Email' or 'Claim Account'",
+        "Enter email address",
+        "Verify via magic link",
+        "Account upgraded, all data preserved"
+      ],
+      "passes": false
+    },
+    {
+      "id": "auth-logout",
+      "category": "auth",
+      "priority": 2,
+      "description": "Authenticated user can log out of their account",
+      "steps": [
+        "Go to Settings",
+        "Tap 'Log Out'",
+        "Confirm logout action",
+        "Returned to welcome/login screen",
+        "Session cleared from device"
+      ],
+      "passes": true
+    },
+    {
+      "id": "auth-session-refresh",
+      "category": "auth",
+      "priority": 2,
+      "description": "Authentication tokens refresh automatically before expiry",
+      "steps": [
+        "Log in and use app",
+        "Keep app open past token expiry time",
+        "Continue using app without interruption",
+        "No re-authentication required"
+      ],
+      "passes": false
+    },
+    {
+      "id": "groups-invite-code-manual",
+      "category": "groups",
+      "priority": 2,
+      "description": "User can join group by manually entering invite code",
+      "steps": [
+        "From groups screen, tap 'Join Group'",
+        "Enter 6-character invite code",
+        "Tap 'Join'",
+        "Successfully added to group"
+      ],
+      "passes": true
+    },
+    {
+      "id": "groups-edit-details",
+      "category": "groups",
+      "priority": 2,
+      "description": "Group creator can edit group name, emoji, and currency",
+      "steps": [
+        "Open group settings",
+        "Tap 'Edit Group'",
+        "Modify name, emoji, or default currency",
+        "Save changes",
+        "Changes reflected immediately"
+      ],
+      "passes": false
+    },
+    {
+      "id": "groups-leave",
+      "category": "groups",
+      "priority": 2,
+      "description": "User can leave a group they are member of",
+      "steps": [
+        "Open group settings",
+        "Tap 'Leave Group'",
+        "See warning if balances exist",
+        "Confirm leaving",
+        "Group removed from user's list"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-select-category",
+      "category": "expenses",
+      "priority": 2,
+      "description": "User can categorize expense (Food, Transport, Accommodation, etc.)",
+      "steps": [
+        "Creating or editing expense",
+        "Tap category selector",
+        "See category options with icons",
+        "Select appropriate category",
+        "Category saved and shown on expense"
+      ],
+      "passes": true
+    },
+    {
+      "id": "expenses-date-selection",
+      "category": "expenses",
+      "priority": 2,
+      "description": "User can set a custom date for expense (not just today)",
+      "steps": [
+        "Creating expense",
+        "Tap date field (defaults to today)",
+        "Date picker appears",
+        "Select past or future date",
+        "Expense saved with selected date"
+      ],
+      "passes": false
+    },
+    {
+      "id": "splits-percentages",
+      "category": "splits",
+      "priority": 2,
+      "description": "User can split by percentages",
+      "steps": [
+        "Creating expense",
+        "Select 'Percentages' split type",
+        "Enter percentage for each person",
+        "Percentages must sum to 100%",
+        "See calculated amounts before saving"
+      ],
+      "passes": false
+    },
+    {
+      "id": "splits-shares",
+      "category": "splits",
+      "priority": 2,
+      "description": "User can split by shares (e.g., 2:1 ratio)",
+      "steps": [
+        "Creating expense",
+        "Select 'By Shares' split type",
+        "Enter number of shares per person",
+        "See calculated amounts based on ratios",
+        "Save expense with share-based split"
+      ],
+      "passes": false
+    },
+    {
+      "id": "currency-search",
+      "category": "currency",
+      "priority": 2,
+      "description": "User can search currencies by name or code",
+      "steps": [
+        "Open currency selector",
+        "Start typing 'yen' or 'JPY'",
+        "Results filter in real-time",
+        "Can find any world currency quickly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "balances-individual-view",
+      "category": "settlements",
+      "priority": 2,
+      "description": "User can see their personal balance (what they owe/are owed)",
+      "steps": [
+        "Open group",
+        "See personal balance at a glance",
+        "Positive = others owe you",
+        "Negative = you owe others",
+        "Breakdown by person available"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settlements-partial-payment",
+      "category": "settlements",
+      "priority": 2,
+      "description": "User can record partial settlement",
+      "steps": [
+        "Owe $100 to another user",
+        "Record $50 payment",
+        "Balance updated to $50 remaining",
+        "Settlement history shows partial payment"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settlements-venmo-deeplink",
+      "category": "settlements",
+      "priority": 2,
+      "description": "User can settle via Venmo with pre-filled amount",
+      "steps": [
+        "View amount owed to another user",
+        "Tap 'Pay via Venmo'",
+        "Venmo app opens with amount pre-filled",
+        "Complete payment in Venmo",
+        "Return to app, confirm settlement"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settlements-cash-record",
+      "category": "settlements",
+      "priority": 2,
+      "description": "User can record cash payment",
+      "steps": [
+        "Tap 'Record Cash Payment'",
+        "Enter amount paid in cash",
+        "Both parties see settlement",
+        "Balances updated"
       ],
       "passes": false
     },
@@ -1007,32 +804,6 @@
       "passes": false
     },
     {
-      "id": "notifications-push-payment-reminder",
-      "category": "notifications",
-      "priority": 3,
-      "description": "User receives push notification for payment reminders",
-      "steps": [
-        "Someone sends you a payment reminder",
-        "Receive push notification",
-        "Notification shows amount owed",
-        "Tapping opens balance view"
-      ],
-      "passes": false
-    },
-    {
-      "id": "notifications-push-group-invite",
-      "category": "notifications",
-      "priority": 3,
-      "description": "User notified when added to a new group",
-      "steps": [
-        "Another user adds you to group directly",
-        "Receive push notification",
-        "Notification shows group name",
-        "Tapping opens the group"
-      ],
-      "passes": false
-    },
-    {
       "id": "notifications-settings",
       "category": "notifications",
       "priority": 2,
@@ -1059,19 +830,6 @@
       "passes": false
     },
     {
-      "id": "web-pwa-access",
-      "category": "web-pwa",
-      "priority": 1,
-      "description": "Users can access app via web browser without installation",
-      "steps": [
-        "Open invite link on device without app",
-        "Web version loads in browser",
-        "Can view group and expenses",
-        "Core functionality works in browser"
-      ],
-      "passes": false
-    },
-    {
       "id": "web-pwa-install",
       "category": "web-pwa",
       "priority": 2,
@@ -1082,33 +840,6 @@
         "Install PWA",
         "App icon appears on home screen",
         "Opens in standalone mode"
-      ],
-      "passes": false
-    },
-    {
-      "id": "web-pwa-responsive",
-      "category": "web-pwa",
-      "priority": 1,
-      "description": "Web app is responsive and works on mobile browsers",
-      "steps": [
-        "Open web app on mobile browser",
-        "UI adapts to screen size",
-        "Touch targets appropriately sized",
-        "No horizontal scrolling needed"
-      ],
-      "passes": false
-    },
-    {
-      "id": "web-pwa-offline-view",
-      "category": "web-pwa",
-      "priority": 3,
-      "description": "PWA shows cached content when offline",
-      "steps": [
-        "Open web app and view some groups",
-        "Go offline",
-        "Refresh or reopen app",
-        "Previously viewed content still visible",
-        "Clear indicator of offline state"
       ],
       "passes": false
     },
@@ -1124,46 +855,6 @@
         "Can record settlements"
       ],
       "passes": false
-    },
-    {
-      "id": "web-pwa-app-prompt",
-      "category": "web-pwa",
-      "priority": 3,
-      "description": "Web users see gentle prompt to download native app",
-      "steps": [
-        "Use web app multiple times",
-        "See non-intrusive banner suggesting native app",
-        "Links to App Store / Play Store",
-        "Can dismiss permanently"
-      ],
-      "passes": false
-    },
-    {
-      "id": "offline-expense-queue",
-      "category": "offline",
-      "priority": 1,
-      "description": "Expenses created offline are queued and sync when online",
-      "steps": [
-        "Go offline",
-        "Create new expense",
-        "Expense saved locally with pending indicator",
-        "Come back online",
-        "Expense syncs automatically"
-      ],
-      "passes": true
-    },
-    {
-      "id": "offline-view-data",
-      "category": "offline",
-      "priority": 1,
-      "description": "User can view existing data while offline",
-      "steps": [
-        "View groups and expenses while online",
-        "Go offline",
-        "Can still view all previously loaded data",
-        "Groups, expenses, balances all accessible"
-      ],
-      "passes": true
     },
     {
       "id": "offline-indicator",
@@ -1206,33 +897,6 @@
       "passes": false
     },
     {
-      "id": "offline-conflict-handling",
-      "category": "offline",
-      "priority": 3,
-      "description": "Conflicts from offline edits are handled gracefully",
-      "steps": [
-        "Go offline, edit expense",
-        "Another user edits same expense while you're offline",
-        "Come back online",
-        "Conflict detected and resolved",
-        "User informed of resolution"
-      ],
-      "passes": false
-    },
-    {
-      "id": "offline-local-storage",
-      "category": "offline",
-      "priority": 1,
-      "description": "Data persists in local database",
-      "steps": [
-        "Use app and create data",
-        "Force close app completely",
-        "Reopen app offline",
-        "All previous data still present"
-      ],
-      "passes": true
-    },
-    {
       "id": "settings-profile-name",
       "category": "settings",
       "priority": 2,
@@ -1247,99 +911,6 @@
       "passes": false
     },
     {
-      "id": "settings-profile-photo",
-      "category": "settings",
-      "priority": 4,
-      "description": "User can set a profile photo",
-      "steps": [
-        "Go to Settings > Profile",
-        "Tap on photo area",
-        "Take photo or choose from gallery",
-        "Crop if needed",
-        "Photo shown in groups"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settings-default-currency",
-      "category": "settings",
-      "priority": 3,
-      "description": "User can set their preferred default currency",
-      "steps": [
-        "Go to Settings > Preferences",
-        "Tap 'Default Currency'",
-        "Select preferred currency",
-        "New groups default to this currency"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settings-theme-dark",
-      "category": "settings",
-      "priority": 4,
-      "description": "User can switch to dark mode",
-      "steps": [
-        "Go to Settings > Appearance",
-        "Select 'Dark' theme",
-        "App switches to dark color scheme",
-        "Preference persists"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settings-theme-system",
-      "category": "settings",
-      "priority": 4,
-      "description": "App can follow system theme setting",
-      "steps": [
-        "Go to Settings > Appearance",
-        "Select 'System' theme",
-        "App matches device dark/light mode",
-        "Changes when system setting changes"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settings-linked-accounts",
-      "category": "settings",
-      "priority": 4,
-      "description": "User can view and manage linked auth providers",
-      "steps": [
-        "Go to Settings > Account",
-        "See linked providers (Google, Apple, Email)",
-        "Can link additional providers",
-        "Can unlink if multiple exist"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settings-delete-account",
-      "category": "settings",
-      "priority": 3,
-      "description": "User can delete their account and all data",
-      "steps": [
-        "Go to Settings > Account",
-        "Tap 'Delete Account'",
-        "See warning about permanent deletion",
-        "Confirm by typing phrase",
-        "Account and data deleted"
-      ],
-      "passes": false
-    },
-    {
-      "id": "settings-export-data",
-      "category": "settings",
-      "priority": 4,
-      "description": "User can export their data",
-      "steps": [
-        "Go to Settings > Account",
-        "Tap 'Export My Data'",
-        "Data prepared for download",
-        "Receive file with all personal data"
-      ],
-      "passes": false
-    },
-    {
       "id": "categories-default-list",
       "category": "settings",
       "priority": 2,
@@ -1349,32 +920,6 @@
         "Open category selector",
         "See default categories with icons",
         "Can quickly select common categories"
-      ],
-      "passes": false
-    },
-    {
-      "id": "categories-custom-create",
-      "category": "settings",
-      "priority": 4,
-      "description": "User can create custom categories",
-      "steps": [
-        "Go to Settings > Categories",
-        "Tap 'Add Category'",
-        "Enter name and select icon",
-        "Category available in expense creation"
-      ],
-      "passes": false
-    },
-    {
-      "id": "categories-custom-edit",
-      "category": "settings",
-      "priority": 5,
-      "description": "User can edit custom categories",
-      "steps": [
-        "Go to Settings > Categories",
-        "Tap on custom category",
-        "Edit name or icon",
-        "Changes reflected in existing expenses"
       ],
       "passes": false
     },
@@ -1457,32 +1002,6 @@
       "passes": false
     },
     {
-      "id": "loading-skeleton",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "Loading states show skeleton UI",
-      "steps": [
-        "Open app with slow connection",
-        "See skeleton placeholders while loading",
-        "UI doesn't jump when content loads",
-        "Smooth transition to content"
-      ],
-      "passes": false
-    },
-    {
-      "id": "loading-pull-refresh",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "User can pull to refresh lists",
-      "steps": [
-        "On groups or expenses list",
-        "Pull down to refresh",
-        "See refresh indicator",
-        "Data reloads from server"
-      ],
-      "passes": false
-    },
-    {
       "id": "error-network",
       "category": "edge-cases",
       "priority": 2,
@@ -1535,6 +1054,417 @@
       "passes": false
     },
     {
+      "id": "performance-app-start",
+      "category": "edge-cases",
+      "priority": 2,
+      "description": "App starts quickly (under 2 seconds)",
+      "steps": [
+        "Force close app",
+        "Measure time to tap icon",
+        "App usable within 2 seconds",
+        "No long splash screen"
+      ],
+      "passes": false
+    },
+    {
+      "id": "performance-list-scroll",
+      "category": "edge-cases",
+      "priority": 2,
+      "description": "Lists scroll smoothly (60fps)",
+      "steps": [
+        "Open group with many expenses",
+        "Scroll quickly through list",
+        "No jank or stuttering",
+        "Smooth 60fps scrolling"
+      ],
+      "passes": false
+    },
+    {
+      "id": "performance-expense-save",
+      "category": "edge-cases",
+      "priority": 2,
+      "description": "Expense saves quickly with immediate feedback",
+      "steps": [
+        "Create new expense",
+        "Tap Save",
+        "Immediate feedback (optimistic UI)",
+        "Return to list within 500ms"
+      ],
+      "passes": false
+    },
+    {
+      "id": "security-data-encryption",
+      "category": "edge-cases",
+      "priority": 2,
+      "description": "Sensitive data encrypted at rest",
+      "steps": [
+        "User data stored locally",
+        "Data encrypted using device security",
+        "Not accessible via file browser",
+        "Cleared on logout"
+      ],
+      "passes": false
+    },
+    {
+      "id": "security-session-management",
+      "category": "auth",
+      "priority": 2,
+      "description": "Sessions managed securely with proper expiry",
+      "steps": [
+        "Login creates secure session",
+        "Session has appropriate expiry",
+        "Refresh tokens handled securely",
+        "Logout invalidates sessions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "api-rate-limiting",
+      "category": "edge-cases",
+      "priority": 2,
+      "description": "API has rate limiting to prevent abuse",
+      "steps": [
+        "Make many rapid API requests",
+        "Eventually get rate limited",
+        "Clear error message returned",
+        "Can retry after cooldown"
+      ],
+      "passes": false
+    },
+    {
+      "id": "currency-symbol-display",
+      "category": "currency",
+      "priority": 2,
+      "description": "Currency symbols display correctly for all currencies",
+      "steps": [
+        "Create expenses in various currencies",
+        "See correct symbols ($, EUR, GBP, JPY, etc.)",
+        "Symbols positioned correctly (prefix/suffix)",
+        "Decimal handling correct per currency"
+      ],
+      "passes": false
+    },
+    {
+      "id": "split-rounding",
+      "category": "splits",
+      "priority": 2,
+      "description": "Split amounts round correctly without losing money",
+      "steps": [
+        "Split $10.00 among 3 people",
+        "See $3.33 + $3.33 + $3.34 or similar",
+        "Total still equals $10.00",
+        "No money lost to rounding"
+      ],
+      "passes": false
+    },
+    {
+      "id": "keyboard-numpad",
+      "category": "expenses",
+      "priority": 2,
+      "description": "Amount entry uses numeric keypad",
+      "steps": [
+        "Tap amount field",
+        "Numeric keypad appears",
+        "Can enter decimals easily",
+        "No need to switch keyboards"
+      ],
+      "passes": false
+    },
+    {
+      "id": "back-navigation",
+      "category": "edge-cases",
+      "priority": 2,
+      "description": "Back navigation works correctly throughout",
+      "steps": [
+        "Navigate deep into app",
+        "Use back button/gesture",
+        "Returns to previous screen",
+        "No unexpected behavior"
+      ],
+      "passes": false
+    },
+    {
+      "id": "auth-google-oauth",
+      "category": "auth",
+      "priority": 3,
+      "description": "User can sign in with Google account",
+      "steps": [
+        "Tap 'Continue with Google' button",
+        "Complete Google OAuth flow",
+        "Successfully authenticated",
+        "Profile photo and name imported from Google"
+      ],
+      "passes": false
+    },
+    {
+      "id": "auth-apple-signin",
+      "category": "auth",
+      "priority": 3,
+      "description": "User can sign in with Apple ID (iOS only)",
+      "steps": [
+        "On iOS device, tap 'Continue with Apple'",
+        "Complete Apple Sign In flow",
+        "Successfully authenticated",
+        "Can hide email if desired"
+      ],
+      "passes": false
+    },
+    {
+      "id": "groups-remove-member",
+      "category": "groups",
+      "priority": 3,
+      "description": "Group creator can remove a member from the group",
+      "steps": [
+        "As group creator, open members list",
+        "Select member to remove",
+        "Tap 'Remove from Group'",
+        "Confirm action",
+        "Member removed, their balances handled appropriately"
+      ],
+      "passes": false
+    },
+    {
+      "id": "groups-delete",
+      "category": "groups",
+      "priority": 3,
+      "description": "Group creator can delete a group permanently",
+      "steps": [
+        "Open group settings as creator",
+        "Tap 'Delete Group'",
+        "See warning about permanent deletion",
+        "Type group name to confirm",
+        "Group and all data permanently deleted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "groups-regenerate-invite",
+      "category": "groups",
+      "priority": 3,
+      "description": "Group creator can regenerate invite code to invalidate old links",
+      "steps": [
+        "Open group settings",
+        "Tap 'Regenerate Invite Code'",
+        "Confirm action",
+        "New code generated",
+        "Old invite links no longer work"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-add-notes",
+      "category": "expenses",
+      "priority": 3,
+      "description": "User can add notes to an expense",
+      "steps": [
+        "Creating or editing expense",
+        "Tap 'Add Notes' field",
+        "Enter additional context/details",
+        "Save expense",
+        "Notes visible in expense detail"
+      ],
+      "passes": false
+    },
+    {
+      "id": "splits-adjustment",
+      "category": "splits",
+      "priority": 3,
+      "description": "User can make small adjustments to equal split",
+      "steps": [
+        "Start with equal split",
+        "Tap '+' or '-' to adjust individual amounts",
+        "Other amounts adjust to maintain total",
+        "Quick way to handle 'I had more' scenarios"
+      ],
+      "passes": false
+    },
+    {
+      "id": "currency-manual-rate",
+      "category": "currency",
+      "priority": 3,
+      "description": "User can override exchange rate for specific expense",
+      "steps": [
+        "Creating expense in foreign currency",
+        "Tap to expand conversion details",
+        "Enter custom exchange rate",
+        "Custom rate used for this expense only"
+      ],
+      "passes": false
+    },
+    {
+      "id": "currency-recent",
+      "category": "currency",
+      "priority": 3,
+      "description": "Recently used currencies appear at top of selector",
+      "steps": [
+        "Use EUR for an expense",
+        "Create new expense",
+        "Open currency selector",
+        "EUR appears in 'Recent' section at top"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settlements-paypal-deeplink",
+      "category": "settlements",
+      "priority": 3,
+      "description": "User can settle via PayPal with pre-filled amount",
+      "steps": [
+        "View amount owed",
+        "Tap 'Pay via PayPal'",
+        "PayPal app opens",
+        "Complete payment",
+        "Return and confirm settlement"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settlements-history",
+      "category": "settlements",
+      "priority": 3,
+      "description": "User can view settlement history",
+      "steps": [
+        "Go to group settlements section",
+        "See list of past settlements",
+        "Each shows amount, date, method, parties",
+        "Can see full payment history"
+      ],
+      "passes": false
+    },
+    {
+      "id": "sync-connection-status",
+      "category": "sync",
+      "priority": 3,
+      "description": "User can see sync status indicator",
+      "steps": [
+        "Look for sync indicator in app",
+        "When connected, shows synced status",
+        "When offline, shows offline indicator",
+        "When syncing, shows activity"
+      ],
+      "passes": false
+    },
+    {
+      "id": "notifications-push-payment-reminder",
+      "category": "notifications",
+      "priority": 3,
+      "description": "User receives push notification for payment reminders",
+      "steps": [
+        "Someone sends you a payment reminder",
+        "Receive push notification",
+        "Notification shows amount owed",
+        "Tapping opens balance view"
+      ],
+      "passes": false
+    },
+    {
+      "id": "notifications-push-group-invite",
+      "category": "notifications",
+      "priority": 3,
+      "description": "User notified when added to a new group",
+      "steps": [
+        "Another user adds you to group directly",
+        "Receive push notification",
+        "Notification shows group name",
+        "Tapping opens the group"
+      ],
+      "passes": false
+    },
+    {
+      "id": "web-pwa-offline-view",
+      "category": "web-pwa",
+      "priority": 3,
+      "description": "PWA shows cached content when offline",
+      "steps": [
+        "Open web app and view some groups",
+        "Go offline",
+        "Refresh or reopen app",
+        "Previously viewed content still visible",
+        "Clear indicator of offline state"
+      ],
+      "passes": false
+    },
+    {
+      "id": "web-pwa-app-prompt",
+      "category": "web-pwa",
+      "priority": 3,
+      "description": "Web users see gentle prompt to download native app",
+      "steps": [
+        "Use web app multiple times",
+        "See non-intrusive banner suggesting native app",
+        "Links to App Store / Play Store",
+        "Can dismiss permanently"
+      ],
+      "passes": false
+    },
+    {
+      "id": "offline-conflict-handling",
+      "category": "offline",
+      "priority": 3,
+      "description": "Conflicts from offline edits are handled gracefully",
+      "steps": [
+        "Go offline, edit expense",
+        "Another user edits same expense while you're offline",
+        "Come back online",
+        "Conflict detected and resolved",
+        "User informed of resolution"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-default-currency",
+      "category": "settings",
+      "priority": 3,
+      "description": "User can set their preferred default currency",
+      "steps": [
+        "Go to Settings > Preferences",
+        "Tap 'Default Currency'",
+        "Select preferred currency",
+        "New groups default to this currency"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-delete-account",
+      "category": "settings",
+      "priority": 3,
+      "description": "User can delete their account and all data",
+      "steps": [
+        "Go to Settings > Account",
+        "Tap 'Delete Account'",
+        "See warning about permanent deletion",
+        "Confirm by typing phrase",
+        "Account and data deleted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "loading-skeleton",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "Loading states show skeleton UI",
+      "steps": [
+        "Open app with slow connection",
+        "See skeleton placeholders while loading",
+        "UI doesn't jump when content loads",
+        "Smooth transition to content"
+      ],
+      "passes": false
+    },
+    {
+      "id": "loading-pull-refresh",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "User can pull to refresh lists",
+      "steps": [
+        "On groups or expenses list",
+        "Pull down to refresh",
+        "See refresh indicator",
+        "Data reloads from server"
+      ],
+      "passes": false
+    },
+    {
       "id": "error-expired-invite",
       "category": "edge-cases",
       "priority": 3,
@@ -1544,19 +1474,6 @@
         "See error that invite is no longer valid",
         "Explains link may have been reset",
         "Suggests requesting new invite"
-      ],
-      "passes": false
-    },
-    {
-      "id": "haptic-feedback",
-      "category": "edge-cases",
-      "priority": 4,
-      "description": "App provides haptic feedback for key actions",
-      "steps": [
-        "Complete expense creation",
-        "Feel subtle haptic feedback",
-        "Feedback on settlements too",
-        "Enhances tactile experience"
       ],
       "passes": false
     },
@@ -1587,6 +1504,389 @@
       "passes": false
     },
     {
+      "id": "receipt-ocr-scan",
+      "category": "expenses",
+      "priority": 3,
+      "description": "User can scan receipt and extract total",
+      "steps": [
+        "Tap 'Scan Receipt' when adding expense",
+        "Camera opens",
+        "Point at receipt",
+        "Total amount extracted automatically",
+        "Can confirm or edit extracted amount"
+      ],
+      "passes": false
+    },
+    {
+      "id": "activity-feed-group",
+      "category": "groups",
+      "priority": 3,
+      "description": "Each group has activity/history feed",
+      "steps": [
+        "Open group",
+        "Go to Activity/History tab",
+        "See chronological list of all changes",
+        "Shows who did what when"
+      ],
+      "passes": false
+    },
+    {
+      "id": "number-formatting-locale",
+      "category": "currency",
+      "priority": 3,
+      "description": "Numbers formatted according to locale",
+      "steps": [
+        "Set device to European locale",
+        "Numbers use comma as decimal separator",
+        "Large numbers use appropriate grouping",
+        "Consistent throughout app"
+      ],
+      "passes": false
+    },
+    {
+      "id": "group-member-limit",
+      "category": "groups",
+      "priority": 3,
+      "description": "Groups support reasonable number of members",
+      "steps": [
+        "Create group with 20+ members",
+        "All members can be added",
+        "UI handles many members gracefully",
+        "Performance remains acceptable"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expense-amount-limit",
+      "category": "expenses",
+      "priority": 3,
+      "description": "Large expense amounts handled correctly",
+      "steps": [
+        "Enter large amount (100,000+)",
+        "Amount saved correctly",
+        "No overflow or precision issues",
+        "Displays correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expense-small-amounts",
+      "category": "expenses",
+      "priority": 3,
+      "description": "Small amounts and cents handled correctly",
+      "steps": [
+        "Enter $0.01 expense",
+        "Saved with correct precision",
+        "Split calculations accurate",
+        "No floating point errors visible"
+      ],
+      "passes": false
+    },
+    {
+      "id": "undo-expense-delete",
+      "category": "expenses",
+      "priority": 3,
+      "description": "User can undo accidental expense deletion",
+      "steps": [
+        "Delete an expense",
+        "See undo option (toast/snackbar)",
+        "Tap undo within time limit",
+        "Expense restored"
+      ],
+      "passes": false
+    },
+    {
+      "id": "gesture-swipe-delete",
+      "category": "expenses",
+      "priority": 3,
+      "description": "User can swipe to delete expense",
+      "steps": [
+        "In expense list, swipe left on expense",
+        "See delete action revealed",
+        "Confirm or complete swipe",
+        "Expense deleted with undo option"
+      ],
+      "passes": false
+    },
+    {
+      "id": "keyboard-dismiss",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "Keyboard dismisses appropriately",
+      "steps": [
+        "Open keyboard in any input",
+        "Tap outside input area",
+        "Keyboard dismisses",
+        "Works consistently throughout app"
+      ],
+      "passes": false
+    },
+    {
+      "id": "app-state-restore",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "App restores state after being killed by OS",
+      "steps": [
+        "Be in middle of expense creation",
+        "Switch to memory-intensive app",
+        "Return to Evn app",
+        "Work in progress restored"
+      ],
+      "passes": false
+    },
+    {
+      "id": "cross-timezone",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "App handles users in different timezones",
+      "steps": [
+        "Users in different timezones share group",
+        "Expense dates show correctly for each user",
+        "No confusion about when things happened",
+        "'Today' is relative to user's timezone"
+      ],
+      "passes": false
+    },
+    {
+      "id": "unicode-support",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "Unicode characters supported in text fields",
+      "steps": [
+        "Enter group name with emoji",
+        "Enter expense description with accented chars",
+        "Enter member name in non-Latin script",
+        "All display correctly"
+      ],
+      "passes": false
+    },
+    {
+      "id": "long-text-handling",
+      "category": "edge-cases",
+      "priority": 3,
+      "description": "Long text truncates gracefully",
+      "steps": [
+        "Enter very long expense description",
+        "In list view, text truncates with ellipsis",
+        "Full text visible in detail view",
+        "No layout breaking"
+      ],
+      "passes": false
+    },
+    {
+      "id": "groups-archive",
+      "category": "groups",
+      "priority": 4,
+      "description": "User can archive a group to hide it from main list",
+      "steps": [
+        "Open group settings",
+        "Tap 'Archive Group'",
+        "Group moves to archived section",
+        "Not visible in main groups list",
+        "Can unarchive later"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-add-photo",
+      "category": "expenses",
+      "priority": 4,
+      "description": "User can attach a photo (receipt) to expense",
+      "steps": [
+        "Creating or editing expense",
+        "Tap 'Add Photo'",
+        "Take photo or select from gallery",
+        "Photo attached to expense",
+        "Photo viewable in expense detail"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-duplicate",
+      "category": "expenses",
+      "priority": 4,
+      "description": "User can duplicate an existing expense",
+      "steps": [
+        "Open expense detail",
+        "Tap 'Duplicate' option",
+        "New expense created with same details",
+        "Date set to today",
+        "Can edit before saving"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-filter-by-category",
+      "category": "expenses",
+      "priority": 4,
+      "description": "User can filter expenses by category",
+      "steps": [
+        "In expenses list, tap filter icon",
+        "Select one or more categories",
+        "List shows only matching expenses",
+        "Clear filter shows all expenses"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-filter-by-member",
+      "category": "expenses",
+      "priority": 4,
+      "description": "User can filter expenses by who paid or who's involved",
+      "steps": [
+        "In expenses list, tap filter icon",
+        "Select member to filter by",
+        "See expenses that member paid or is part of",
+        "Clear filter shows all"
+      ],
+      "passes": false
+    },
+    {
+      "id": "expenses-search",
+      "category": "expenses",
+      "priority": 4,
+      "description": "User can search expenses by description",
+      "steps": [
+        "In expenses list, tap search icon",
+        "Enter search term",
+        "Results filter in real-time",
+        "Matching text highlighted",
+        "Clear search to see all"
+      ],
+      "passes": false
+    },
+    {
+      "id": "splits-remember-preference",
+      "category": "splits",
+      "priority": 4,
+      "description": "App remembers last used split type per group",
+      "steps": [
+        "Create expense with specific split type",
+        "Create another expense",
+        "Same split type pre-selected",
+        "Preference persists across sessions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "currency-historical-rate",
+      "category": "currency",
+      "priority": 4,
+      "description": "Expenses use exchange rate from expense date, not current",
+      "steps": [
+        "Create expense dated last week",
+        "Select foreign currency",
+        "Exchange rate from that date used",
+        "More accurate for past transactions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settlements-remind",
+      "category": "settlements",
+      "priority": 4,
+      "description": "User can send payment reminder to someone who owes them",
+      "steps": [
+        "View balance where someone owes you",
+        "Tap 'Send Reminder'",
+        "Notification sent to that person",
+        "Reminder shows amount owed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-profile-photo",
+      "category": "settings",
+      "priority": 4,
+      "description": "User can set a profile photo",
+      "steps": [
+        "Go to Settings > Profile",
+        "Tap on photo area",
+        "Take photo or choose from gallery",
+        "Crop if needed",
+        "Photo shown in groups"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-theme-dark",
+      "category": "settings",
+      "priority": 4,
+      "description": "User can switch to dark mode",
+      "steps": [
+        "Go to Settings > Appearance",
+        "Select 'Dark' theme",
+        "App switches to dark color scheme",
+        "Preference persists"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-theme-system",
+      "category": "settings",
+      "priority": 4,
+      "description": "App can follow system theme setting",
+      "steps": [
+        "Go to Settings > Appearance",
+        "Select 'System' theme",
+        "App matches device dark/light mode",
+        "Changes when system setting changes"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-linked-accounts",
+      "category": "settings",
+      "priority": 4,
+      "description": "User can view and manage linked auth providers",
+      "steps": [
+        "Go to Settings > Account",
+        "See linked providers (Google, Apple, Email)",
+        "Can link additional providers",
+        "Can unlink if multiple exist"
+      ],
+      "passes": false
+    },
+    {
+      "id": "settings-export-data",
+      "category": "settings",
+      "priority": 4,
+      "description": "User can export their data",
+      "steps": [
+        "Go to Settings > Account",
+        "Tap 'Export My Data'",
+        "Data prepared for download",
+        "Receive file with all personal data"
+      ],
+      "passes": false
+    },
+    {
+      "id": "categories-custom-create",
+      "category": "settings",
+      "priority": 4,
+      "description": "User can create custom categories",
+      "steps": [
+        "Go to Settings > Categories",
+        "Tap 'Add Category'",
+        "Enter name and select icon",
+        "Category available in expense creation"
+      ],
+      "passes": false
+    },
+    {
+      "id": "haptic-feedback",
+      "category": "edge-cases",
+      "priority": 4,
+      "description": "App provides haptic feedback for key actions",
+      "steps": [
+        "Complete expense creation",
+        "Feel subtle haptic feedback",
+        "Feedback on settlements too",
+        "Enhances tactile experience"
+      ],
+      "passes": false
+    },
+    {
       "id": "deep-link-expense",
       "category": "edge-cases",
       "priority": 4,
@@ -1609,20 +1909,6 @@
         "Member clicks link",
         "App opens to that group",
         "Non-members see join flow"
-      ],
-      "passes": false
-    },
-    {
-      "id": "receipt-ocr-scan",
-      "category": "expenses",
-      "priority": 3,
-      "description": "User can scan receipt and extract total",
-      "steps": [
-        "Tap 'Scan Receipt' when adding expense",
-        "Camera opens",
-        "Point at receipt",
-        "Total amount extracted automatically",
-        "Can confirm or edit extracted amount"
       ],
       "passes": false
     },
@@ -1709,20 +1995,6 @@
       "passes": false
     },
     {
-      "id": "trip-summary-csv",
-      "category": "groups",
-      "priority": 5,
-      "description": "User can export expenses as CSV",
-      "steps": [
-        "View trip summary",
-        "Tap 'Export'",
-        "Select CSV format",
-        "CSV with all expense details generated",
-        "Can import into spreadsheet"
-      ],
-      "passes": false
-    },
-    {
       "id": "friends-1on1-balance",
       "category": "groups",
       "priority": 4,
@@ -1749,15 +2021,42 @@
       "passes": false
     },
     {
-      "id": "activity-feed-group",
-      "category": "groups",
-      "priority": 3,
-      "description": "Each group has activity/history feed",
+      "id": "splits-default-group-ratio",
+      "category": "splits",
+      "priority": 5,
+      "description": "Group can have default split ratio (e.g., always 60/40)",
       "steps": [
-        "Open group",
-        "Go to Activity/History tab",
-        "See chronological list of all changes",
-        "Shows who did what when"
+        "In group settings, set default split ratio",
+        "Create new expense",
+        "Split pre-populated with default ratio",
+        "Can still modify for individual expenses"
+      ],
+      "passes": false
+    },
+    {
+      "id": "categories-custom-edit",
+      "category": "settings",
+      "priority": 5,
+      "description": "User can edit custom categories",
+      "steps": [
+        "Go to Settings > Categories",
+        "Tap on custom category",
+        "Edit name or icon",
+        "Changes reflected in existing expenses"
+      ],
+      "passes": false
+    },
+    {
+      "id": "trip-summary-csv",
+      "category": "groups",
+      "priority": 5,
+      "description": "User can export expenses as CSV",
+      "steps": [
+        "View trip summary",
+        "Tap 'Export'",
+        "Select CSV format",
+        "CSV with all expense details generated",
+        "Can import into spreadsheet"
       ],
       "passes": false
     },
@@ -1772,305 +2071,6 @@
         "Complete Plaid flow",
         "See recent transactions",
         "Can import selected transactions as expenses"
-      ],
-      "passes": false
-    },
-    {
-      "id": "performance-app-start",
-      "category": "edge-cases",
-      "priority": 2,
-      "description": "App starts quickly (under 2 seconds)",
-      "steps": [
-        "Force close app",
-        "Measure time to tap icon",
-        "App usable within 2 seconds",
-        "No long splash screen"
-      ],
-      "passes": false
-    },
-    {
-      "id": "performance-list-scroll",
-      "category": "edge-cases",
-      "priority": 2,
-      "description": "Lists scroll smoothly (60fps)",
-      "steps": [
-        "Open group with many expenses",
-        "Scroll quickly through list",
-        "No jank or stuttering",
-        "Smooth 60fps scrolling"
-      ],
-      "passes": false
-    },
-    {
-      "id": "performance-expense-save",
-      "category": "edge-cases",
-      "priority": 2,
-      "description": "Expense saves quickly with immediate feedback",
-      "steps": [
-        "Create new expense",
-        "Tap Save",
-        "Immediate feedback (optimistic UI)",
-        "Return to list within 500ms"
-      ],
-      "passes": false
-    },
-    {
-      "id": "security-data-encryption",
-      "category": "edge-cases",
-      "priority": 2,
-      "description": "Sensitive data encrypted at rest",
-      "steps": [
-        "User data stored locally",
-        "Data encrypted using device security",
-        "Not accessible via file browser",
-        "Cleared on logout"
-      ],
-      "passes": false
-    },
-    {
-      "id": "security-https-only",
-      "category": "edge-cases",
-      "priority": 1,
-      "description": "All API communication over HTTPS",
-      "steps": [
-        "Monitor network traffic",
-        "All requests use HTTPS",
-        "No plain HTTP requests",
-        "Certificate validation enforced"
-      ],
-      "passes": true
-    },
-    {
-      "id": "security-session-management",
-      "category": "auth",
-      "priority": 2,
-      "description": "Sessions managed securely with proper expiry",
-      "steps": [
-        "Login creates secure session",
-        "Session has appropriate expiry",
-        "Refresh tokens handled securely",
-        "Logout invalidates sessions"
-      ],
-      "passes": false
-    },
-    {
-      "id": "api-rate-limiting",
-      "category": "edge-cases",
-      "priority": 2,
-      "description": "API has rate limiting to prevent abuse",
-      "steps": [
-        "Make many rapid API requests",
-        "Eventually get rate limited",
-        "Clear error message returned",
-        "Can retry after cooldown"
-      ],
-      "passes": false
-    },
-    {
-      "id": "api-input-validation",
-      "category": "edge-cases",
-      "priority": 1,
-      "description": "API validates all input to prevent injection",
-      "steps": [
-        "Try submitting malformed data",
-        "API rejects with validation error",
-        "No SQL injection possible",
-        "No XSS via stored content"
-      ],
-      "passes": true
-    },
-    {
-      "id": "currency-symbol-display",
-      "category": "currency",
-      "priority": 2,
-      "description": "Currency symbols display correctly for all currencies",
-      "steps": [
-        "Create expenses in various currencies",
-        "See correct symbols ($, EUR, GBP, JPY, etc.)",
-        "Symbols positioned correctly (prefix/suffix)",
-        "Decimal handling correct per currency"
-      ],
-      "passes": false
-    },
-    {
-      "id": "number-formatting-locale",
-      "category": "currency",
-      "priority": 3,
-      "description": "Numbers formatted according to locale",
-      "steps": [
-        "Set device to European locale",
-        "Numbers use comma as decimal separator",
-        "Large numbers use appropriate grouping",
-        "Consistent throughout app"
-      ],
-      "passes": false
-    },
-    {
-      "id": "group-member-limit",
-      "category": "groups",
-      "priority": 3,
-      "description": "Groups support reasonable number of members",
-      "steps": [
-        "Create group with 20+ members",
-        "All members can be added",
-        "UI handles many members gracefully",
-        "Performance remains acceptable"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expense-amount-limit",
-      "category": "expenses",
-      "priority": 3,
-      "description": "Large expense amounts handled correctly",
-      "steps": [
-        "Enter large amount (100,000+)",
-        "Amount saved correctly",
-        "No overflow or precision issues",
-        "Displays correctly"
-      ],
-      "passes": false
-    },
-    {
-      "id": "expense-small-amounts",
-      "category": "expenses",
-      "priority": 3,
-      "description": "Small amounts and cents handled correctly",
-      "steps": [
-        "Enter $0.01 expense",
-        "Saved with correct precision",
-        "Split calculations accurate",
-        "No floating point errors visible"
-      ],
-      "passes": false
-    },
-    {
-      "id": "split-rounding",
-      "category": "splits",
-      "priority": 2,
-      "description": "Split amounts round correctly without losing money",
-      "steps": [
-        "Split $10.00 among 3 people",
-        "See $3.33 + $3.33 + $3.34 or similar",
-        "Total still equals $10.00",
-        "No money lost to rounding"
-      ],
-      "passes": false
-    },
-    {
-      "id": "undo-expense-delete",
-      "category": "expenses",
-      "priority": 3,
-      "description": "User can undo accidental expense deletion",
-      "steps": [
-        "Delete an expense",
-        "See undo option (toast/snackbar)",
-        "Tap undo within time limit",
-        "Expense restored"
-      ],
-      "passes": false
-    },
-    {
-      "id": "gesture-swipe-delete",
-      "category": "expenses",
-      "priority": 3,
-      "description": "User can swipe to delete expense",
-      "steps": [
-        "In expense list, swipe left on expense",
-        "See delete action revealed",
-        "Confirm or complete swipe",
-        "Expense deleted with undo option"
-      ],
-      "passes": false
-    },
-    {
-      "id": "keyboard-numpad",
-      "category": "expenses",
-      "priority": 2,
-      "description": "Amount entry uses numeric keypad",
-      "steps": [
-        "Tap amount field",
-        "Numeric keypad appears",
-        "Can enter decimals easily",
-        "No need to switch keyboards"
-      ],
-      "passes": false
-    },
-    {
-      "id": "keyboard-dismiss",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "Keyboard dismisses appropriately",
-      "steps": [
-        "Open keyboard in any input",
-        "Tap outside input area",
-        "Keyboard dismisses",
-        "Works consistently throughout app"
-      ],
-      "passes": false
-    },
-    {
-      "id": "back-navigation",
-      "category": "edge-cases",
-      "priority": 2,
-      "description": "Back navigation works correctly throughout",
-      "steps": [
-        "Navigate deep into app",
-        "Use back button/gesture",
-        "Returns to previous screen",
-        "No unexpected behavior"
-      ],
-      "passes": false
-    },
-    {
-      "id": "app-state-restore",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "App restores state after being killed by OS",
-      "steps": [
-        "Be in middle of expense creation",
-        "Switch to memory-intensive app",
-        "Return to Evn app",
-        "Work in progress restored"
-      ],
-      "passes": false
-    },
-    {
-      "id": "cross-timezone",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "App handles users in different timezones",
-      "steps": [
-        "Users in different timezones share group",
-        "Expense dates show correctly for each user",
-        "No confusion about when things happened",
-        "'Today' is relative to user's timezone"
-      ],
-      "passes": false
-    },
-    {
-      "id": "unicode-support",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "Unicode characters supported in text fields",
-      "steps": [
-        "Enter group name with emoji",
-        "Enter expense description with accented chars",
-        "Enter member name in non-Latin script",
-        "All display correctly"
-      ],
-      "passes": false
-    },
-    {
-      "id": "long-text-handling",
-      "category": "edge-cases",
-      "priority": 3,
-      "description": "Long text truncates gracefully",
-      "steps": [
-        "Enter very long expense description",
-        "In list view, text truncates with ellipsis",
-        "Full text visible in detail view",
-        "No layout breaking"
       ],
       "passes": false
     }

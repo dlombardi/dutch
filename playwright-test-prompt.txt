@@ -1,0 +1,399 @@
+Generate end-to-end Playwright tests for the Evn mobile application. Focus ONLY on core user flows that are currently implemented (features with "passes": true). Do NOT create tests for edge cases, error scenarios, or features that are not yet implemented.
+
+PROJECT CONTEXT
+==============
+
+Evn is a Splitwise alternative for tracking group expenses and settlements. It's a React Native/Expo mobile app with:
+- Expo Router for navigation (file-based routing)
+- TanStack React Query for server state management
+- Zustand for client state management
+- NestJS backend API (running on port 3001)
+- WebSocket for real-time sync
+- Offline-first architecture with local storage
+
+APP STRUCTURE
+=============
+
+Key routes:
+- /(auth)/sign-in - Sign in screen
+- /(auth)/guest-join - Guest join flow
+- /(auth)/magic-link-sent - Confirmation after requesting magic link
+- /auth/verify - Magic link verification
+- /(tabs)/index - Main groups list screen
+- /(tabs)/settings - Settings screen
+- /create-group - Create new group (modal)
+- /group/[id] - Group detail view
+- /group/[id]/add-expense - Add expense (modal)
+- /expense/[id] - Expense detail view
+- /expense/[id]/edit - Edit expense (modal)
+- /join/[code] - Join group via invite code
+- /join-group - Join group screen
+
+TEST FRAMEWORK SETUP
+====================
+
+Use Playwright for mobile testing. Set up tests to:
+- Use mobile device emulation (iPhone or Android)
+- Test against the Expo development server or built app
+- Use proper selectors (test IDs preferred, fallback to accessible labels)
+- Include proper waits for async operations
+- Use page object model or similar organization pattern
+- Group related tests in describe blocks
+
+CORE END-TO-END FLOWS TO TEST
+==============================
+
+Focus on these core user journeys. Each test should be a complete end-to-end flow, not isolated unit tests.
+
+1. AUTHENTICATION FLOWS
+------------------------
+
+1.1 Magic Link Authentication Flow
+- Navigate to sign in screen
+- Enter valid email address
+- Tap 'Send Magic Link' button
+- Verify confirmation message appears
+- Simulate clicking magic link from email (or use API to get token)
+- Verify app opens and user is authenticated
+- Verify user is redirected to main groups screen
+- Verify session persists (close and reopen app, still authenticated)
+
+1.2 Guest Join Flow
+- Open invite link without being logged in
+- Verify prompt to enter display name appears
+- Enter name and tap 'Join Group'
+- Verify successfully joined the group as guest member
+- Verify guest identity persists (close and reopen app, still recognized as same guest)
+
+1.3 Logout Flow
+- As authenticated user, navigate to Settings
+- Tap 'Log Out'
+- Confirm logout action
+- Verify returned to welcome/login screen
+- Verify session cleared (cannot access groups without re-authenticating)
+
+2. GROUP MANAGEMENT FLOWS
+-------------------------
+
+2.1 Create Group Flow
+- As authenticated user, tap 'Create Group' button
+- Enter group name
+- Select or search for emoji
+- Optionally set default currency (e.g., EUR, GBP, JPY)
+- Tap 'Create'
+- Verify new group appears in groups list
+- Verify invite code is automatically generated and displayed
+- Verify group shows emoji, name, and recent activity
+
+2.2 View Groups List
+- Open app to main screen
+- Verify list of groups user is member of is displayed
+- Verify each group shows emoji, name, recent activity
+- Verify groups sorted by most recent activity
+
+2.3 View Group Detail
+- Tap on a group in groups list
+- Verify group name and emoji displayed at top
+- Verify list of expenses is shown
+- Verify current balances summary is displayed
+- Verify can navigate to different tabs/sections (expenses, balances, members)
+
+2.4 View Group Members
+- Open a group
+- Navigate to members section
+- Verify all members with names are displayed
+- Verify member types are indicated (guest vs full account)
+- Verify member join dates are shown
+
+2.5 Join Group via Invite Code
+- From groups screen, tap 'Join Group'
+- Enter 6-character invite code
+- Tap 'Join'
+- Verify successfully added to group
+- Verify group appears in groups list
+
+2.6 Join Group via Invite Link
+- Receive invite link (simulate opening link)
+- Verify app opens to group preview (name, emoji, member count)
+- Authenticate (as guest or full account)
+- Verify successfully added to group
+
+2.7 Share Invite Link
+- Open group settings or tap invite button
+- Tap 'Share Invite Link'
+- Verify system share sheet opens (or link is accessible)
+- Verify link includes group name in preview
+
+3. EXPENSE MANAGEMENT FLOWS
+----------------------------
+
+3.1 Create Basic Expense
+- In a group, tap 'Add Expense'
+- Enter amount using numpad
+- Enter description
+- Tap 'Save'
+- Verify expense appears in group's expense list
+- Verify expense shows amount, description, who paid
+- Verify expenses sorted by date (newest first)
+
+3.2 Create Expense with Payer Selection
+- Creating new expense
+- Tap 'Paid by' field
+- Verify list of group members appears
+- Select the member who paid
+- Enter amount and description
+- Save expense
+- Verify payer selection is saved with expense
+
+3.3 Create Expense with Category
+- Creating or editing expense
+- Tap category selector
+- Verify category options with icons are shown
+- Select appropriate category (e.g., Food, Transport)
+- Save expense
+- Verify category saved and shown on expense
+
+3.4 View Expense List
+- Open a group
+- Verify expenses list is displayed
+- Verify each expense shows amount, description, who paid
+- Verify expenses sorted by date (newest first)
+- Verify can scroll through all expenses
+
+3.5 View Expense Detail
+- Tap on expense in list
+- Verify full expense details are shown
+- Verify who paid and full split breakdown are displayed
+- Verify date, category, notes are shown
+- Verify who created and when are displayed
+
+3.6 Edit Expense
+- Open expense detail
+- Tap 'Edit'
+- Modify amount, description, or split
+- Save changes
+- Verify changes are reflected in expense detail
+- Verify balances recalculated automatically
+
+3.7 Delete Expense
+- Open expense detail
+- Tap 'Delete'
+- Confirm deletion
+- Verify expense removed from list
+- Verify balances recalculated
+
+4. EXPENSE SPLITTING FLOWS
+---------------------------
+
+4.1 Equal Split
+- Creating expense
+- Select 'Split Equally'
+- Verify all group members selected by default
+- Verify amount divided equally
+- Verify per-person amount displayed before saving
+- Save expense
+- Verify split is saved correctly
+
+4.2 Exclude Members from Split
+- Creating expense with equal split
+- Tap on members to include/exclude
+- Verify excluded members show as unchecked
+- Verify split recalculates for included members only
+- Save expense
+- Verify expense shows who was excluded
+
+4.3 Exact Amounts Split
+- Creating expense
+- Select 'Exact Amounts' split type
+- Enter specific amount for each person
+- Verify amounts must sum to total
+- Verify warning appears if amounts don't match total
+- Save expense
+- Verify exact amounts are saved correctly
+
+5. MULTI-CURRENCY FLOWS
+------------------------
+
+5.1 Create Expense in Different Currency
+- Creating expense
+- Tap currency indicator
+- Select different currency from list (e.g., EUR, GBP, JPY)
+- Enter amount in selected currency
+- Save expense
+- Verify expense saved with original currency
+
+5.2 Currency Auto-Conversion
+- Create group with USD as default currency
+- Add expense in EUR
+- View balances
+- Verify EUR expense converted to USD for balance calculation
+- Verify conversion rate is shown
+
+5.3 Exchange Rates Auto-Fetch
+- Open app
+- Verify exchange rates are fetched on startup
+- Verify rates are cached for offline use
+- Verify rates refresh periodically
+- Verify user doesn't need to manually enter rates
+
+6. BALANCES AND SETTLEMENTS FLOWS
+-----------------------------------
+
+6.1 View Simplified Balances
+- Open group balances tab
+- Verify simplified payment suggestions are shown
+- Verify minimum number of transactions displayed
+- Verify clear indication of amounts owed
+
+6.2 Debt Simplification
+- Create group with complex expense history (multiple expenses between multiple people)
+- View balances
+- Verify debts consolidated into minimum transactions
+- Verify algorithm minimizes transactions (e.g., A owes B, B owes C -> A pays C directly)
+
+6.3 Record Settlement Payment
+- View balances showing amount owed
+- Tap 'Settle Up' or 'Record Payment'
+- Enter or confirm payment amount
+- Select payment method used
+- Record payment
+- Verify payment recorded, balances updated
+- Verify settlement appears in history
+
+7. REAL-TIME SYNC FLOWS
+------------------------
+
+7.1 Real-Time Expense Sync
+- Set up two test sessions (User A and User B)
+- User A adds expense on their device
+- User B has group open on their device
+- Verify expense appears for User B within 2 seconds
+- Verify no manual refresh needed
+
+7.2 Real-Time Edit Sync
+- Set up two test sessions
+- User A edits an expense
+- Verify User B sees updated expense immediately
+- Verify balances recalculate in real-time
+
+7.3 Real-Time Settlement Sync
+- Set up two test sessions
+- User A records settlement
+- Verify User B sees updated balances immediately
+- Verify settlement appears in history for both users
+
+7.4 WebSocket Connection
+- Open app
+- Verify WebSocket connection established
+- Verify connection indicator (if shown) is active
+- Simulate connection drop
+- Verify reconnects automatically
+
+8. OFFLINE FUNCTIONALITY FLOWS
+-------------------------------
+
+8.1 Offline Expense Queue
+- Go offline (disable network)
+- Create new expense
+- Verify expense saved locally with pending indicator
+- Come back online
+- Verify expense syncs automatically
+- Verify pending indicator disappears
+
+8.2 Offline View Data
+- View groups and expenses while online
+- Go offline
+- Verify can still view all previously loaded data
+- Verify groups, expenses, balances all accessible
+
+8.3 Offline Local Storage Persistence
+- Use app and create data (groups, expenses)
+- Force close app completely
+- Reopen app offline
+- Verify all previous data still present
+
+8.4 Offline Indicator
+- Go offline
+- Verify offline indicator (banner or icon) is shown
+- Verify indicator explains limited functionality
+- Come back online
+- Verify indicator disappears
+
+TEST REQUIREMENTS
+=================
+
+1. Test Organization:
+   - Group tests by feature area (auth, groups, expenses, etc.)
+   - Use descriptive test names that explain the flow
+   - Each test should be independent and can run in isolation
+
+2. Test Data:
+   - Use test fixtures for consistent test data
+   - Clean up test data after each test
+   - Use unique identifiers to avoid conflicts
+
+3. Assertions:
+   - Assert on visible UI elements, not internal state
+   - Verify user-visible outcomes (e.g., "expense appears in list")
+   - Check that balances update correctly after operations
+   - Verify navigation works correctly
+
+4. Best Practices:
+   - Use proper waits for async operations (waitForSelector, waitForNavigation)
+   - Use test IDs or accessible labels for selectors
+   - Avoid hard-coded delays (use proper waiting strategies)
+   - Make tests resilient to timing issues
+   - Use page object model or helper functions for common operations
+
+5. Focus Areas:
+   - Test the HAPPY PATH only
+   - Focus on core flows that users perform most often
+   - Verify data persistence and state management
+   - Verify real-time sync works
+   - Verify offline functionality works
+
+6. What NOT to Test:
+   - Edge cases (invalid inputs, error scenarios)
+   - Features marked as "passes": false in feature_list.json
+   - Performance metrics (unless critical to user experience)
+   - UI polish details (exact pixel positions, animations)
+   - Security edge cases (rate limiting, injection attacks)
+
+EXAMPLE TEST STRUCTURE
+=======================
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Group Management', () => {
+  test('user can create a new group with name and emoji', async ({ page }) => {
+    // Setup: authenticate user
+    // Action: navigate to create group
+    // Action: enter group name
+    // Action: select emoji
+    // Action: create group
+    // Assert: group appears in list
+    // Assert: invite code is generated
+  });
+
+  test('user can view group detail with expenses and balances', async ({ page }) => {
+    // Setup: create group with expenses
+    // Action: tap on group
+    // Assert: group name and emoji displayed
+    // Assert: expenses list shown
+    // Assert: balances summary shown
+  });
+});
+```
+
+OUTPUT REQUIREMENTS
+===================
+
+Generate a complete Playwright test suite with:
+1. Test configuration file (playwright.config.ts)
+2. Test files organized by feature area
+3. Helper utilities for common operations (auth, navigation, etc.)
+4. Test fixtures for test data
+5. README with instructions for running tests
+
+The test suite should be production-ready and follow Playwright best practices. Focus on maintainability and readability.

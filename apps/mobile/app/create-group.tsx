@@ -14,13 +14,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@/modules/auth';
 import { type Currency, getDefaultCurrency, searchCurrencies } from '@evn/shared';
 import { VALIDATION } from '@evn/shared';
-import { colors } from '../constants/theme';
+import { colors } from '@/constants/theme';
 
 // React Query hooks
-import { useCreateGroup } from '../hooks/mutations';
+import { useCreateGroup } from '@/modules/groups';
 
 const POPULAR_EMOJIS = ['🏖️', '✈️', '🏠', '🍕', '🎉', '🚗', '⚽', '🎬', '🛒', '💼'];
 

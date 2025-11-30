@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/modules/auth';
 
 export default function MagicLinkSentScreen() {
   const { magicLinkEmail, resetMagicLinkState, requestMagicLink, isLoading } =

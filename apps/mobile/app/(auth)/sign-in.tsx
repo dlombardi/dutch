@@ -10,9 +10,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { useAuthStore } from '../../stores/authStore';
-import { PrimaryButton, SecondaryButton } from '../../components';
-import { colors, gradients } from '../../constants/theme';
+import { useAuthStore } from '@/modules/auth';
+import { PrimaryButton, SecondaryButton } from '@/components/ui';
+import { colors, gradients } from '@/constants/theme';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');

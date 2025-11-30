@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '@/modules/auth';
 
 export default function VerifyMagicLinkScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();

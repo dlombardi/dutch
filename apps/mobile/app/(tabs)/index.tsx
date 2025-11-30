@@ -2,9 +2,9 @@ import { useCallback } from 'react';
 import { FlatList, ListRenderItemInfo, Text, TouchableOpacity, View } from 'react-native';
 import { Link, router, Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { Group, useGroupsStore } from '../../stores/groupsStore';
-import { GhostButton, PrimaryButton } from '../../components';
-import { colors } from '../../constants/theme';
+import { Group, useGroupsStore } from '@/modules/groups';
+import { GhostButton, PrimaryButton } from '@/components/ui';
+import { colors } from '@/constants/theme';
 
 // Fixed height for FlatList optimization
 const GROUP_ITEM_HEIGHT = 80;

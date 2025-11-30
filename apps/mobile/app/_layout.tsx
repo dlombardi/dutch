@@ -7,13 +7,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityIndicator, Appearance, Text, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
-import { getQueryClient } from '../lib/queryClient';
-import { useAuthStore } from '../stores/authStore';
-import { useSyncStore } from '../stores/syncStore';
-import { setOnOnlineCallback, useNetworkStore } from '../stores/networkStore';
-import { useOfflineQueueStore } from '../stores/offlineQueueStore';
-import { useThemeStore } from '../stores/themeStore';
-import { colors } from '../constants/theme';
+import { getQueryClient } from '@/lib/query-client';
+import { useAuthStore } from '@/modules/auth';
+import { useSyncStore } from '@/store/sync-store';
+import { setOnOnlineCallback, useNetworkStore } from '@/store/network-store';
+import { useOfflineQueueStore } from '@/store/offline-queue-store';
+import { useThemeStore } from '@/store/theme-store';
+import { colors } from '@/constants/theme';
 
 // Offline banner as a pure presentational component (no hooks)
 function OfflineBannerView({

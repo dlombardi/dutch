@@ -11,17 +11,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
-import { useAuthStore } from '../../stores/authStore';
-import { useSyncStore } from '../../stores/syncStore';
-import { queryKeys } from '../../lib/queryClient';
-import type { Balance } from '../../stores/groupsStore';
-import { BalancesTab, ExpensesTab, LoadingSpinner, MembersTab, PrimaryButton, SettleModal } from '../../components';
-import { formatBalance, getUserDisplayName } from '../../lib/formatters';
-import { colors, gradients, shadows } from '../../constants/theme';
+import { useAuthStore } from '@/modules/auth';
+import { useSyncStore } from '@/store/sync-store';
+import { queryKeys } from '@/lib/query-client';
+import type { Balance } from '@/modules/groups';
+import { useGroupData } from '@/modules/groups';
+import { BalancesTab, ExpensesTab, MembersTab, SettleModal } from '@/components/group';
+import { LoadingSpinner, PrimaryButton } from '@/components/ui';
+import { formatBalance, getUserDisplayName } from '@/lib/utils/formatters';
+import { colors, gradients, shadows } from '@/constants/theme';
 
 // React Query hooks
-import { useGroupData, useGroupExpenses } from '../../hooks/queries';
-import { useCreateSettlement } from '../../hooks/mutations';
+import { useGroupExpenses } from '@/modules/expenses';
+import { useCreateSettlement } from '@/modules/settlements';
 
 type Tab = 'expenses' | 'balances' | 'members';
 

@@ -10,13 +10,13 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../stores/authStore';
-import { LoadingSpinner } from '../../components';
-import { formatAmount, getCurrencySymbol, getUserDisplayName } from '../../lib/formatters';
+import { useAuthStore } from '@/modules/auth';
+import { LoadingSpinner } from '@/components/ui';
+import { formatAmount, getCurrencySymbol, getUserDisplayName } from '@/lib/utils/formatters';
 
 // React Query hooks
-import { useExpense, useGroup, useGroupMembers } from '../../hooks/queries';
-import { useDeleteExpense } from '../../hooks/mutations';
+import { useExpense, useDeleteExpense } from '@/modules/expenses';
+import { useGroup, useGroupMembers } from '@/modules/groups';
 
 export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

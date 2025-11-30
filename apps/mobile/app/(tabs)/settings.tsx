@@ -1,11 +1,11 @@
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
-import { useGroupsStore } from '../../stores/groupsStore';
-import { useOfflineQueueStore } from '../../stores/offlineQueueStore';
-import { useAuthStore } from '../../stores/authStore';
-import { type ThemePreference, useThemeStore } from '../../stores/themeStore';
-import { DangerButton } from '../../components';
+import { useGroupsStore } from '@/modules/groups';
+import { useOfflineQueueStore } from '@/store/offline-queue-store';
+import { useAuthStore } from '@/modules/auth';
+import { type ThemePreference, useThemeStore } from '@/store/theme-store';
+import { DangerButton } from '@/components/ui';
 
 const themeLabels: Record<ThemePreference, string> = {
   system: 'System',

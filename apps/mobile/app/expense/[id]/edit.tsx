@@ -14,11 +14,11 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuthStore } from '../../../stores/authStore';
+import { useAuthStore } from '@/modules/auth';
 
 // React Query hooks
-import { useExpense, useGroup, useGroupMembers } from '../../../hooks/queries';
-import { useUpdateExpense } from '../../../hooks/mutations';
+import { useExpense, useUpdateExpense } from '@/modules/expenses';
+import { useGroup, useGroupMembers } from '@/modules/groups';
 
 export default function EditExpenseScreen() {
   const { id: expenseId } = useLocalSearchParams<{ id: string }>();

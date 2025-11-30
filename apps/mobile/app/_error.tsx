@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ErrorBoundaryProps, useRouter } from 'expo-router';
-import { borderRadius, colors, fontSize, fontWeight, spacing } from '../lib/theme';
-import { logger } from '../lib/logger';
+import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/lib/theme';
+import { logger } from '@/lib/utils/logger';
 
 export default function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const router = useRouter();

@@ -11,9 +11,8 @@ import {
   View,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
-import { useAuthStore } from '../stores/authStore';
-import { useGroupByInviteCode } from '../hooks/queries';
-import { useJoinGroup } from '../hooks/mutations';
+import { useAuthStore } from '@/modules/auth';
+import { useGroupByInviteCode, useJoinGroup } from '@/modules/groups';
 
 export default function JoinGroupScreen() {
   const [inviteCode, setInviteCode] = useState('');

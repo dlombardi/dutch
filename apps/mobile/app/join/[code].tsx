@@ -7,12 +7,11 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
-import { LoadingSpinner } from '../../components';
+import { useAuthStore } from '@/modules/auth';
+import { LoadingSpinner } from '@/components/ui';
 
 // React Query hooks
-import { useGroupByInviteCode } from '../../hooks/queries';
-import { useJoinGroup } from '../../hooks/mutations';
+import { useGroupByInviteCode, useJoinGroup } from '@/modules/groups';
 
 export default function JoinGroupScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();

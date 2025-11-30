@@ -14,13 +14,13 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'nativewind';
-import { useAuthStore } from '../../../stores/authStore';
-import { api } from '../../../lib/api';
-import { colors } from '../../../constants/theme';
+import { useAuthStore } from '@/modules/auth';
+import { api } from '@/lib/api-client';
+import { colors } from '@/constants/theme';
 
 // React Query hooks
-import { useGroup, useGroupMembers } from '../../../hooks/queries';
-import { useCreateExpense } from '../../../hooks/mutations';
+import { useGroup, useGroupMembers } from '@/modules/groups';
+import { useCreateExpense } from '@/modules/expenses';
 
 // Common currencies with their symbols
 const CURRENCIES = [
