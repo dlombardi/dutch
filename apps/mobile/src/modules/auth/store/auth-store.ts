@@ -35,6 +35,8 @@ export const useAuthStore = create<AuthStore>()(
       magicLinkSent: false,
       magicLinkEmail: null,
       error: null,
+      showUpgradePrompt: false,
+      upgradePromptDismissedAt: null,
       _hasHydrated: false,
 
       // Actions
@@ -53,15 +55,18 @@ export const useAuthStore = create<AuthStore>()(
             id: response.user.id,
             name: response.user.name,
             type: response.user.type,
+            sessionCount: response.user.sessionCount,
             createdAt: response.user.createdAt,
           };
           set({
             user,
             accessToken: response.accessToken,
             isAuthenticated: true,
+            showUpgradePrompt: response.showUpgradePrompt,
+            upgradePromptDismissedAt: response.user.upgradePromptDismissedAt || null,
           });
           logger.setUser({ id: user.id, name: user.name });
-          logger.info('Guest user logged in', { userId: user.id });
+          logger.info('Guest user logged in', { userId: user.id, sessionCount: user.sessionCount });
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error ? error.message : 'Failed to login as guest';
@@ -138,6 +143,7 @@ export const useAuthStore = create<AuthStore>()(
           // TODO: Call API to claim account
           set({
             user: { ...user, email, type: 'claimed' },
+            showUpgradePrompt: false,
           });
         } catch (error: unknown) {
           const errorMessage =
@@ -150,6 +156,20 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      dismissUpgradePrompt: async () => {
+        try {
+          const deviceId = await getOrCreateDeviceId();
+          await authService.dismissUpgradePrompt(deviceId);
+          set({
+            showUpgradePrompt: false,
+            upgradePromptDismissedAt: new Date().toISOString(),
+          });
+          logger.info('Upgrade prompt dismissed');
+        } catch (error: unknown) {
+          logger.error('Failed to dismiss upgrade prompt', error);
+        }
+      },
+
       logout: () => {
         set({
           user: null,
@@ -158,6 +178,8 @@ export const useAuthStore = create<AuthStore>()(
           magicLinkSent: false,
           magicLinkEmail: null,
           error: null,
+          showUpgradePrompt: false,
+          upgradePromptDismissedAt: null,
         });
         logger.setUser(null);
         logger.info('User logged out');
@@ -182,6 +204,7 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
+        upgradePromptDismissedAt: state.upgradePromptDismissedAt,
       }),
       onRehydrateStorage: () => (state) => {
         useAuthStore.getState().setHasHydrated(true);

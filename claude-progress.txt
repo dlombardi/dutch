@@ -773,3 +773,38 @@ Description: Data persists in local database
   - Mobile TypeScript compiles without errors
 - Status: Feature complete
 
+---
+
+## Session: 2025-12-02 22:00:00 UTC
+Working on: auth-guest-upgrade-prompt
+Description: Implement guest upgrade prompt feature - contextual prompts for guest users to claim their account
+
+### auth-guest-upgrade-prompt - COMPLETE
+- Implemented API changes:
+  - Added `sessionCount` field to UserData to track guest sessions
+  - Added `upgradePromptDismissedAt` field for tracking dismissals
+  - Updated `createGuestUser` to return `showUpgradePrompt` flag
+  - Added `POST /auth/guest/dismiss-upgrade-prompt` endpoint
+  - Added `DismissUpgradePromptDto` for validation
+- Implemented mobile UI:
+  - Created `UpgradePromptBanner` component with:
+    - Non-intrusive banner design
+    - Add/claim button to navigate to settings
+    - Dismiss button with confirmation dialog
+    - Dark mode support
+  - Updated auth store with `showUpgradePrompt`, `upgradePromptDismissedAt` states
+  - Updated auth types with new fields
+  - Added `dismissUpgradePrompt` action to auth store
+  - Updated API client with new endpoint and response types
+  - Integrated banner into app layout (shows below offline banner)
+- Tests added:
+  - `apps/api/src/auth/__tests__/guest-upgrade-prompt.controller.spec.ts` (9 tests)
+  - `apps/mobile/__tests__/components/UpgradePromptBanner.test.tsx` (5 tests)
+- All 157 API tests pass, 5 mobile component tests pass
+- Commit: 35c9619
+- Notes:
+  - Upgrade prompt shows after 2+ sessions (not on first session)
+  - Users can dismiss with a confirmation dialog
+  - Dismissed state is persisted and synced with server
+  - Only shows for guest users (not claimed or full accounts)
+

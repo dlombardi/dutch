@@ -11,6 +11,7 @@ export interface User {
   email?: string;
   type: UserType;
   photoUrl?: string;
+  sessionCount?: number;
   createdAt: string;
 }
 
@@ -22,6 +23,8 @@ export interface AuthState {
   magicLinkSent: boolean;
   magicLinkEmail: string | null;
   error: string | null;
+  showUpgradePrompt: boolean;
+  upgradePromptDismissedAt: string | null;
   _hasHydrated: boolean;
 }
 
@@ -31,6 +34,7 @@ export interface AuthActions {
   requestMagicLink: (email: string) => Promise<boolean>;
   verifyMagicLink: (token: string) => Promise<boolean>;
   claimAccount: (email: string) => Promise<void>;
+  dismissUpgradePrompt: () => Promise<void>;
   logout: () => void;
   clearError: () => void;
   resetMagicLinkState: () => void;
@@ -47,10 +51,13 @@ export interface GuestUserResponse {
     type: 'guest';
     authProvider: 'guest';
     deviceId: string;
+    sessionCount: number;
+    upgradePromptDismissedAt?: string;
     createdAt: string;
     updatedAt: string;
   };
   accessToken: string;
+  showUpgradePrompt: boolean;
 }
 
 export interface MagicLinkVerifyResponse {

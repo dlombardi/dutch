@@ -142,13 +142,23 @@ class ApiClient {
         type: 'guest';
         authProvider: 'guest';
         deviceId: string;
+        sessionCount: number;
+        upgradePromptDismissedAt?: string;
         createdAt: string;
         updatedAt: string;
       };
       accessToken: string;
+      showUpgradePrompt: boolean;
     }>('/auth/guest', {
       method: 'POST',
       body: JSON.stringify({ name, deviceId }),
+    });
+  }
+
+  async dismissUpgradePrompt(deviceId: string) {
+    return this.request<{ success: boolean }>('/auth/guest/dismiss-upgrade-prompt', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId }),
     });
   }
 

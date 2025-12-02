@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { router, Stack, useRootNavigationState, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, Appearance, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Appearance, Text, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
 import { getQueryClient } from '@/lib/query-client';
@@ -14,6 +14,7 @@ import { setOnOnlineCallback, useNetworkStore } from '@/store/network-store';
 import { useOfflineQueueStore } from '@/store/offline-queue-store';
 import { useThemeStore } from '@/store/theme-store';
 import { colors } from '@/constants/theme';
+import { UpgradePromptBanner } from '@/components/ui';
 
 // Offline banner as a pure presentational component (no hooks)
 function OfflineBannerView({
@@ -86,12 +87,18 @@ function AppContent({
   pendingCount,
   isSyncing,
   isDark,
+  showUpgradePrompt,
+  onClaimAccount,
+  onDismissUpgradePrompt,
 }: {
   isConnected: boolean;
   isInternetReachable: boolean | null;
   pendingCount: number;
   isSyncing: boolean;
   isDark: boolean;
+  showUpgradePrompt: boolean;
+  onClaimAccount: () => void;
+  onDismissUpgradePrompt: () => void;
 }) {
   const themeColors = isDark ? colors.dark : colors.light;
 
@@ -104,6 +111,13 @@ function AppContent({
         pendingCount={pendingCount}
         isSyncing={isSyncing}
       />
+      {showUpgradePrompt && (
+        <UpgradePromptBanner
+          onClaim={onClaimAccount}
+          onDismiss={onDismissUpgradePrompt}
+          isDark={isDark}
+        />
+      )}
       <Stack
         screenOptions={{
           headerShadowVisible: false,
@@ -165,6 +179,9 @@ export default function RootLayout() {
   // Zustand store hooks - called unconditionally
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const _hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const showUpgradePrompt = useAuthStore((state) => state.showUpgradePrompt);
+  const user = useAuthStore((state) => state.user);
+  const dismissUpgradePrompt = useAuthStore((state) => state.dismissUpgradePrompt);
   const connect = useSyncStore((state) => state.connect);
   const disconnect = useSyncStore((state) => state.disconnect);
   const initializeNetwork = useNetworkStore((state) => state.initialize);
@@ -183,6 +200,22 @@ export default function RootLayout() {
   const handleOnline = useCallback(() => {
     syncPendingExpenses();
   }, [syncPendingExpenses]);
+
+  const handleClaimAccount = useCallback(() => {
+    // Navigate to settings where the user can add their email
+    router.push('/(tabs)/settings');
+  }, []);
+
+  const handleDismissUpgradePrompt = useCallback(() => {
+    Alert.alert(
+      'Dismiss Reminder',
+      'You can always add your email later in Settings.',
+      [
+        { text: 'Keep Showing', style: 'cancel' },
+        { text: 'Dismiss', onPress: dismissUpgradePrompt },
+      ]
+    );
+  }, [dismissUpgradePrompt]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -253,6 +286,9 @@ export default function RootLayout() {
             pendingCount={pendingExpenses.length}
             isSyncing={isSyncing}
             isDark={isDark}
+            showUpgradePrompt={showUpgradePrompt && user?.type === 'guest'}
+            onClaimAccount={handleClaimAccount}
+            onDismissUpgradePrompt={handleDismissUpgradePrompt}
           />
         )}
       </SafeAreaProvider>

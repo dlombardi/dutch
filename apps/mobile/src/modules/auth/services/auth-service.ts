@@ -30,8 +30,16 @@ export async function createGuestUser(
   return api.createGuestUser(name, deviceId);
 }
 
+/**
+ * Dismiss the upgrade prompt for a guest user
+ */
+export async function dismissUpgradePrompt(deviceId: string): Promise<{ success: boolean }> {
+  return api.dismissUpgradePrompt(deviceId);
+}
+
 export const authService = {
   requestMagicLink,
   verifyMagicLink,
   createGuestUser,
+  dismissUpgradePrompt,
 };

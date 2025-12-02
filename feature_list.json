@@ -556,7 +556,7 @@
         "Prompt explains benefits (cross-device, notifications)",
         "Can dismiss prompt without friction"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-guest-claim-account",

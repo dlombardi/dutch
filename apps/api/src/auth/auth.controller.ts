@@ -1,6 +1,18 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RequestMagicLinkDto, VerifyMagicLinkDto, GuestAuthDto } from './dto';
+import {
+  RequestMagicLinkDto,
+  VerifyMagicLinkDto,
+  GuestAuthDto,
+  DismissUpgradePromptDto,
+} from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -21,5 +33,15 @@ export class AuthController {
   @Post('guest')
   createGuestUser(@Body() dto: GuestAuthDto) {
     return this.authService.createGuestUser(dto.name, dto.deviceId);
+  }
+
+  @Post('guest/dismiss-upgrade-prompt')
+  @HttpCode(HttpStatus.OK)
+  dismissUpgradePrompt(@Body() dto: DismissUpgradePromptDto) {
+    const result = this.authService.dismissUpgradePrompt(dto.deviceId);
+    if (!result) {
+      throw new NotFoundException('Guest user not found for this device');
+    }
+    return result;
   }
 }

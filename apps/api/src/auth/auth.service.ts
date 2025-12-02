@@ -17,6 +17,8 @@ export interface UserData {
   type: 'guest' | 'claimed' | 'full';
   authProvider: 'magic_link' | 'google' | 'apple' | 'guest';
   deviceId?: string;
+  sessionCount: number;
+  upgradePromptDismissedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,6 +87,9 @@ export class AuthService {
 
     if (existingUserId) {
       user = this.users.get(existingUserId)!;
+      user.sessionCount = (user.sessionCount || 0) + 1;
+      user.updatedAt = new Date();
+      this.users.set(existingUserId, user);
     } else {
       // Create new user
       const userId = randomBytes(16).toString('hex');
@@ -94,6 +99,7 @@ export class AuthService {
         name: magicLink.email.split('@')[0], // Default name from email
         type: 'full',
         authProvider: 'magic_link',
+        sessionCount: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -110,20 +116,23 @@ export class AuthService {
   createGuestUser(
     name: string,
     deviceId: string,
-  ): { user: UserData; accessToken: string } {
+  ): { user: UserData; accessToken: string; showUpgradePrompt: boolean } {
     // Check if device already has a guest user
     const existingUserId = this.usersByDeviceId.get(deviceId);
 
     let user: UserData;
+    let isNewUser = false;
 
     if (existingUserId) {
-      // Update existing user's name
+      // Update existing user's name and increment session count
       user = this.users.get(existingUserId)!;
       user.name = name;
+      user.sessionCount = (user.sessionCount || 1) + 1;
       user.updatedAt = new Date();
       this.users.set(existingUserId, user);
     } else {
       // Create new guest user
+      isNewUser = true;
       const userId = randomBytes(16).toString('hex');
       user = {
         id: userId,
@@ -131,6 +140,7 @@ export class AuthService {
         type: 'guest',
         authProvider: 'guest',
         deviceId,
+        sessionCount: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -141,7 +151,31 @@ export class AuthService {
     // Generate access token
     const accessToken = randomBytes(32).toString('hex');
 
-    return { user, accessToken };
+    // Determine whether to show upgrade prompt:
+    // - Show if session count > 1 (not first session)
+    // - Don't show if user has dismissed the prompt
+    const showUpgradePrompt =
+      user.sessionCount > 1 && !user.upgradePromptDismissedAt;
+
+    return { user, accessToken, showUpgradePrompt };
+  }
+
+  dismissUpgradePrompt(deviceId: string): { success: boolean } {
+    const userId = this.usersByDeviceId.get(deviceId);
+    if (!userId) {
+      return null;
+    }
+
+    const user = this.users.get(userId);
+    if (!user) {
+      return null;
+    }
+
+    user.upgradePromptDismissedAt = new Date();
+    user.updatedAt = new Date();
+    this.users.set(userId, user);
+
+    return { success: true };
   }
 
   // Helper method to get magic link info (for testing)
