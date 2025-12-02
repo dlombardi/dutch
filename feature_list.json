@@ -468,7 +468,7 @@
     {
       "id": "offline-expense-queue",
       "category": "offline",
-      "priority": 1,
+      "priority": 5,
       "description": "Expenses created offline are queued and sync when online",
       "steps": [
         "Go offline",
@@ -482,7 +482,7 @@
     {
       "id": "offline-view-data",
       "category": "offline",
-      "priority": 1,
+      "priority": 5,
       "description": "User can view existing data while offline",
       "steps": [
         "View groups and expenses while online",
@@ -495,7 +495,7 @@
     {
       "id": "offline-local-storage",
       "category": "offline",
-      "priority": 1,
+      "priority": 5,
       "description": "Data persists in local database",
       "steps": [
         "Use app and create data",
@@ -832,7 +832,7 @@
     {
       "id": "web-pwa-install",
       "category": "web-pwa",
-      "priority": 2,
+      "priority": 4,
       "description": "Users can install PWA to home screen",
       "steps": [
         "Open web app in browser",
@@ -846,7 +846,7 @@
     {
       "id": "web-pwa-feature-parity",
       "category": "web-pwa",
-      "priority": 2,
+      "priority": 4,
       "description": "Core features work in web version",
       "steps": [
         "Can view groups and expenses",
@@ -859,7 +859,7 @@
     {
       "id": "offline-indicator",
       "category": "offline",
-      "priority": 2,
+      "priority": 5,
       "description": "Clear indicator when app is offline",
       "steps": [
         "Go offline",
@@ -872,7 +872,7 @@
     {
       "id": "offline-pending-indicator",
       "category": "offline",
-      "priority": 2,
+      "priority": 5,
       "description": "Pending changes show sync status",
       "steps": [
         "Create expense while offline",
@@ -885,7 +885,7 @@
     {
       "id": "offline-edit-queue",
       "category": "offline",
-      "priority": 2,
+      "priority": 5,
       "description": "Edits made offline sync when reconnected",
       "steps": [
         "Go offline",
@@ -1373,7 +1373,7 @@
     {
       "id": "web-pwa-offline-view",
       "category": "web-pwa",
-      "priority": 3,
+      "priority": 4,
       "description": "PWA shows cached content when offline",
       "steps": [
         "Open web app and view some groups",
@@ -1387,7 +1387,7 @@
     {
       "id": "web-pwa-app-prompt",
       "category": "web-pwa",
-      "priority": 3,
+      "priority": 4,
       "description": "Web users see gentle prompt to download native app",
       "steps": [
         "Use web app multiple times",
@@ -1400,7 +1400,7 @@
     {
       "id": "offline-conflict-handling",
       "category": "offline",
-      "priority": 3,
+      "priority": 5,
       "description": "Conflicts from offline edits are handled gracefully",
       "steps": [
         "Go offline, edit expense",
@@ -1676,7 +1676,7 @@
     {
       "id": "groups-archive",
       "category": "groups",
-      "priority": 4,
+      "priority": 3,
       "description": "User can archive a group to hide it from main list",
       "steps": [
         "Open group settings",
@@ -1690,7 +1690,7 @@
     {
       "id": "expenses-add-photo",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can attach a photo (receipt) to expense",
       "steps": [
         "Creating or editing expense",
@@ -1704,7 +1704,7 @@
     {
       "id": "expenses-duplicate",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can duplicate an existing expense",
       "steps": [
         "Open expense detail",
@@ -1718,7 +1718,7 @@
     {
       "id": "expenses-filter-by-category",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can filter expenses by category",
       "steps": [
         "In expenses list, tap filter icon",
@@ -1731,7 +1731,7 @@
     {
       "id": "expenses-filter-by-member",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can filter expenses by who paid or who's involved",
       "steps": [
         "In expenses list, tap filter icon",
@@ -1744,7 +1744,7 @@
     {
       "id": "expenses-search",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can search expenses by description",
       "steps": [
         "In expenses list, tap search icon",
@@ -1758,7 +1758,7 @@
     {
       "id": "splits-remember-preference",
       "category": "splits",
-      "priority": 4,
+      "priority": 3,
       "description": "App remembers last used split type per group",
       "steps": [
         "Create expense with specific split type",
@@ -1771,7 +1771,7 @@
     {
       "id": "currency-historical-rate",
       "category": "currency",
-      "priority": 4,
+      "priority": 3,
       "description": "Expenses use exchange rate from expense date, not current",
       "steps": [
         "Create expense dated last week",
@@ -1784,7 +1784,7 @@
     {
       "id": "settlements-remind",
       "category": "settlements",
-      "priority": 4,
+      "priority": 3,
       "description": "User can send payment reminder to someone who owes them",
       "steps": [
         "View balance where someone owes you",
@@ -1797,7 +1797,7 @@
     {
       "id": "settings-profile-photo",
       "category": "settings",
-      "priority": 4,
+      "priority": 3,
       "description": "User can set a profile photo",
       "steps": [
         "Go to Settings > Profile",
@@ -1811,7 +1811,7 @@
     {
       "id": "settings-theme-dark",
       "category": "settings",
-      "priority": 4,
+      "priority": 3,
       "description": "User can switch to dark mode",
       "steps": [
         "Go to Settings > Appearance",
@@ -1824,7 +1824,7 @@
     {
       "id": "settings-theme-system",
       "category": "settings",
-      "priority": 4,
+      "priority": 3,
       "description": "App can follow system theme setting",
       "steps": [
         "Go to Settings > Appearance",
@@ -1837,7 +1837,7 @@
     {
       "id": "settings-linked-accounts",
       "category": "settings",
-      "priority": 4,
+      "priority": 3,
       "description": "User can view and manage linked auth providers",
       "steps": [
         "Go to Settings > Account",
@@ -1850,7 +1850,7 @@
     {
       "id": "settings-export-data",
       "category": "settings",
-      "priority": 4,
+      "priority": 3,
       "description": "User can export their data",
       "steps": [
         "Go to Settings > Account",
@@ -1863,7 +1863,7 @@
     {
       "id": "categories-custom-create",
       "category": "settings",
-      "priority": 4,
+      "priority": 3,
       "description": "User can create custom categories",
       "steps": [
         "Go to Settings > Categories",
@@ -1876,7 +1876,7 @@
     {
       "id": "haptic-feedback",
       "category": "edge-cases",
-      "priority": 4,
+      "priority": 3,
       "description": "App provides haptic feedback for key actions",
       "steps": [
         "Complete expense creation",
@@ -1889,7 +1889,7 @@
     {
       "id": "deep-link-expense",
       "category": "edge-cases",
-      "priority": 4,
+      "priority": 3,
       "description": "Deep links can open specific expenses",
       "steps": [
         "Share expense link",
@@ -1902,7 +1902,7 @@
     {
       "id": "deep-link-group",
       "category": "edge-cases",
-      "priority": 4,
+      "priority": 3,
       "description": "Deep links can open specific groups",
       "steps": [
         "Share group link (not invite)",
@@ -1915,7 +1915,7 @@
     {
       "id": "receipt-ocr-itemized",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "Receipt OCR extracts individual line items",
       "steps": [
         "Scan restaurant receipt",
@@ -1928,7 +1928,7 @@
     {
       "id": "receipt-plates-ui",
       "category": "splits",
-      "priority": 4,
+      "priority": 3,
       "description": "Drag-and-drop 'Plates' UI for assigning receipt items",
       "steps": [
         "After scanning itemized receipt",
@@ -1942,7 +1942,7 @@
     {
       "id": "recurring-expense-create",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can create recurring expense (rent, utilities)",
       "steps": [
         "Create expense",
@@ -1956,7 +1956,7 @@
     {
       "id": "recurring-expense-manage",
       "category": "expenses",
-      "priority": 4,
+      "priority": 3,
       "description": "User can view and manage recurring expenses",
       "steps": [
         "Go to group settings > Recurring",
@@ -1969,7 +1969,7 @@
     {
       "id": "trip-summary-view",
       "category": "groups",
-      "priority": 4,
+      "priority": 3,
       "description": "User can see trip/group summary statistics",
       "steps": [
         "Open group",
@@ -1983,7 +1983,7 @@
     {
       "id": "trip-summary-export",
       "category": "groups",
-      "priority": 4,
+      "priority": 3,
       "description": "User can export trip summary as PDF",
       "steps": [
         "View trip summary",
@@ -1997,7 +1997,7 @@
     {
       "id": "friends-1on1-balance",
       "category": "groups",
-      "priority": 4,
+      "priority": 3,
       "description": "User can see 1-on-1 balance with friends outside groups",
       "steps": [
         "Go to Friends tab",
@@ -2010,7 +2010,7 @@
     {
       "id": "activity-feed-global",
       "category": "groups",
-      "priority": 4,
+      "priority": 3,
       "description": "User can see activity feed across all groups",
       "steps": [
         "Go to Activity tab",
@@ -2023,7 +2023,7 @@
     {
       "id": "splits-default-group-ratio",
       "category": "splits",
-      "priority": 5,
+      "priority": 3,
       "description": "Group can have default split ratio (e.g., always 60/40)",
       "steps": [
         "In group settings, set default split ratio",
@@ -2036,7 +2036,7 @@
     {
       "id": "categories-custom-edit",
       "category": "settings",
-      "priority": 5,
+      "priority": 3,
       "description": "User can edit custom categories",
       "steps": [
         "Go to Settings > Categories",
@@ -2049,7 +2049,7 @@
     {
       "id": "trip-summary-csv",
       "category": "groups",
-      "priority": 5,
+      "priority": 3,
       "description": "User can export expenses as CSV",
       "steps": [
         "View trip summary",
@@ -2063,7 +2063,7 @@
     {
       "id": "bank-import-plaid",
       "category": "expenses",
-      "priority": 5,
+      "priority": 3,
       "description": "User can connect bank account via Plaid for auto-import",
       "steps": [
         "Go to Settings > Connected Accounts",
