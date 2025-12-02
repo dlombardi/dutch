@@ -1,0 +1,62 @@
+# Test: View Expense Detail Flow
+# Description: User can tap on expense to view full details
+# Tags: expenses, detail
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Movie Night"
+      emoji: "🎬"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Movie Night"
+    timeout: 10000
+
+# Create an expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "32.50"
+- tapOn: "What was this for?"
+- inputText: "Movie tickets"
+- tapOn: "Save"
+
+# Wait for expense to appear in list
+- extendedWaitUntil:
+    visible: "Movie tickets"
+    timeout: 10000
+
+# Tap on the expense to view details
+- tapOn: "Movie tickets"
+
+# Verify expense detail screen
+- extendedWaitUntil:
+    visible: "Movie tickets"
+    timeout: 5000
+
+# Verify expense amount is shown
+- assertVisible: "$32.50"
+
+# Verify payer information
+- assertVisible: "Paid by"
+
+# Verify split information
+- assertVisible: "Split"
+
+# Verify Edit option is available
+- assertVisible: "Edit"
+
+# Verify Delete option is available
+- assertVisible: "Delete"

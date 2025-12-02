@@ -1,0 +1,29 @@
+# Test: Magic Link Request Flow
+# Description: User can request a magic link via email
+# Tags: auth, magic-link
+
+appId: com.evn.app
+
+---
+# Launch the app using the standard launch subflow
+- runFlow: ../../subflows/launch-app.yaml
+
+# Verify we're on the sign-in screen
+- assertVisible: "dutch"
+- assertVisible: "Sign in with email"
+- assertVisible: "We'll send you a magic link to sign in instantly"
+
+# Enter email address
+- tapOn: "your@email.com"
+- inputText: "test@example.com"
+
+# Tap "Send Magic Link" button
+- tapOn: "Send Magic Link"
+
+# Verify navigation to magic link sent screen
+- extendedWaitUntil:
+    visible: "Check your email"
+    timeout: 10000
+
+# Verify confirmation message
+- assertVisible: "test@example.com"

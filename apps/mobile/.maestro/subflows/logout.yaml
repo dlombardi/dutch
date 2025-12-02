@@ -1,0 +1,26 @@
+# Subflow: Logout
+# Reusable flow for logging out of the app
+
+appId: com.evn.app
+
+---
+# Navigate to Settings if not already there
+- runFlow:
+    when:
+      notVisible: "Sign Out"
+    commands:
+      - tapOn: "Settings"
+
+- assertVisible: "Sign Out"
+
+# Tap Sign Out button
+- tapOn: "Sign Out"
+
+# Confirm logout in alert
+- tapOn: "Sign Out"
+
+# Verify we're back at auth screen
+- extendedWaitUntil:
+    visible: "dutch"
+    timeout: 5000
+- assertVisible: "Sign in with email"

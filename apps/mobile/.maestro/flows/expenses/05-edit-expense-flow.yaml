@@ -1,0 +1,83 @@
+# Test: Edit Expense Flow
+# Description: User can edit an existing expense
+# Tags: expenses, edit
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Food Group"
+      emoji: "🍔"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Food Group"
+    timeout: 10000
+
+# Create an expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "20.00"
+- tapOn: "What was this for?"
+- inputText: "Lunch"
+- tapOn: "Save"
+
+# Wait for expense to appear
+- extendedWaitUntil:
+    visible: "Lunch"
+    timeout: 10000
+
+# Tap on expense to view details
+- tapOn: "Lunch"
+
+# Wait for expense detail screen
+- extendedWaitUntil:
+    visible: "Lunch"
+    timeout: 5000
+
+# Tap Edit button
+- tapOn: "Edit"
+
+# Verify edit expense screen
+- assertVisible: "Edit Expense"
+
+# Clear and update amount
+- tapOn: "20.00"
+- eraseText
+- inputText: "25.00"
+
+# Clear and update description
+- tapOn: "Lunch"
+- eraseText
+- inputText: "Business lunch"
+
+# Save changes
+- tapOn: "Save"
+
+# Wait for detail screen to update
+- extendedWaitUntil:
+    visible: "Business lunch"
+    timeout: 10000
+
+# Verify updated values
+- assertVisible: "Business lunch"
+- assertVisible: "$25.00"
+
+# Go back to group detail
+- back
+
+# Verify updated expense in list
+- assertVisible: "Business lunch"
+- assertVisible: "$25.00"
+- assertNotVisible: "Lunch"

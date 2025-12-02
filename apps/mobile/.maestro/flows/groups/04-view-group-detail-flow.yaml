@@ -1,0 +1,58 @@
+# Test: View Group Detail Flow
+# Description: User can view group details including expenses, balances, and members
+# Tags: groups, detail
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Road Trip"
+      emoji: "🚗"
+
+# Wait for group detail screen
+- extendedWaitUntil:
+    visible: "Road Trip"
+    timeout: 10000
+
+# Verify group header
+- assertVisible: "🚗"
+- assertVisible: "Road Trip"
+
+# Verify balance summary section
+- assertVisible: "Your balance"
+- assertVisible: "$0.00"
+- assertVisible: "All settled up!"
+
+# Verify tabs are present
+- assertVisible: "Expenses"
+- assertVisible: "Balances"
+- assertVisible: "Members"
+
+# Verify Expenses tab is default
+- assertVisible: "No expenses yet"
+
+# Switch to Balances tab
+- tapOn: "Balances"
+- assertVisible: "All settled up"
+
+# Switch to Members tab
+- tapOn:
+    text: "Members"
+    index: 0
+
+# Verify Add Expense FAB
+- assertVisible: "+ Add Expense"
+
+# Verify header actions
+- assertVisible: "Invite"

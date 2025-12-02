@@ -1,0 +1,78 @@
+# Test: Create Expense with Different Currency Flow
+# Description: User can create an expense in a currency different from group default
+# Tags: expenses, create, currency
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group (USD default)
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Europe Trip"
+      emoji: "✈️"
+
+# Wait for group detail screen
+- extendedWaitUntil:
+    visible: "Europe Trip"
+    timeout: 10000
+
+# Tap Add Expense button
+- tapOn: "+ Add Expense"
+
+# Verify add expense screen
+- assertVisible: "Add Expense"
+
+# Tap currency selector to change currency
+- tapOn: "$"
+- tapOn: "USD"
+
+# Verify currency picker modal
+- assertVisible: "Select Currency"
+
+# Search for EUR
+- tapOn: "Search currencies..."
+- inputText: "EUR"
+
+# Select Euro
+- tapOn: "EUR"
+- tapOn: "Done"
+
+# Enter amount in EUR
+- tapOn: "0.00"
+- inputText: "30.00"
+
+# Verify exchange rate field appears
+- assertVisible: "Exchange Rate"
+
+# The exchange rate should auto-fetch
+- extendedWaitUntil:
+    visible: "Auto"
+    timeout: 10000
+
+# Enter description
+- tapOn: "What was this for?"
+- inputText: "Paris museum ticket"
+
+# Verify conversion preview is shown
+- assertVisible: "EUR"
+- assertVisible: "USD"
+
+# Tap Save
+- tapOn: "Save"
+
+# Wait for expense to appear
+- extendedWaitUntil:
+    visible: "Paris museum ticket"
+    timeout: 10000
+
+# Verify expense shows in list with EUR
+- assertVisible: "Paris museum ticket"

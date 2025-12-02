@@ -1,0 +1,63 @@
+# Test: Create Basic Expense Flow
+# Description: User can create a basic expense with amount and description
+# Tags: expenses, create
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow: ../../subflows/create-group.yaml
+
+# Wait for group detail screen
+- extendedWaitUntil:
+    visible: "Test Group"
+    timeout: 10000
+
+# Verify empty expenses state
+- assertVisible: "No expenses yet"
+
+# Tap Add Expense button
+- tapOn: "+ Add Expense"
+
+# Verify add expense screen
+- assertVisible: "Add Expense"
+- assertVisible: "Cancel"
+- assertVisible: "Description"
+- assertVisible: "Paid by"
+
+# Enter amount
+- tapOn: "0.00"
+- inputText: "45.99"
+
+# Enter description
+- tapOn: "What was this for?"
+- inputText: "Pizza dinner"
+
+# Verify payer default is "You"
+- assertVisible: "You"
+
+# Verify split default is all members
+- assertVisible: "All members"
+
+# Tap Save button
+- tapOn: "Save"
+
+# Wait for expense to appear in list
+- extendedWaitUntil:
+    visible: "Pizza dinner"
+    timeout: 10000
+
+# Verify expense details in list
+- assertVisible: "$45.99"
+- assertVisible: "Pizza dinner"
+
+# Verify balance updated
+- assertNotVisible: "All settled up!"

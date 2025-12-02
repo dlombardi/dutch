@@ -1,0 +1,39 @@
+# Subflow: Add Expense
+# Reusable flow for adding an expense to a group
+
+appId: com.evn.app
+
+# Input: amount, description
+---
+# Tap Add Expense button
+- tapOn: "+ Add Expense"
+
+- assertVisible: "Add Expense"
+
+# Enter amount (tap on amount field first)
+- tapOn:
+    text: "0.00"
+    optional: true
+- tapOn:
+    text: "$"
+    optional: true
+
+- inputText: ${amount ?? "50.00"}
+
+# Enter description
+- tapOn:
+    text: "What was this for?"
+    optional: true
+- tapOn:
+    text: "Description"
+    optional: true
+
+- inputText: ${description ?? "Test expense"}
+
+# Save the expense
+- tapOn: "Save"
+
+# Wait for expense to appear in list
+- extendedWaitUntil:
+    visible: ${description ?? "Test expense"}
+    timeout: 10000

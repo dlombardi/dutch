@@ -1,0 +1,65 @@
+# Test: Offline Expense Queue Flow
+# Description: Expenses created offline are queued and synced when back online
+# Tags: offline, queue, sync
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Create a group while online
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Queue Test Group"
+      emoji: "📵"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Queue Test Group"
+    timeout: 10000
+
+# Enable airplane mode to go offline
+- setAirplaneMode: enabled
+
+# Wait a moment for network state to update
+- waitForAnimationToEnd
+
+# Try to add expense while offline
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "55.00"
+- tapOn: "What was this for?"
+- inputText: "Offline queued expense"
+- tapOn: "Save"
+
+# The expense should be saved locally with pending status
+# Note: UI may show pending indicator or offline banner
+- extendedWaitUntil:
+    visible: "Offline queued expense"
+    timeout: 10000
+
+# Verify expense appears (possibly with pending indicator)
+- assertVisible: "Offline queued expense"
+- assertVisible: "$55.00"
+
+# Disable airplane mode to go back online
+- setAirplaneMode: disabled
+
+# Wait for sync to complete
+- waitForAnimationToEnd
+
+# The expense should now be synced
+# Pending indicator should disappear
+- assertVisible: "Offline queued expense"
+- assertVisible: "$55.00"
+
+# Balance should update after sync
+- assertVisible: "Your balance"

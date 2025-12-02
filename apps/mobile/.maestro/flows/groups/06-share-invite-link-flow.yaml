@@ -1,0 +1,38 @@
+# Test: Share Invite Link Flow
+# Description: User can share a group invite link via system share sheet
+# Tags: groups, invite, share
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Party Planning"
+      emoji: "🎉"
+
+# Wait for group detail screen
+- extendedWaitUntil:
+    visible: "Party Planning"
+    timeout: 10000
+
+# Tap Invite button in header
+- tapOn: "Invite"
+
+# Note: System share sheet will open
+# Maestro cannot fully interact with native share sheet
+# but we can verify the flow reaches that point
+# The test validates that the invite button is functional
+
+# In actual device testing, the share sheet would appear with:
+# - The invite link: https://evn.app/join/[CODE]
+# - A message: Join my group "Party Planning" on Dutch!

@@ -1,0 +1,41 @@
+# Subflow: Create Group
+# Reusable flow for creating a new group
+
+appId: com.evn.app
+
+# Input: groupName, emoji (optional)
+---
+# Tap the create group button (+ icon or "Create Group" button)
+- tapOn:
+    text: "+"
+    optional: true
+- tapOn:
+    text: "Create Group"
+    optional: true
+
+- assertVisible: "New Group"
+
+# Select an emoji (optional - uses default if not specified)
+- runFlow:
+    when:
+      true: ${emoji != null}
+    commands:
+      - tapOn: ${emoji}
+
+# Enter group name
+- tapOn:
+    text: "e.g., Trip to Paris"
+    optional: true
+- tapOn:
+    text: "Group Name"
+    optional: true
+
+- inputText: ${groupName ?? "Test Group"}
+
+# Tap Create button
+- tapOn: "Create"
+
+# Wait for group detail screen
+- extendedWaitUntil:
+    visible: ${groupName ?? "Test Group"}
+    timeout: 10000

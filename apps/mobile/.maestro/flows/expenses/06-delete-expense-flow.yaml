@@ -1,0 +1,66 @@
+# Test: Delete Expense Flow
+# Description: User can delete an expense
+# Tags: expenses, delete
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Delete Test Group"
+      emoji: "🗑️"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Delete Test Group"
+    timeout: 10000
+
+# Create an expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "100.00"
+- tapOn: "What was this for?"
+- inputText: "Expense to delete"
+- tapOn: "Save"
+
+# Wait for expense to appear
+- extendedWaitUntil:
+    visible: "Expense to delete"
+    timeout: 10000
+
+# Tap on expense to view details
+- tapOn: "Expense to delete"
+
+# Wait for expense detail screen
+- extendedWaitUntil:
+    visible: "Expense to delete"
+    timeout: 5000
+
+# Tap Delete button
+- tapOn: "Delete"
+
+# Confirm deletion in alert
+- assertVisible: "Are you sure"
+- tapOn: "Delete"
+
+# Wait for navigation back to group detail
+- extendedWaitUntil:
+    visible: "Delete Test Group"
+    timeout: 5000
+
+# Verify expense is removed from list
+- assertVisible: "No expenses yet"
+- assertNotVisible: "Expense to delete"
+
+# Verify balance is reset
+- assertVisible: "All settled up!"

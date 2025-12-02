@@ -1,0 +1,41 @@
+# Test: Logout Flow
+# Description: Authenticated user can log out and return to sign-in screen
+# Tags: auth, logout
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Navigate to Settings tab
+- tapOn: "Settings"
+
+# Verify settings screen
+- assertVisible: "Account"
+- assertVisible: "Preferences"
+
+# Tap Sign Out button
+- scrollUntilVisible:
+    element: "Sign Out"
+    direction: DOWN
+- tapOn: "Sign Out"
+
+# Confirm logout in alert dialog
+- assertVisible: "Are you sure you want to sign out?"
+- tapOn: "Sign Out"
+
+# Verify returned to welcome/login screen
+- extendedWaitUntil:
+    visible: "dutch"
+    timeout: 5000
+
+- assertVisible: "Split expenses, not friendships"
+- assertVisible: "Sign in with email"
+- assertVisible: "Continue as guest"

@@ -1,0 +1,58 @@
+# Test: Create Group with Different Currency
+# Description: User can create a group with a non-default currency
+# Tags: groups, create, currency
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Tap Create Group button
+- tapOn: "Create Group"
+
+# Verify create group screen
+- assertVisible: "New Group"
+
+# Select emoji
+- tapOn:
+    text: "🏖️"
+
+# Enter group name
+- tapOn: "e.g., Trip to Paris"
+- inputText: "Euro Beach Trip"
+
+# Tap currency selector
+- tapOn: "USD"
+
+# Verify currency picker modal opens
+- assertVisible: "Select Currency"
+
+# Search for Euro
+- tapOn: "Search currencies..."
+- inputText: "EUR"
+
+# Select Euro
+- tapOn: "EUR"
+
+# Verify modal closes and EUR is selected
+- assertVisible: "EUR"
+- assertVisible: "Euro"
+
+# Tap Create button
+- tapOn: "Create"
+
+# Verify navigation to group detail screen
+- extendedWaitUntil:
+    visible: "Euro Beach Trip"
+    timeout: 10000
+
+# Verify group shows correct currency
+- assertVisible: "🏖️"
+- assertVisible: "Euro Beach Trip"

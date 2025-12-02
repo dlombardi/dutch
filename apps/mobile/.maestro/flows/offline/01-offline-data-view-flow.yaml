@@ -1,0 +1,93 @@
+# Test: Offline Data View Flow
+# Description: User can view previously loaded data while offline
+# Tags: offline, persistence
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Create a group while online
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Offline Test Group"
+      emoji: "📡"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Offline Test Group"
+    timeout: 10000
+
+# Add some expenses while online
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "30.00"
+- tapOn: "What was this for?"
+- inputText: "Cached expense one"
+- tapOn: "Save"
+
+# Wait for first expense
+- extendedWaitUntil:
+    visible: "Cached expense one"
+    timeout: 10000
+
+# Add second expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "45.00"
+- tapOn: "What was this for?"
+- inputText: "Cached expense two"
+- tapOn: "Save"
+
+# Wait for second expense
+- extendedWaitUntil:
+    visible: "Cached expense two"
+    timeout: 10000
+
+# Go back to groups list
+- back
+
+# Wait for groups list to cache
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+
+# Stop the app
+- stopApp
+
+# Enable airplane mode to simulate offline
+- setAirplaneMode: enabled
+
+# Relaunch app using the launch subflow
+- runFlow: ../../subflows/launch-app.yaml
+
+# Should still see main screen (from cache)
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Should see the cached group
+- assertVisible: "Offline Test Group"
+
+# Navigate to the group
+- tapOn: "Offline Test Group"
+
+# Should see cached group detail
+- extendedWaitUntil:
+    visible: "Offline Test Group"
+    timeout: 10000
+
+# Should see cached expenses
+- assertVisible: "Cached expense one"
+- assertVisible: "Cached expense two"
+
+# Clean up - disable airplane mode
+- setAirplaneMode: disabled

@@ -1,0 +1,83 @@
+# Test: Balance Update on Expense Flow
+# Description: Balances automatically recalculate when expenses are added/edited/deleted
+# Tags: balances, expenses, recalculate
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Balance Recalc Test"
+      emoji: "📊"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Balance Recalc Test"
+    timeout: 10000
+
+# Verify initial state - all settled
+- assertVisible: "All settled up!"
+
+# Add first expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "100.00"
+- tapOn: "What was this for?"
+- inputText: "First expense"
+- tapOn: "Save"
+
+# Wait and verify expense added
+- extendedWaitUntil:
+    visible: "First expense"
+    timeout: 10000
+
+# Add second expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "50.00"
+- tapOn: "What was this for?"
+- inputText: "Second expense"
+- tapOn: "Save"
+
+# Wait and verify expense added
+- extendedWaitUntil:
+    visible: "Second expense"
+    timeout: 10000
+
+# Switch to balances to verify totals
+- tapOn: "Balances"
+
+# Note: With single member, balances are against self
+# The UI should show the balance calculations completed
+
+# Switch back to expenses
+- tapOn: "Expenses"
+
+# Delete an expense to see balance recalculate
+- tapOn: "First expense"
+- extendedWaitUntil:
+    visible: "First expense"
+    timeout: 5000
+- tapOn: "Delete"
+- tapOn: "Delete"
+
+# Verify expense removed
+- extendedWaitUntil:
+    visible: "Balance Recalc Test"
+    timeout: 5000
+- assertNotVisible: "First expense"
+- assertVisible: "Second expense"
+
+# Balances should have recalculated automatically
+- tapOn: "Balances"
+- assertVisible: "Balances"

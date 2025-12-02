@@ -1,0 +1,27 @@
+# Maestro Configuration for Evn Mobile App E2E Tests
+# Documentation: https://maestro.mobile.dev/
+
+# App configuration
+# Using standalone development build
+appId: com.evn.app
+name: Evn E2E Tests
+
+# Environment variables for tests
+env:
+  API_URL: http://localhost:3001
+  TEST_EMAIL: test@example.com
+  TEST_GUEST_NAME: Test User
+  EXPO_GO: "true"  # Set to "false" for production builds
+
+# Tags for organizing test suites
+tags:
+  - auth
+  - groups
+  - expenses
+  - balances
+  - settlements
+  - sync
+  - offline
+
+# Test execution settings
+executionOrder: continue # Continue on failure to run all tests

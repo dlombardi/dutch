@@ -1,0 +1,81 @@
+# Test: View Expense List Flow
+# Description: User can view list of expenses in a group sorted by date
+# Tags: expenses, list
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Shopping Trips"
+      emoji: "🛒"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Shopping Trips"
+    timeout: 10000
+
+# Create first expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "25.00"
+- tapOn: "What was this for?"
+- inputText: "Groceries"
+- tapOn: "Save"
+
+# Wait for first expense
+- extendedWaitUntil:
+    visible: "Groceries"
+    timeout: 10000
+
+# Create second expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "15.50"
+- tapOn: "What was this for?"
+- inputText: "Coffee supplies"
+- tapOn: "Save"
+
+# Wait for second expense
+- extendedWaitUntil:
+    visible: "Coffee supplies"
+    timeout: 10000
+
+# Create third expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "89.99"
+- tapOn: "What was this for?"
+- inputText: "Kitchen appliance"
+- tapOn: "Save"
+
+# Wait for third expense
+- extendedWaitUntil:
+    visible: "Kitchen appliance"
+    timeout: 10000
+
+# Verify all expenses are visible in the list
+- assertVisible: "Groceries"
+- assertVisible: "$25.00"
+- assertVisible: "Coffee supplies"
+- assertVisible: "$15.50"
+- assertVisible: "Kitchen appliance"
+- assertVisible: "$89.99"
+
+# Verify expenses tab is active
+- assertVisible: "Expenses"
+
+# Scroll to verify list is scrollable
+- scrollUntilVisible:
+    element: "Groceries"
+    direction: DOWN

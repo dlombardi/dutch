@@ -1,0 +1,120 @@
+# Test: Data Persistence Flow
+# Description: User data persists across app restarts
+# Tags: offline, persistence, storage
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Create first group
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Home Expenses"
+      emoji: "🏠"
+
+# Wait for first group
+- extendedWaitUntil:
+    visible: "Home Expenses"
+    timeout: 10000
+
+# Add expense to first group
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "200.00"
+- tapOn: "What was this for?"
+- inputText: "Rent split"
+- tapOn: "Save"
+
+# Wait for expense
+- extendedWaitUntil:
+    visible: "Rent split"
+    timeout: 10000
+
+# Go back
+- back
+
+# Create second group
+- tapOn:
+    text: "+"
+- tapOn: "🚗"
+- tapOn: "e.g., Trip to Paris"
+- inputText: "Road Trip"
+- tapOn: "Create"
+
+# Wait for second group
+- extendedWaitUntil:
+    visible: "Road Trip"
+    timeout: 10000
+
+# Add expense to second group
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "150.00"
+- tapOn: "What was this for?"
+- inputText: "Gas money"
+- tapOn: "Save"
+
+# Wait for expense
+- extendedWaitUntil:
+    visible: "Gas money"
+    timeout: 10000
+
+# Go back to groups list
+- back
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+
+# Force close app completely
+- stopApp
+
+# Relaunch using the standard launch subflow
+- runFlow: ../../subflows/launch-app.yaml
+
+# Verify user is still authenticated
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Verify groups are persisted
+- assertVisible: "Home Expenses"
+- assertVisible: "🏠"
+- assertVisible: "Road Trip"
+- assertVisible: "🚗"
+
+# Navigate to first group and verify expense
+- tapOn: "Home Expenses"
+- extendedWaitUntil:
+    visible: "Home Expenses"
+    timeout: 10000
+- assertVisible: "Rent split"
+- assertVisible: "$200.00"
+
+# Go back and check second group
+- back
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+- tapOn: "Road Trip"
+- extendedWaitUntil:
+    visible: "Road Trip"
+    timeout: 10000
+- assertVisible: "Gas money"
+- assertVisible: "$150.00"
+
+# Verify user profile persisted
+- back
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+- tapOn: "Settings"
+- assertVisible: "Account"

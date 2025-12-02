@@ -1,0 +1,11 @@
+# Subflow: Navigate to Settings
+# Reusable flow for navigating to the settings screen
+
+appId: com.evn.app
+
+---
+# Navigate to Settings tab
+- tapOn: "Settings"
+
+- assertVisible: "Account"
+- assertVisible: "Sign Out"

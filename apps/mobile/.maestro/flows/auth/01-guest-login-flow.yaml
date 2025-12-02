@@ -1,0 +1,46 @@
+# Test: Guest Join Flow
+# Description: User can join the app as a guest with a display name
+# Tags: auth, guest
+
+appId: com.evn.app
+
+---
+# Launch the app using the standard launch subflow
+- runFlow: ../../subflows/launch-app.yaml
+
+# Verify we're on the sign-in screen
+- assertVisible: "dutch"
+- assertVisible: "Split expenses, not friendships"
+- assertVisible: "Sign in with email"
+- assertVisible: "Continue as guest"
+
+# Tap "Continue as guest" button
+- tapOn: "Continue as guest"
+
+# Verify guest join screen appears
+- extendedWaitUntil:
+    visible: "Join as a guest"
+    timeout: 10000
+
+- assertVisible: "What's your name?"
+- assertVisible: "This is how others will see you in the group"
+
+# Enter a display name
+- tapOn: "Enter your name"
+- inputText: "Alice Test"
+
+# Tap "Join Group" button
+- tapOn: "Join Group"
+
+# Verify successful authentication - should be on main groups screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Verify empty state for new user
+- assertVisible: "No groups yet"
+- assertVisible: "Create a group to start splitting expenses with friends"
+
+# Verify action buttons are available
+- assertVisible: "Create Group"
+- assertVisible: "Join with Code"

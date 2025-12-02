@@ -1,0 +1,68 @@
+# Test: Expense Split Flow
+# Description: User can split expense equally and exclude members from split
+# Tags: expenses, split
+# Note: This test demonstrates split functionality with a single member (the creator)
+# In multi-member scenarios, more members would be available for splitting
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Split Test Group"
+      emoji: "💰"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Split Test Group"
+    timeout: 10000
+
+# Tap Add Expense button
+- tapOn: "+ Add Expense"
+
+# Enter amount
+- tapOn: "0.00"
+- inputText: "120.00"
+
+# Enter description
+- tapOn: "What was this for?"
+- inputText: "Group dinner"
+
+# Verify split section is visible
+- assertVisible: "Split equally among"
+- assertVisible: "All members"
+
+# Tap split selector to view options
+- tapOn: "All members"
+
+# Verify split modal
+- assertVisible: "Split with"
+
+# Verify per-person amount preview (with 1 member)
+- assertVisible: "Done"
+
+# Close modal
+- tapOn: "Done"
+
+# Verify per-person preview is shown
+- assertVisible: "$120.00 per person"
+
+# Save the expense
+- tapOn: "Save"
+
+# Verify expense created
+- extendedWaitUntil:
+    visible: "Group dinner"
+    timeout: 10000
+
+- assertVisible: "$120.00"

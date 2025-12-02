@@ -1,0 +1,63 @@
+# Test: Create Group Flow
+# Description: User can create a new group with name and emoji
+# Tags: groups, create
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Tap Create Group button (from empty state)
+- tapOn: "Create Group"
+
+# Verify create group screen
+- assertVisible: "New Group"
+- assertVisible: "Cancel"
+- assertVisible: "Create"
+- assertVisible: "Tap to select emoji"
+
+# Select an emoji
+- tapOn:
+    text: "✈️"
+
+# Enter group name
+- tapOn: "e.g., Trip to Paris"
+- inputText: "Weekend Trip"
+
+# Verify default currency selector is visible
+- assertVisible: "Default Currency"
+- assertVisible: "USD"
+
+# Tap Create button
+- tapOn: "Create"
+
+# Verify navigation to group detail screen
+- extendedWaitUntil:
+    visible: "Weekend Trip"
+    timeout: 10000
+
+# Verify group header shows emoji and name
+- assertVisible: "✈️"
+- assertVisible: "Weekend Trip"
+
+# Verify group tabs are visible
+- assertVisible: "Expenses"
+- assertVisible: "Balances"
+- assertVisible: "Members"
+
+# Verify balance summary shows
+- assertVisible: "Your balance"
+- assertVisible: "All settled up!"
+
+# Verify Add Expense FAB is visible
+- assertVisible: "+ Add Expense"
+
+# Verify Invite button is available
+- assertVisible: "Invite"

@@ -1,0 +1,73 @@
+# Test: Data Refresh Flow
+# Description: Verify data refreshes when navigating between screens
+# Tags: sync, refresh
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Create first group
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Refresh Group One"
+      emoji: "1️⃣"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Refresh Group One"
+    timeout: 10000
+
+# Add an expense
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "75.00"
+- tapOn: "What was this for?"
+- inputText: "Refresh test expense"
+- tapOn: "Save"
+
+# Wait for expense
+- extendedWaitUntil:
+    visible: "Refresh test expense"
+    timeout: 10000
+
+# Go back to groups list
+- back
+
+# Wait for groups list
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+
+# Verify group appears in list
+- assertVisible: "Refresh Group One"
+
+# Navigate back into the group
+- tapOn: "Refresh Group One"
+
+# Data should refresh and show the expense
+- extendedWaitUntil:
+    visible: "Refresh test expense"
+    timeout: 10000
+
+- assertVisible: "$75.00"
+
+# Navigate to balances tab
+- tapOn: "Balances"
+
+# Data should be current
+- assertVisible: "Balances"
+
+# Navigate back to expenses
+- tapOn: "Expenses"
+
+# Expense should still be visible
+- assertVisible: "Refresh test expense"

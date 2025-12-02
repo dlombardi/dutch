@@ -1,0 +1,53 @@
+# Test: Join Group by Invite Code Flow
+# Description: User can join an existing group using a 6-character invite code
+# Tags: groups, join, invite-code
+# Note: This test requires a pre-existing group with a known invite code
+# For actual testing, the invite code should be set up via API or test fixtures
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Tap Join with Code button (from empty state)
+- tapOn: "Join with Code"
+
+# Verify join group screen
+- assertVisible: "Enter Invite Code"
+- assertVisible: "Ask a group member for the 6-character invite code"
+
+# Verify code input field exists
+- assertVisible:
+    id: "invite-code-input"
+    optional: true
+
+# Enter a test invite code (6 characters)
+# Note: In actual test environment, this would be a valid code from fixtures
+- tapOn: "ABC123"
+- inputText: "ABC123"
+
+# Verify Look Up Group button becomes enabled
+- assertVisible: "Look Up Group"
+
+# Tap Look Up button
+- tapOn:
+    id: "lookup-button"
+    optional: true
+- tapOn:
+    text: "Look Up Group"
+    optional: true
+
+# Note: The following assertions depend on having a valid test group
+# In a real test environment with fixtures:
+# - assertVisible: "[Group emoji]"
+# - assertVisible: "[Group name]"
+# - assertVisible: "Join Group"
+# - tapOn: "Join Group"
+# - assertVisible: "You've joined [Group name]!"

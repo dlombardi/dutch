@@ -1,0 +1,30 @@
+# Subflow: Dismiss Dev Menu
+# Dismisses the Expo Go developer menu popup if it appears
+# Note: This relies on coordinate-based tapping since the native modal
+# doesn't expose accessibility labels to Maestro
+
+appId: com.evn.app
+
+---
+# Wait briefly for any modal to fully appear
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Try tapping the X button in top-right of the modal
+# The X is at approximately 93% from left, 65% from top
+- tapOn:
+    point: "93%,65%"
+    retryTapIfNoChange: false
+
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# If X didn't work, try Continue button area
+# Continue button is approximately at 50% x, 95% y
+- tapOn:
+    point: "50%,95%"
+    optional: true
+    retryTapIfNoChange: false
+
+- waitForAnimationToEnd:
+    timeout: 1000

@@ -1,0 +1,33 @@
+# Subflow: Login as Guest
+# Reusable flow for authenticating as a guest user
+
+appId: com.evn.app
+
+# Input: guestName (optional, defaults to "Test User")
+---
+- runFlow:
+    when:
+      visible: "Continue as guest"
+    commands:
+      - tapOn: "Continue as guest"
+
+- assertVisible: "What's your name?"
+
+- tapOn:
+    id: "guest-name-input"
+    optional: true
+- tapOn:
+    text: "Enter your name"
+    optional: true
+
+- inputText: ${guestName ?? "Test User"}
+
+- tapOn: "Join Group"
+
+# Wait for navigation to complete
+- assertVisible:
+    text: "Groups"
+    optional: true
+- assertVisible:
+    text: "No groups yet"
+    optional: true

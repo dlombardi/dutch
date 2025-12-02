@@ -1,0 +1,61 @@
+# Test: View Groups List Flow
+# Description: User can view list of groups they are member of
+# Tags: groups, list
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Create first group
+- tapOn: "Create Group"
+- tapOn: "🍕"
+- tapOn: "e.g., Trip to Paris"
+- inputText: "Pizza Night"
+- tapOn: "Create"
+
+# Wait for group detail and go back
+- extendedWaitUntil:
+    visible: "Pizza Night"
+    timeout: 10000
+- back
+
+# Verify we're back on groups list
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+
+# Create second group
+- tapOn:
+    text: "+"
+- tapOn: "🎬"
+- tapOn: "e.g., Trip to Paris"
+- inputText: "Movie Club"
+- tapOn: "Create"
+
+# Wait for group detail and go back
+- extendedWaitUntil:
+    visible: "Movie Club"
+    timeout: 10000
+- back
+
+# Verify we're on groups list with both groups
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 5000
+
+# Verify both groups are visible in the list
+- assertVisible: "Pizza Night"
+- assertVisible: "🍕"
+- assertVisible: "Movie Club"
+- assertVisible: "🎬"
+
+# Verify groups show currency info
+- assertVisible: "USD"

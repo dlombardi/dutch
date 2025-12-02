@@ -1,0 +1,60 @@
+# Test: View Balances Flow
+# Description: User can view simplified balances in a group
+# Tags: balances, view
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen and create a group
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+- runFlow:
+    file: ../../subflows/create-group.yaml
+    env:
+      groupName: "Balance Test"
+      emoji: "💳"
+
+# Wait for group detail
+- extendedWaitUntil:
+    visible: "Balance Test"
+    timeout: 10000
+
+# Verify initial balance is zero
+- assertVisible: "Your balance"
+- assertVisible: "$0.00"
+- assertVisible: "All settled up!"
+
+# Switch to Balances tab
+- tapOn: "Balances"
+
+# Verify balances tab content
+- assertVisible: "All settled up"
+
+# Create an expense to see balance change
+- tapOn: "+ Add Expense"
+- tapOn: "0.00"
+- inputText: "50.00"
+- tapOn: "What was this for?"
+- inputText: "Test expense for balance"
+- tapOn: "Save"
+
+# Wait for expense to be created
+- extendedWaitUntil:
+    visible: "Test expense for balance"
+    timeout: 10000
+
+# Check that balance summary has updated
+# Note: With single member, balance should still be $0 (owes self)
+- assertVisible: "Your balance"
+
+# Switch to Balances tab to see detailed view
+- tapOn: "Balances"
+
+# Verify balances tab is now showing
+- assertVisible: "Balances"

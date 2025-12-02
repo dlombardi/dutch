@@ -1,0 +1,37 @@
+# Test: Session Persistence Flow
+# Description: User session persists after closing and reopening the app
+# Tags: auth, persistence
+
+appId: com.evn.app
+
+---
+# Launch the app and login as guest
+- runFlow: ../../subflows/launch-app.yaml
+- runFlow: ../../subflows/login-as-guest.yaml
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Verify we're authenticated
+- assertVisible: "No groups yet"
+
+# Stop the app (simulating closing)
+- stopApp
+
+# Relaunch using the standard launch subflow
+- runFlow: ../../subflows/launch-app.yaml
+
+# Verify user is still authenticated - should go directly to groups screen
+- extendedWaitUntil:
+    visible: "Groups"
+    timeout: 10000
+
+# Verify we're not on the login screen
+- assertNotVisible: "Sign in with email"
+- assertNotVisible: "Continue as guest"
+
+# Navigate to Settings to verify user is still logged in
+- tapOn: "Settings"
+- assertVisible: "Account"
