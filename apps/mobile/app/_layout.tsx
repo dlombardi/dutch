@@ -164,6 +164,13 @@ function AppContent({
             title: 'Join Group',
           }}
         />
+        <Stack.Screen
+          name="claim-account"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+          }}
+        />
       </Stack>
     </>
   );

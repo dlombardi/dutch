@@ -8,6 +8,7 @@ export interface MagicLinkData {
   used: boolean;
   createdAt: Date;
   expiresAt: Date;
+  claimForUserId?: string; // If set, this magic link is for claiming a guest account
 }
 
 export interface UserData {
@@ -81,30 +82,50 @@ export class AuthService {
     magicLink.used = true;
     this.magicLinks.set(token, magicLink);
 
-    // Find or create user
     let user: UserData;
-    const existingUserId = this.usersByEmail.get(magicLink.email);
 
-    if (existingUserId) {
-      user = this.users.get(existingUserId)!;
+    // Check if this is a claim link (upgrading a guest account)
+    if (magicLink.claimForUserId) {
+      // Get the guest user and upgrade them
+      user = this.users.get(magicLink.claimForUserId)!;
+      if (!user) {
+        throw new BadRequestException('Guest user no longer exists');
+      }
+
+      // Upgrade the guest to a claimed user
+      user.email = magicLink.email;
+      user.type = 'claimed';
       user.sessionCount = (user.sessionCount || 0) + 1;
       user.updatedAt = new Date();
-      this.users.set(existingUserId, user);
+      this.users.set(magicLink.claimForUserId, user);
+
+      // Register the email mapping
+      this.usersByEmail.set(magicLink.email, magicLink.claimForUserId);
     } else {
-      // Create new user
-      const userId = randomBytes(16).toString('hex');
-      user = {
-        id: userId,
-        email: magicLink.email,
-        name: magicLink.email.split('@')[0], // Default name from email
-        type: 'full',
-        authProvider: 'magic_link',
-        sessionCount: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      this.users.set(userId, user);
-      this.usersByEmail.set(magicLink.email, userId);
+      // Normal login flow - find or create user
+      const existingUserId = this.usersByEmail.get(magicLink.email);
+
+      if (existingUserId) {
+        user = this.users.get(existingUserId)!;
+        user.sessionCount = (user.sessionCount || 0) + 1;
+        user.updatedAt = new Date();
+        this.users.set(existingUserId, user);
+      } else {
+        // Create new user
+        const userId = randomBytes(16).toString('hex');
+        user = {
+          id: userId,
+          email: magicLink.email,
+          name: magicLink.email.split('@')[0], // Default name from email
+          type: 'full',
+          authProvider: 'magic_link',
+          sessionCount: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        this.users.set(userId, user);
+        this.usersByEmail.set(magicLink.email, userId);
+      }
     }
 
     // Generate access token (simplified for now)
@@ -160,7 +181,7 @@ export class AuthService {
     return { user, accessToken, showUpgradePrompt };
   }
 
-  dismissUpgradePrompt(deviceId: string): { success: boolean } {
+  dismissUpgradePrompt(deviceId: string): { success: boolean } | null {
     const userId = this.usersByDeviceId.get(deviceId);
     if (!userId) {
       return null;
@@ -176,6 +197,58 @@ export class AuthService {
     this.users.set(userId, user);
 
     return { success: true };
+  }
+
+  claimGuestAccount(
+    deviceId: string,
+    email: string,
+  ): { message: string } | { error: string; code: number } {
+    // Find the guest user by device ID
+    const userId = this.usersByDeviceId.get(deviceId);
+    if (!userId) {
+      return { error: 'Guest user not found for this device', code: 404 };
+    }
+
+    const user = this.users.get(userId);
+    if (!user) {
+      return { error: 'Guest user not found for this device', code: 404 };
+    }
+
+    // Check if email is already in use
+    const normalizedEmail = email.toLowerCase();
+    const existingUserId = this.usersByEmail.get(normalizedEmail);
+    if (existingUserId) {
+      return {
+        error: 'This email is already associated with an account',
+        code: 409,
+      };
+    }
+
+    // Generate a magic link for verification
+    const token = randomBytes(32).toString('hex');
+    const tokenId = randomBytes(16).toString('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    const magicLinkData: MagicLinkData = {
+      id: tokenId,
+      email: normalizedEmail,
+      token,
+      used: false,
+      createdAt: new Date(),
+      expiresAt,
+      claimForUserId: userId, // Mark this as a claim link
+    };
+
+    this.magicLinks.set(token, magicLinkData);
+
+    // In production, send email here
+    const magicLinkUrl = `evn://auth/verify?token=${token}`;
+    console.log(`[Auth] Claim link for ${email}: ${magicLinkUrl}`);
+    console.log(`[Auth] Token: ${token}`);
+
+    return {
+      message: 'Verification email sent. Please check your inbox.',
+    };
   }
 
   // Helper method to get magic link info (for testing)

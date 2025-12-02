@@ -808,3 +808,47 @@ Description: Implement guest upgrade prompt feature - contextual prompts for gue
   - Dismissed state is persisted and synced with server
   - Only shows for guest users (not claimed or full accounts)
 
+---
+
+## Session: 2025-12-02 (continued)
+Working on: auth-guest-claim-account
+Description: Guest can claim their account by adding an email
+
+### auth-guest-claim-account - COMPLETE
+- Implemented API changes:
+  - Added `POST /auth/guest/claim` endpoint to initiate account claiming
+  - Added `claimForUserId` field to MagicLinkData for tracking claim links
+  - Added `ClaimAccountDto` for validation (deviceId, email)
+  - Updated `verifyMagicLink` to handle claim verification flow
+  - Claim verification upgrades guest user to 'claimed' type
+  - Preserves user ID, name, and all existing data during upgrade
+  - Rejects claiming with already-used email address (409 Conflict)
+  - Claimed users can log in again via magic link with same user ID
+- Implemented mobile UI:
+  - Created `/app/claim-account.tsx` modal screen
+  - Added email input form with validation
+  - Shows current guest account info before claiming
+  - Success state with "Check your email" confirmation
+  - Added `claimGuestAccount` method to API client and auth service
+  - Updated auth store with `claimEmailSent`, `claimEmail` states
+  - Added `resetClaimState` action
+  - Updated `claimAccount` action to call API and track state
+  - Updated settings screen to show "Add Email" for guests (navigates to claim screen)
+  - Updated settings to show email for claimed/full users
+  - Added claim-account route to Stack navigator
+- Tests added:
+  - `apps/api/src/auth/__tests__/guest-claim-account.controller.spec.ts` (10 tests)
+    - Initiate claim process for guest user
+    - Reject claim for non-existent device
+    - Reject claim with invalid/missing email
+    - Reject claim with missing deviceId
+    - Reject claim if email is already in use
+    - Upgrade guest to claimed user after verification
+    - Preserve user data after claiming
+    - Return new access token after claiming
+    - Allow claimed user to login again with email
+- Verified:
+  - All 167 API tests pass
+  - All 5 mobile component tests pass
+- Status: Feature complete
+

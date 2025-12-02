@@ -570,7 +570,7 @@
         "Verify via magic link",
         "Account upgraded, all data preserved"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "auth-logout",

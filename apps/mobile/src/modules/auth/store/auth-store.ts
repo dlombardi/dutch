@@ -37,6 +37,8 @@ export const useAuthStore = create<AuthStore>()(
       error: null,
       showUpgradePrompt: false,
       upgradePromptDismissedAt: null,
+      claimEmailSent: false,
+      claimEmail: null,
       _hasHydrated: false,
 
       // Actions
@@ -136,21 +138,30 @@ export const useAuthStore = create<AuthStore>()(
 
       claimAccount: async (email) => {
         const { user } = get();
-        if (!user || user.type !== 'guest') return;
+        if (!user || user.type !== 'guest') {
+          set({ error: 'Only guest users can claim an account' });
+          return false;
+        }
 
-        set({ isLoading: true, error: null });
+        set({ isLoading: true, error: null, claimEmailSent: false });
         try {
-          // TODO: Call API to claim account
+          const deviceId = await getOrCreateDeviceId();
+          await authService.claimGuestAccount(deviceId, email);
           set({
-            user: { ...user, email, type: 'claimed' },
+            claimEmailSent: true,
+            claimEmail: email,
             showUpgradePrompt: false,
           });
+          logger.info('Claim account email sent', { email });
+          return true;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error
               ? error.message
               : 'Failed to claim account';
+          logger.error('Claim account failed', error, { email });
           set({ error: errorMessage });
+          return false;
         } finally {
           set({ isLoading: false });
         }
@@ -193,6 +204,14 @@ export const useAuthStore = create<AuthStore>()(
         set({
           magicLinkSent: false,
           magicLinkEmail: null,
+          error: null,
+        });
+      },
+
+      resetClaimState: () => {
+        set({
+          claimEmailSent: false,
+          claimEmail: null,
           error: null,
         });
       },

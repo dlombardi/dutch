@@ -1,6 +1,7 @@
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
+import { router } from 'expo-router';
 import { useGroupsStore } from '@/modules/groups';
 import { useOfflineQueueStore } from '@/store/offline-queue-store';
 import { useAuthStore } from '@/modules/auth';
@@ -89,6 +90,14 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleAddEmail = () => {
+    if (user?.type === 'guest') {
+      router.push('/claim-account');
+    }
+  };
+
+  const isGuest = user?.type === 'guest';
+
   const SettingItem = ({
     label,
     value,
@@ -139,7 +148,15 @@ export default function SettingsScreen() {
         <SectionTitle>Account</SectionTitle>
         <View className={`rounded-xl mx-4 overflow-hidden ${isDark ? 'bg-dark-card' : 'bg-light-card'}`}>
           <SettingItem label="Profile" value={user?.name || 'Guest User'} />
-          <SettingItem label="Add Email" hint="Claim your account" />
+          {isGuest ? (
+            <SettingItem
+              label="Add Email"
+              hint="Claim your account"
+              onPress={handleAddEmail}
+            />
+          ) : (
+            <SettingItem label="Email" value={user?.email || ''} />
+          )}
         </View>
 
         <SectionTitle>Preferences</SectionTitle>

@@ -25,6 +25,8 @@ export interface AuthState {
   error: string | null;
   showUpgradePrompt: boolean;
   upgradePromptDismissedAt: string | null;
+  claimEmailSent: boolean;
+  claimEmail: string | null;
   _hasHydrated: boolean;
 }
 
@@ -33,11 +35,12 @@ export interface AuthActions {
   loginAsGuest: (name: string) => Promise<void>;
   requestMagicLink: (email: string) => Promise<boolean>;
   verifyMagicLink: (token: string) => Promise<boolean>;
-  claimAccount: (email: string) => Promise<void>;
+  claimAccount: (email: string) => Promise<boolean>;
   dismissUpgradePrompt: () => Promise<void>;
   logout: () => void;
   clearError: () => void;
   resetMagicLinkState: () => void;
+  resetClaimState: () => void;
   setHasHydrated: (value: boolean) => void;
 }
 

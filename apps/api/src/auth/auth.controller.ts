@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -12,6 +13,7 @@ import {
   VerifyMagicLinkDto,
   GuestAuthDto,
   DismissUpgradePromptDto,
+  ClaimAccountDto,
 } from './dto';
 
 @Controller('auth')
@@ -41,6 +43,21 @@ export class AuthController {
     const result = this.authService.dismissUpgradePrompt(dto.deviceId);
     if (!result) {
       throw new NotFoundException('Guest user not found for this device');
+    }
+    return result;
+  }
+
+  @Post('guest/claim')
+  @HttpCode(HttpStatus.OK)
+  claimGuestAccount(@Body() dto: ClaimAccountDto) {
+    const result = this.authService.claimGuestAccount(dto.deviceId, dto.email);
+    if ('error' in result) {
+      if (result.code === 404) {
+        throw new NotFoundException(result.error);
+      }
+      if (result.code === 409) {
+        throw new ConflictException(result.error);
+      }
     }
     return result;
   }

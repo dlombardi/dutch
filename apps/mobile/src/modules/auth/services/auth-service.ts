@@ -37,9 +37,21 @@ export async function dismissUpgradePrompt(deviceId: string): Promise<{ success:
   return api.dismissUpgradePrompt(deviceId);
 }
 
+/**
+ * Request to claim a guest account with an email
+ * This sends a verification email to the user
+ */
+export async function claimGuestAccount(
+  deviceId: string,
+  email: string
+): Promise<{ message: string }> {
+  return api.claimGuestAccount(deviceId, email);
+}
+
 export const authService = {
   requestMagicLink,
   verifyMagicLink,
   createGuestUser,
   dismissUpgradePrompt,
+  claimGuestAccount,
 };

@@ -162,6 +162,13 @@ class ApiClient {
     });
   }
 
+  async claimGuestAccount(deviceId: string, email: string) {
+    return this.request<{ message: string }>('/auth/guest/claim', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId, email }),
+    });
+  }
+
   // Groups endpoints
   async createGroup(
     name: string,
