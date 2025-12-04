@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { AuthModule } from '../auth.module';
+import { AppModule } from '../../app.module';
 
 interface GuestUser {
   id: string;
@@ -25,10 +25,14 @@ interface GuestAuthResponse {
 describe('Guest Upgrade Prompt (integration)', () => {
   let app: INestApplication;
   let httpServer: Server;
+  let uniquePrefix: string;
 
   beforeEach(async () => {
+    // Generate unique prefix for this test run to avoid conflicts
+    uniquePrefix = `upgrade-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -52,7 +56,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     it('should track session count starting at 1 for new guest', async () => {
       const response = await request(httpServer)
         .post('/auth/guest')
-        .send({ name: 'NewUser', deviceId: 'device-new-session-1' })
+        .send({ name: 'NewUser', deviceId: `${uniquePrefix}-new-session-1` })
         .expect(201);
 
       const body = response.body as GuestAuthResponse;
@@ -60,7 +64,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     });
 
     it('should increment session count on subsequent logins', async () => {
-      const deviceId = 'device-session-counter';
+      const deviceId = `${uniquePrefix}-session-counter`;
 
       // First session
       const response1 = await request(httpServer)
@@ -92,7 +96,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     it('should NOT show upgrade prompt on first session', async () => {
       const response = await request(httpServer)
         .post('/auth/guest')
-        .send({ name: 'FirstTimer', deviceId: 'device-first-1' })
+        .send({ name: 'FirstTimer', deviceId: `${uniquePrefix}-first-1` })
         .expect(201);
 
       const body = response.body as GuestAuthResponse;
@@ -100,7 +104,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     });
 
     it('should show upgrade prompt starting from second session', async () => {
-      const deviceId = 'device-prompt-test';
+      const deviceId = `${uniquePrefix}-prompt-test`;
 
       // First session - no prompt
       const response1 = await request(httpServer)
@@ -124,7 +128,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     });
 
     it('should continue showing upgrade prompt on subsequent sessions', async () => {
-      const deviceId = 'device-subsequent-prompt';
+      const deviceId = `${uniquePrefix}-subsequent-prompt`;
 
       // First session
       await request(httpServer)
@@ -152,7 +156,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
 
   describe('POST /auth/guest/dismiss-upgrade-prompt', () => {
     it('should allow dismissing the upgrade prompt', async () => {
-      const deviceId = 'device-dismiss-test';
+      const deviceId = `${uniquePrefix}-dismiss-test`;
 
       // Create a guest with 2 sessions
       await request(httpServer)
@@ -175,7 +179,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     });
 
     it('should NOT show upgrade prompt after it has been dismissed', async () => {
-      const deviceId = 'device-dismissed-no-show';
+      const deviceId = `${uniquePrefix}-dismissed-no-show`;
 
       // First session
       await request(httpServer)
@@ -216,7 +220,7 @@ describe('Guest Upgrade Prompt (integration)', () => {
     it('should return 404 for non-existent device', async () => {
       await request(httpServer)
         .post('/auth/guest/dismiss-upgrade-prompt')
-        .send({ deviceId: 'non-existent-device' })
+        .send({ deviceId: `${uniquePrefix}-non-existent-device` })
         .expect(404);
     });
 

@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { ExpensesService } from '../expenses/expenses.service';
 import { SettlementsService } from '../settlements/settlements.service';
@@ -19,22 +19,21 @@ export interface BalancesResult {
 export class BalancesService {
   constructor(
     private readonly groupsService: GroupsService,
-    @Inject(forwardRef(() => ExpensesService))
     private readonly expensesService: ExpensesService,
-    @Inject(forwardRef(() => SettlementsService))
     private readonly settlementsService: SettlementsService,
   ) {}
 
-  getGroupBalances(groupId: string): BalancesResult {
+  async getGroupBalances(groupId: string): Promise<BalancesResult> {
     // Verify group exists
-    const { group } = this.groupsService.getGroupById(groupId);
+    const { group } = await this.groupsService.getGroupById(groupId);
 
     // Get all expenses for the group
-    const { expenses } = this.expensesService.getExpensesByGroupId(groupId);
+    const { expenses } =
+      await this.expensesService.getExpensesByGroupId(groupId);
 
     // Get all settlements for the group
     const { settlements } =
-      this.settlementsService.getSettlementsByGroupId(groupId);
+      await this.settlementsService.getSettlementsByGroupId(groupId);
 
     // Step 1: Calculate net balance for each person
     // Positive = owed money, Negative = owes money

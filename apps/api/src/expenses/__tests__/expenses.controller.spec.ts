@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { ExpensesModule } from '../expenses.module';
-import { GroupsModule } from '../../groups/groups.module';
+import { AppModule } from '../../app.module';
 
 interface Group {
   id: string;
@@ -49,14 +48,20 @@ interface ErrorResponse {
   statusCode: number;
 }
 
+// Valid UUID format that doesn't exist in the database
+const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
+
 describe('ExpensesController (integration)', () => {
   let app: INestApplication;
   let httpServer: Server;
   let testGroup: Group;
+  let testUserId: string;
+  let testUser2Id: string;
+  let testUser3Id: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [ExpensesModule, GroupsModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -71,18 +76,44 @@ describe('ExpensesController (integration)', () => {
 
     httpServer = app.getHttpServer() as Server;
 
+    // Create test users to get valid UUIDs (unique device IDs per test run)
+    const uniquePrefix = `expense-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    const user1Response = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: `${uniquePrefix}-user-1`, name: 'Test User 1' });
+    testUserId = user1Response.body.user.id;
+
+    const user2Response = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: `${uniquePrefix}-user-2`, name: 'Test User 2' });
+    testUser2Id = user2Response.body.user.id;
+
+    const user3Response = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: `${uniquePrefix}-user-3`, name: 'Test User 3' });
+    testUser3Id = user3Response.body.user.id;
+
     // Create a test group for expense tests
     const groupResponse = await request(httpServer)
       .post('/groups')
       .send({
         name: 'Test Expense Group',
         emoji: '💰',
-        createdById: 'user-123',
+        createdById: testUserId,
         defaultCurrency: 'USD',
       })
       .expect(201);
 
     testGroup = (groupResponse.body as CreateGroupResponse).group;
+
+    // Add other users to the group
+    await request(httpServer)
+      .post('/groups/join')
+      .send({ inviteCode: testGroup.inviteCode, userId: testUser2Id });
+    await request(httpServer)
+      .post('/groups/join')
+      .send({ inviteCode: testGroup.inviteCode, userId: testUser3Id });
   });
 
   afterEach(async () => {
@@ -97,8 +128,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Lunch at restaurant',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -108,8 +139,8 @@ describe('ExpensesController (integration)', () => {
         groupId: testGroup.id,
         amount: 50,
         description: 'Lunch at restaurant',
-        paidById: 'user-123',
-        createdById: 'user-123',
+        paidById: testUserId,
+        createdById: testUserId,
       });
       expect(body.expense).toHaveProperty('id');
       expect(body.expense).toHaveProperty('currency');
@@ -126,8 +157,8 @@ describe('ExpensesController (integration)', () => {
           currency: 'EUR',
           exchangeRate: 1.1, // Required for foreign currency
           description: 'Coffee',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -145,8 +176,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 25.0,
           description: 'Taxi',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           date: customDate,
         })
         .expect(201);
@@ -162,8 +193,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 30.0,
           description: 'Snacks',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -177,8 +208,8 @@ describe('ExpensesController (integration)', () => {
         .send({
           amount: 50.0,
           description: 'Test expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -189,8 +220,8 @@ describe('ExpensesController (integration)', () => {
         .send({
           groupId: testGroup.id,
           description: 'Test expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -201,8 +232,8 @@ describe('ExpensesController (integration)', () => {
         .send({
           groupId: testGroup.id,
           amount: 50.0,
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -214,7 +245,7 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Test expense',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -223,11 +254,11 @@ describe('ExpensesController (integration)', () => {
       await request(httpServer)
         .post('/expenses')
         .send({
-          groupId: 'non-existent-group',
+          groupId: NON_EXISTENT_UUID,
           amount: 50.0,
           description: 'Test expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(404);
     });
@@ -239,8 +270,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: -50.0,
           description: 'Test expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -252,8 +283,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 0,
           description: 'Test expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -265,8 +296,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: '  Dinner  ',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -284,8 +315,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 75.0,
           description: 'Groceries',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -304,7 +335,7 @@ describe('ExpensesController (integration)', () => {
     });
 
     it('should return 404 for non-existent expense', async () => {
-      await request(httpServer).get('/expenses/non-existent-id').expect(404);
+      await request(httpServer).get(`/expenses/${NON_EXISTENT_UUID}`).expect(404);
     });
   });
 
@@ -317,8 +348,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Expense 1',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -328,8 +359,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 75.0,
           description: 'Expense 2',
-          paidById: 'user-456',
-          createdById: 'user-456',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -353,7 +384,7 @@ describe('ExpensesController (integration)', () => {
 
     it('should return 404 for non-existent group', async () => {
       await request(httpServer)
-        .get('/groups/non-existent-group/expenses')
+        .get(`/groups/${NON_EXISTENT_UUID}/expenses`)
         .expect(404);
     });
   });
@@ -367,8 +398,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Original expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -393,8 +424,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Original',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -418,8 +449,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Test',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -428,11 +459,11 @@ describe('ExpensesController (integration)', () => {
 
       const response = await request(httpServer)
         .put(`/expenses/${createdExpense.id}`)
-        .send({ paidById: 'user-456' })
+        .send({ paidById: testUserId })
         .expect(200);
 
       const body = response.body as { expense: Expense };
-      expect(body.expense.paidById).toBe('user-456');
+      expect(body.expense.paidById).toBe(testUserId);
     });
 
     it('should update multiple fields at once', async () => {
@@ -442,8 +473,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Original',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -455,14 +486,14 @@ describe('ExpensesController (integration)', () => {
         .send({
           amount: 100.0,
           description: 'Updated',
-          paidById: 'user-456',
+          paidById: testUserId,
         })
         .expect(200);
 
       const body = response.body as { expense: Expense };
       expect(body.expense.amount).toBe(100);
       expect(body.expense.description).toBe('Updated');
-      expect(body.expense.paidById).toBe('user-456');
+      expect(body.expense.paidById).toBe(testUserId);
     });
 
     it('should update updatedAt timestamp', async () => {
@@ -472,8 +503,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Test',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -495,7 +526,7 @@ describe('ExpensesController (integration)', () => {
 
     it('should return 404 for non-existent expense', async () => {
       await request(httpServer)
-        .put('/expenses/non-existent-id')
+        .put(`/expenses/${NON_EXISTENT_UUID}`)
         .send({ amount: 75.0 })
         .expect(404);
     });
@@ -507,8 +538,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Test',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -528,8 +559,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Test',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -549,8 +580,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Original',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -576,8 +607,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'To be deleted',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -602,8 +633,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'To be deleted',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -619,7 +650,7 @@ describe('ExpensesController (integration)', () => {
     });
 
     it('should return 404 for non-existent expense', async () => {
-      await request(httpServer).delete('/expenses/non-existent-id').expect(404);
+      await request(httpServer).delete(`/expenses/${NON_EXISTENT_UUID}`).expect(404);
     });
 
     it('should remove expense from group expenses list', async () => {
@@ -630,8 +661,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Expense 1',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -641,8 +672,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 75.0,
           description: 'Expense 2',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -683,9 +714,9 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Dinner for three',
-          paidById: 'user-123',
-          createdById: 'user-123',
-          splitParticipants: ['user-123', 'user-456', 'user-789'],
+          paidById: testUserId,
+          createdById: testUserId,
+          splitParticipants: [testUserId, testUser2Id, testUser3Id],
         })
         .expect(201);
 
@@ -695,7 +726,7 @@ describe('ExpensesController (integration)', () => {
       expect(
         (body.expense as Expense & { splitParticipants: string[] })
           .splitParticipants,
-      ).toEqual(['user-123', 'user-456', 'user-789']);
+      ).toEqual(expect.arrayContaining([testUserId, testUser2Id, testUser3Id]));
     });
 
     it('should calculate equal split amounts per person', async () => {
@@ -705,9 +736,9 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 90.0,
           description: 'Split three ways',
-          paidById: 'user-123',
-          createdById: 'user-123',
-          splitParticipants: ['user-123', 'user-456', 'user-789'],
+          paidById: testUserId,
+          createdById: testUserId,
+          splitParticipants: [testUserId, testUser2Id, testUser3Id],
         })
         .expect(201);
 
@@ -717,9 +748,9 @@ describe('ExpensesController (integration)', () => {
         splitAmounts: Record<string, number>;
       };
       expect(expense.splitAmounts).toBeDefined();
-      expect(expense.splitAmounts['user-123']).toBe(30);
-      expect(expense.splitAmounts['user-456']).toBe(30);
-      expect(expense.splitAmounts['user-789']).toBe(30);
+      expect(expense.splitAmounts[testUserId]).toBe(30);
+      expect(expense.splitAmounts[testUser2Id]).toBe(30);
+      expect(expense.splitAmounts[testUser3Id]).toBe(30);
     });
 
     it('should handle rounding in split amounts (total preserved)', async () => {
@@ -729,9 +760,9 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Split three ways with rounding',
-          paidById: 'user-123',
-          createdById: 'user-123',
-          splitParticipants: ['user-123', 'user-456', 'user-789'],
+          paidById: testUserId,
+          createdById: testUserId,
+          splitParticipants: [testUserId, testUser2Id, testUser3Id],
         })
         .expect(201);
 
@@ -756,14 +787,14 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Solo expense',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
       const body = response.body as CreateExpenseResponse;
       const expense = body.expense as Expense & { splitParticipants: string[] };
-      expect(expense.splitParticipants).toEqual(['user-123']);
+      expect(expense.splitParticipants).toEqual([testUserId]);
     });
 
     it('should reject empty splitParticipants array', async () => {
@@ -773,8 +804,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'No participants',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitParticipants: [],
         })
         .expect(400);
@@ -788,9 +819,9 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 90.0,
           description: 'Original split',
-          paidById: 'user-123',
-          createdById: 'user-123',
-          splitParticipants: ['user-123', 'user-456', 'user-789'],
+          paidById: testUserId,
+          createdById: testUserId,
+          splitParticipants: [testUserId, testUser2Id, testUser3Id],
         })
         .expect(201);
 
@@ -800,7 +831,7 @@ describe('ExpensesController (integration)', () => {
       // Update to only 2 participants
       const response = await request(httpServer)
         .put(`/expenses/${createdExpense.id}`)
-        .send({ splitParticipants: ['user-123', 'user-456'] })
+        .send({ splitParticipants: [testUserId, testUser2Id] })
         .expect(200);
 
       const body = response.body as {
@@ -809,9 +840,9 @@ describe('ExpensesController (integration)', () => {
           splitAmounts: Record<string, number>;
         };
       };
-      expect(body.expense.splitParticipants).toEqual(['user-123', 'user-456']);
-      expect(body.expense.splitAmounts['user-123']).toBe(45);
-      expect(body.expense.splitAmounts['user-456']).toBe(45);
+      expect(body.expense.splitParticipants).toEqual(expect.arrayContaining([testUserId, testUser2Id]));
+      expect(body.expense.splitAmounts[testUserId]).toBe(45);
+      expect(body.expense.splitAmounts[testUser2Id]).toBe(45);
     });
 
     it('should recalculate splits when amount is updated', async () => {
@@ -822,9 +853,9 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 60.0,
           description: 'Will be updated',
-          paidById: 'user-123',
-          createdById: 'user-123',
-          splitParticipants: ['user-123', 'user-456'],
+          paidById: testUserId,
+          createdById: testUserId,
+          splitParticipants: [testUserId, testUser2Id],
         })
         .expect(201);
 
@@ -840,8 +871,8 @@ describe('ExpensesController (integration)', () => {
       const body = response.body as {
         expense: Expense & { splitAmounts: Record<string, number> };
       };
-      expect(body.expense.splitAmounts['user-123']).toBe(50);
-      expect(body.expense.splitAmounts['user-456']).toBe(50);
+      expect(body.expense.splitAmounts[testUserId]).toBe(50);
+      expect(body.expense.splitAmounts[testUser2Id]).toBe(50);
     });
   });
 
@@ -853,12 +884,12 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Dinner with exact split',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 60.0,
-            'user-456': 40.0,
+            [testUserId]: 60.0,
+            [testUser2Id]: 40.0,
           },
         })
         .expect(201);
@@ -868,8 +899,8 @@ describe('ExpensesController (integration)', () => {
         splitAmounts: Record<string, number>;
       };
       expect(expense.splitType).toBe('exact');
-      expect(expense.splitAmounts['user-123']).toBe(60);
-      expect(expense.splitAmounts['user-456']).toBe(40);
+      expect(expense.splitAmounts[testUserId]).toBe(60);
+      expect(expense.splitAmounts[testUser2Id]).toBe(40);
     });
 
     it('should set splitParticipants from splitAmounts keys', async () => {
@@ -879,13 +910,13 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 90.0,
           description: 'Three-way exact split',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 30.0,
-            'user-456': 35.0,
-            'user-789': 25.0,
+            [testUserId]: 30.0,
+            [testUser2Id]: 35.0,
+            [testUser3Id]: 25.0,
           },
         })
         .expect(201);
@@ -893,7 +924,7 @@ describe('ExpensesController (integration)', () => {
       const body = response.body as CreateExpenseResponse;
       const expense = body.expense as Expense & { splitParticipants: string[] };
       expect(expense.splitParticipants).toEqual(
-        expect.arrayContaining(['user-123', 'user-456', 'user-789']),
+        expect.arrayContaining([testUserId, testUser2Id, testUser3Id]),
       );
       expect(expense.splitParticipants).toHaveLength(3);
     });
@@ -905,12 +936,12 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Invalid exact split',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 50.0,
-            'user-456': 30.0, // Sum is 80, not 100
+            [testUserId]: 50.0,
+            [testUser2Id]: 30.0, // Sum is 80, not 100
           },
         })
         .expect(400);
@@ -926,12 +957,12 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Negative individual',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 120.0,
-            'user-456': -20.0,
+            [testUserId]: 120.0,
+            [testUser2Id]: -20.0,
           },
         })
         .expect(400);
@@ -944,8 +975,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Empty exact split',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {},
         })
@@ -959,13 +990,13 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Exact split with rounding',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 33.33,
-            'user-456': 33.33,
-            'user-789': 33.34,
+            [testUserId]: 33.33,
+            [testUser2Id]: 33.33,
+            [testUser3Id]: 33.34,
           },
         })
         .expect(201);
@@ -989,9 +1020,9 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Initially equal',
-          paidById: 'user-123',
-          createdById: 'user-123',
-          splitParticipants: ['user-123', 'user-456'],
+          paidById: testUserId,
+          createdById: testUserId,
+          splitParticipants: [testUserId, testUser2Id],
         })
         .expect(201);
 
@@ -1004,8 +1035,8 @@ describe('ExpensesController (integration)', () => {
         .send({
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 70.0,
-            'user-456': 30.0,
+            [testUserId]: 70.0,
+            [testUser2Id]: 30.0,
           },
         })
         .expect(200);
@@ -1014,8 +1045,8 @@ describe('ExpensesController (integration)', () => {
         expense: Expense & { splitAmounts: Record<string, number> };
       };
       expect(body.expense.splitType).toBe('exact');
-      expect(body.expense.splitAmounts['user-123']).toBe(70);
-      expect(body.expense.splitAmounts['user-456']).toBe(30);
+      expect(body.expense.splitAmounts[testUserId]).toBe(70);
+      expect(body.expense.splitAmounts[testUser2Id]).toBe(30);
     });
 
     it('should update expense from exact split back to equal split', async () => {
@@ -1026,12 +1057,12 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Initially exact',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 70.0,
-            'user-456': 30.0,
+            [testUserId]: 70.0,
+            [testUser2Id]: 30.0,
           },
         })
         .expect(201);
@@ -1044,7 +1075,7 @@ describe('ExpensesController (integration)', () => {
         .put(`/expenses/${createdExpense.id}`)
         .send({
           splitType: 'equal',
-          splitParticipants: ['user-123', 'user-456'],
+          splitParticipants: [testUserId, testUser2Id],
         })
         .expect(200);
 
@@ -1052,8 +1083,8 @@ describe('ExpensesController (integration)', () => {
         expense: Expense & { splitAmounts: Record<string, number> };
       };
       expect(body.expense.splitType).toBe('equal');
-      expect(body.expense.splitAmounts['user-123']).toBe(50);
-      expect(body.expense.splitAmounts['user-456']).toBe(50);
+      expect(body.expense.splitAmounts[testUserId]).toBe(50);
+      expect(body.expense.splitAmounts[testUser2Id]).toBe(50);
     });
 
     it('should reject updating exact split amounts that do not match expense total', async () => {
@@ -1064,12 +1095,12 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Initially exact',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 60.0,
-            'user-456': 40.0,
+            [testUserId]: 60.0,
+            [testUser2Id]: 40.0,
           },
         })
         .expect(201);
@@ -1083,8 +1114,8 @@ describe('ExpensesController (integration)', () => {
         .send({
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 50.0,
-            'user-456': 30.0, // Sum is 80, not 100
+            [testUserId]: 50.0,
+            [testUser2Id]: 30.0, // Sum is 80, not 100
           },
         })
         .expect(400);
@@ -1097,8 +1128,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Missing splitAmounts',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           // Missing splitAmounts
         })
@@ -1113,12 +1144,12 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Original description',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           splitType: 'exact',
           splitAmounts: {
-            'user-123': 70.0,
-            'user-456': 30.0,
+            [testUserId]: 70.0,
+            [testUser2Id]: 30.0,
           },
         })
         .expect(201);
@@ -1137,8 +1168,8 @@ describe('ExpensesController (integration)', () => {
       };
       expect(body.expense.description).toBe('Updated description');
       expect(body.expense.splitType).toBe('exact');
-      expect(body.expense.splitAmounts['user-123']).toBe(70);
-      expect(body.expense.splitAmounts['user-456']).toBe(30);
+      expect(body.expense.splitAmounts[testUserId]).toBe(70);
+      expect(body.expense.splitAmounts[testUser2Id]).toBe(30);
     });
   });
 
@@ -1150,8 +1181,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 75.0,
           description: 'Uber to airport',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           category: 'transport',
         })
         .expect(201);
@@ -1167,13 +1198,14 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 25.0,
           description: 'Coffee',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
       const body = response.body as CreateExpenseResponse;
-      expect(body.expense.category).toBeUndefined();
+      // PostgreSQL returns null for missing optional fields
+      expect(body.expense.category).toBeNull();
     });
 
     it('should validate category is a valid option', async () => {
@@ -1183,8 +1215,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 50.0,
           description: 'Dinner',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           category: 'invalid_category',
         })
         .expect(400);
@@ -1201,15 +1233,13 @@ describe('ExpensesController (integration)', () => {
     });
 
     it('should accept all valid category options', async () => {
+      // These must match EXPENSE_CATEGORIES in create-expense.dto.ts
       const validCategories = [
         'food',
         'transport',
         'accommodation',
-        'activities',
+        'activity',
         'shopping',
-        'utilities',
-        'entertainment',
-        'health',
         'other',
       ];
 
@@ -1220,8 +1250,8 @@ describe('ExpensesController (integration)', () => {
             groupId: testGroup.id,
             amount: 10.0,
             description: `Test ${category}`,
-            paidById: 'user-123',
-            createdById: 'user-123',
+            paidById: testUserId,
+            createdById: testUserId,
             category,
           })
           .expect(201);
@@ -1241,8 +1271,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 100.0,
           description: 'Groceries',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -1267,8 +1297,8 @@ describe('ExpensesController (integration)', () => {
           groupId: testGroup.id,
           amount: 200.0,
           description: 'Hotel',
-          paidById: 'user-123',
-          createdById: 'user-123',
+          paidById: testUserId,
+          createdById: testUserId,
           category: 'accommodation',
         })
         .expect(201);
@@ -1279,11 +1309,11 @@ describe('ExpensesController (integration)', () => {
       // Change category
       const updateResponse = await request(httpServer)
         .put(`/expenses/${createdExpense.id}`)
-        .send({ category: 'activities' })
+        .send({ category: 'activity' })
         .expect(200);
 
       const body = updateResponse.body as { expense: Expense };
-      expect(body.expense.category).toBe('activities');
+      expect(body.expense.category).toBe('activity');
     });
   });
 });

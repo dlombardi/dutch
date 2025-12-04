@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { AuthModule } from '../auth.module';
+import { AppModule } from '../../app.module';
 
 interface GuestUser {
   id: string;
@@ -31,7 +31,7 @@ describe('Guest Auth (integration)', () => {
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

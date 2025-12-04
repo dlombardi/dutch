@@ -15,7 +15,7 @@ export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
 
   @Post('expenses')
-  createExpense(@Body() dto: CreateExpenseDto) {
+  async createExpense(@Body() dto: CreateExpenseDto) {
     return this.expensesService.createExpense(
       dto.groupId,
       dto.amount,
@@ -33,22 +33,22 @@ export class ExpensesController {
   }
 
   @Get('expenses/:id')
-  getExpense(@Param('id') id: string) {
+  async getExpense(@Param('id') id: string) {
     return this.expensesService.getExpenseById(id);
   }
 
   @Put('expenses/:id')
-  updateExpense(@Param('id') id: string, @Body() dto: UpdateExpenseDto) {
+  async updateExpense(@Param('id') id: string, @Body() dto: UpdateExpenseDto) {
     return this.expensesService.updateExpense(id, dto);
   }
 
   @Delete('expenses/:id')
-  deleteExpense(@Param('id') id: string) {
+  async deleteExpense(@Param('id') id: string) {
     return this.expensesService.deleteExpense(id);
   }
 
   @Get('groups/:groupId/expenses')
-  getGroupExpenses(@Param('groupId') groupId: string) {
+  async getGroupExpenses(@Param('groupId') groupId: string) {
     return this.expensesService.getExpensesByGroupId(groupId);
   }
 }

@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { randomBytes } from 'crypto';
-import { GroupsService } from '../groups/groups.service';
 import { SyncGateway } from '../sync/sync.gateway';
+import { SettlementsRepository, GroupsRepository } from '../db/repositories';
+import type { Settlement } from '../db/schema';
 
+// Legacy interface for API compatibility
 export interface SettlementData {
   id: string;
   groupId: string;
@@ -15,18 +16,38 @@ export interface SettlementData {
   createdAt: Date;
 }
 
+// Helper to convert database settlement to SettlementData
+function toSettlementData(settlement: Settlement): SettlementData {
+  return {
+    id: settlement.id,
+    groupId: settlement.groupId,
+    fromUserId: settlement.fromUserId,
+    toUserId: settlement.toUserId,
+    amount: Number(settlement.amount),
+    currency: settlement.currency,
+    method: settlement.method,
+    createdById: settlement.createdById,
+    createdAt: settlement.settledAt,
+  };
+}
+
 @Injectable()
 export class SettlementsService {
-  // In-memory storage for now (will be replaced with TypeORM later)
-  private settlements: Map<string, SettlementData> = new Map();
-  private groupSettlements: Map<string, string[]> = new Map(); // groupId -> settlementIds
-
   constructor(
-    private readonly groupsService: GroupsService,
+    private readonly groupsRepo: GroupsRepository,
+    private readonly settlementsRepo: SettlementsRepository,
     @Optional() private readonly syncGateway?: SyncGateway,
   ) {}
 
-  createSettlement(
+  private async getGroupOrThrow(groupId: string) {
+    const group = await this.groupsRepo.findById(groupId);
+    if (!group) {
+      throw new NotFoundException('Group not found');
+    }
+    return group;
+  }
+
+  async createSettlement(
     groupId: string,
     fromUserId: string,
     toUserId: string,
@@ -34,31 +55,27 @@ export class SettlementsService {
     createdById: string,
     currency?: string,
     method?: string,
-  ): { settlement: SettlementData } {
+  ): Promise<{ settlement: SettlementData }> {
     // Verify group exists and get default currency
-    const { group } = this.groupsService.getGroupById(groupId);
+    const group = await this.getGroupOrThrow(groupId);
 
-    const settlementId = randomBytes(16).toString('hex');
-    const now = new Date();
-
-    const settlement: SettlementData = {
-      id: settlementId,
+    const dbSettlement = await this.settlementsRepo.create({
       groupId,
       fromUserId,
       toUserId,
-      amount,
+      amount: String(amount),
       currency: currency || group.defaultCurrency,
-      method: method || 'cash',
+      method: (method || 'cash') as
+        | 'cash'
+        | 'venmo'
+        | 'paypal'
+        | 'zelle'
+        | 'bank_transfer'
+        | 'other',
       createdById,
-      createdAt: now,
-    };
+    });
 
-    this.settlements.set(settlementId, settlement);
-
-    // Track settlement in group's settlement list
-    const groupSettlementIds = this.groupSettlements.get(groupId) || [];
-    groupSettlementIds.push(settlementId);
-    this.groupSettlements.set(groupId, groupSettlementIds);
+    const settlement = toSettlementData(dbSettlement);
 
     // Broadcast settlement:created event to group members
     if (this.syncGateway) {
@@ -70,16 +87,14 @@ export class SettlementsService {
     return { settlement };
   }
 
-  getSettlementsByGroupId(groupId: string): { settlements: SettlementData[] } {
+  async getSettlementsByGroupId(
+    groupId: string,
+  ): Promise<{ settlements: SettlementData[] }> {
     // Verify group exists
-    this.groupsService.getGroupById(groupId);
+    await this.getGroupOrThrow(groupId);
 
-    const settlementIds = this.groupSettlements.get(groupId) || [];
-    const settlements = settlementIds
-      .map((id) => this.settlements.get(id))
-      .filter(
-        (settlement): settlement is SettlementData => settlement !== undefined,
-      );
+    const dbSettlements = await this.settlementsRepo.findByGroupId(groupId);
+    const settlements = dbSettlements.map(toSettlementData);
 
     return { settlements };
   }

@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { SettlementsModule } from '../settlements.module';
-import { GroupsModule } from '../../groups/groups.module';
-import { ExpensesModule } from '../../expenses/expenses.module';
+import { AppModule } from '../../app.module';
 
 interface Group {
   id: string;
@@ -29,14 +27,19 @@ interface Settlement {
   createdAt: string;
 }
 
+// Valid UUID format that doesn't exist in the database
+const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
+
 describe('Settlements API (integration)', () => {
   let app: INestApplication;
   let httpServer: Server;
   let testGroup: Group;
+  let userA: string;
+  let userB: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [SettlementsModule, GroupsModule, ExpensesModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -51,13 +54,24 @@ describe('Settlements API (integration)', () => {
 
     httpServer = app.getHttpServer() as Server;
 
+    // Create test users
+    const userAResponse = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: 'user-a-device', name: 'User A' });
+    userA = userAResponse.body.user.id;
+
+    const userBResponse = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: 'user-b-device', name: 'User B' });
+    userB = userBResponse.body.user.id;
+
     // Create a test group
     const groupResponse = await request(httpServer)
       .post('/groups')
       .send({
         name: 'Test Settlement Group',
         emoji: '💰',
-        createdById: 'user-a',
+        createdById: userA,
         defaultCurrency: 'USD',
       })
       .expect(201);
@@ -67,7 +81,7 @@ describe('Settlements API (integration)', () => {
     // Add members to the group
     await request(httpServer)
       .post('/groups/join')
-      .send({ inviteCode: testGroup.inviteCode, userId: 'user-b' })
+      .send({ inviteCode: testGroup.inviteCode, userId: userB })
       .expect(201);
   });
 
@@ -81,18 +95,18 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(201);
 
       expect(response.body).toHaveProperty('settlement');
       const settlement = response.body.settlement as Settlement;
       expect(settlement.groupId).toBe(testGroup.id);
-      expect(settlement.fromUserId).toBe('user-a');
-      expect(settlement.toUserId).toBe('user-b');
+      expect(settlement.fromUserId).toBe(userA);
+      expect(settlement.toUserId).toBe(userB);
       expect(settlement.amount).toBe(50);
       expect(settlement.currency).toBe('USD'); // Defaults to group currency
       expect(settlement).toHaveProperty('id');
@@ -104,11 +118,11 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
           currency: 'EUR',
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(201);
 
@@ -121,11 +135,11 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
           method: 'venmo',
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(201);
 
@@ -138,10 +152,10 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(201);
 
@@ -154,10 +168,10 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: -50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(400);
     });
@@ -167,10 +181,10 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 0,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(400);
     });
@@ -179,10 +193,10 @@ describe('Settlements API (integration)', () => {
       await request(httpServer)
         .post('/settlements')
         .send({
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(400);
     });
@@ -192,9 +206,9 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          toUserId: 'user-b',
+          toUserId: userB,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(400);
     });
@@ -204,9 +218,9 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
+          fromUserId: userA,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(400);
     });
@@ -216,10 +230,10 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-a',
+          fromUserId: userA,
+          toUserId: userA,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(400);
     });
@@ -228,11 +242,11 @@ describe('Settlements API (integration)', () => {
       await request(httpServer)
         .post('/settlements')
         .send({
-          groupId: 'non-existent-group',
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          groupId: NON_EXISTENT_UUID,
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(404);
     });
@@ -254,10 +268,10 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-a',
-          toUserId: 'user-b',
+          fromUserId: userA,
+          toUserId: userB,
           amount: 50,
-          createdById: 'user-a',
+          createdById: userA,
         })
         .expect(201);
 
@@ -271,7 +285,7 @@ describe('Settlements API (integration)', () => {
 
     it('should return 404 for non-existent group', async () => {
       await request(httpServer)
-        .get('/groups/non-existent-group/settlements')
+        .get(`/groups/${NON_EXISTENT_UUID}/settlements`)
         .expect(404);
     });
   });
@@ -285,9 +299,9 @@ describe('Settlements API (integration)', () => {
           groupId: testGroup.id,
           amount: 100,
           description: 'Dinner',
-          paidById: 'user-a',
-          createdById: 'user-a',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userA,
+          createdById: userA,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -296,18 +310,18 @@ describe('Settlements API (integration)', () => {
         .get(`/groups/${testGroup.id}/balances`)
         .expect(200);
 
-      expect(balanceResponse.body.memberBalances['user-a']).toBe(50);
-      expect(balanceResponse.body.memberBalances['user-b']).toBe(-50);
+      expect(balanceResponse.body.memberBalances[userA]).toBe(50);
+      expect(balanceResponse.body.memberBalances[userB]).toBe(-50);
 
       // Record settlement: B pays A $50
       await request(httpServer)
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-b',
-          toUserId: 'user-a',
+          fromUserId: userB,
+          toUserId: userA,
           amount: 50,
-          createdById: 'user-b',
+          createdById: userB,
         })
         .expect(201);
 
@@ -317,8 +331,8 @@ describe('Settlements API (integration)', () => {
         .expect(200);
 
       // Balances should be zero or empty
-      expect(balanceResponse.body.memberBalances['user-a'] || 0).toBe(0);
-      expect(balanceResponse.body.memberBalances['user-b'] || 0).toBe(0);
+      expect(balanceResponse.body.memberBalances[userA] || 0).toBe(0);
+      expect(balanceResponse.body.memberBalances[userB] || 0).toBe(0);
     });
 
     it('should handle partial settlements', async () => {
@@ -329,9 +343,9 @@ describe('Settlements API (integration)', () => {
           groupId: testGroup.id,
           amount: 100,
           description: 'Dinner',
-          paidById: 'user-a',
-          createdById: 'user-a',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userA,
+          createdById: userA,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -340,10 +354,10 @@ describe('Settlements API (integration)', () => {
         .post('/settlements')
         .send({
           groupId: testGroup.id,
-          fromUserId: 'user-b',
-          toUserId: 'user-a',
+          fromUserId: userB,
+          toUserId: userA,
           amount: 30,
-          createdById: 'user-b',
+          createdById: userB,
         })
         .expect(201);
 
@@ -352,8 +366,8 @@ describe('Settlements API (integration)', () => {
         .get(`/groups/${testGroup.id}/balances`)
         .expect(200);
 
-      expect(balanceResponse.body.memberBalances['user-a']).toBe(20);
-      expect(balanceResponse.body.memberBalances['user-b']).toBe(-20);
+      expect(balanceResponse.body.memberBalances[userA]).toBe(20);
+      expect(balanceResponse.body.memberBalances[userB]).toBe(-20);
     });
   });
 });

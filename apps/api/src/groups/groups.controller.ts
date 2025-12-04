@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Param,
-  Res,
-  Inject,
-  forwardRef,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { GroupsService } from './groups.service';
 import { BalancesService } from './balances.service';
@@ -19,12 +10,11 @@ export class GroupsController {
   constructor(
     private readonly groupsService: GroupsService,
     private readonly balancesService: BalancesService,
-    @Inject(forwardRef(() => SettlementsService))
     private readonly settlementsService: SettlementsService,
   ) {}
 
   @Post()
-  createGroup(@Body() dto: CreateGroupDto) {
+  async createGroup(@Body() dto: CreateGroupDto) {
     return this.groupsService.createGroup(
       dto.name,
       dto.createdById,
@@ -34,13 +24,16 @@ export class GroupsController {
   }
 
   @Get('invite/:code')
-  getGroupByInviteCode(@Param('code') code: string) {
+  async getGroupByInviteCode(@Param('code') code: string) {
     return this.groupsService.getGroupByInviteCode(code);
   }
 
   @Post('join')
-  joinGroup(@Body() dto: JoinGroupDto, @Res() res: Response) {
-    const result = this.groupsService.joinGroup(dto.inviteCode, dto.userId);
+  async joinGroup(@Body() dto: JoinGroupDto, @Res() res: Response) {
+    const result = await this.groupsService.joinGroup(
+      dto.inviteCode,
+      dto.userId,
+    );
     const response = {
       group: result.group,
       membership: {
@@ -54,22 +47,22 @@ export class GroupsController {
   }
 
   @Get(':id/members')
-  getGroupMembers(@Param('id') id: string) {
+  async getGroupMembers(@Param('id') id: string) {
     return this.groupsService.getGroupMembersById(id);
   }
 
   @Get(':id/balances')
-  getGroupBalances(@Param('id') id: string) {
+  async getGroupBalances(@Param('id') id: string) {
     return this.balancesService.getGroupBalances(id);
   }
 
   @Get(':id/settlements')
-  getGroupSettlements(@Param('id') id: string) {
+  async getGroupSettlements(@Param('id') id: string) {
     return this.settlementsService.getSettlementsByGroupId(id);
   }
 
   @Get(':id')
-  getGroup(@Param('id') id: string) {
+  async getGroup(@Param('id') id: string) {
     return this.groupsService.getGroupById(id);
   }
 }

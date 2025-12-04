@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { GroupsModule } from '../groups.module';
+import { AppModule } from '../../app.module';
 
 interface Group {
   id: string;
@@ -25,13 +25,17 @@ interface ErrorResponse {
   statusCode: number;
 }
 
+// Valid UUID format that doesn't exist in the database
+const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
+
 describe('GroupsController (integration)', () => {
   let app: INestApplication;
   let httpServer: Server;
+  let testUserId: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [GroupsModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -45,6 +49,12 @@ describe('GroupsController (integration)', () => {
     await app.init();
 
     httpServer = app.getHttpServer() as Server;
+
+    // Create a guest user to get a valid UUID
+    const guestResponse = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: 'test-device-123', name: 'Test User' });
+    testUserId = guestResponse.body.user.id;
   });
 
   afterEach(async () => {
@@ -58,7 +68,7 @@ describe('GroupsController (integration)', () => {
         .send({
           name: 'Trip to Paris',
           emoji: '🗼',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -67,7 +77,7 @@ describe('GroupsController (integration)', () => {
       expect(body.group).toMatchObject({
         name: 'Trip to Paris',
         emoji: '🗼',
-        createdById: 'user-123',
+        createdById: testUserId,
       });
       expect(body.group).toHaveProperty('id');
       expect(body.group).toHaveProperty('inviteCode');
@@ -80,7 +90,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: 'Weekend Trip',
-          createdById: 'user-456',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -95,7 +105,7 @@ describe('GroupsController (integration)', () => {
         .send({
           name: 'Europe Trip',
           emoji: '🇪🇺',
-          createdById: 'user-789',
+          createdById: testUserId,
           defaultCurrency: 'EUR',
         })
         .expect(201);
@@ -109,7 +119,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: 'Local Group',
-          createdById: 'user-101',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -122,7 +132,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: '',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(400);
 
@@ -138,7 +148,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           emoji: '🏖️',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(400);
     });
@@ -158,7 +168,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: 'Group 1',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -166,7 +176,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: 'Group 2',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -181,7 +191,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: '  Trimmed Group  ',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -198,7 +208,7 @@ describe('GroupsController (integration)', () => {
         .send({
           name: 'Test Group',
           emoji: '🎉',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -216,7 +226,7 @@ describe('GroupsController (integration)', () => {
     });
 
     it('should return 404 for non-existent group', async () => {
-      await request(httpServer).get('/groups/non-existent-id').expect(404);
+      await request(httpServer).get(`/groups/${NON_EXISTENT_UUID}`).expect(404);
     });
   });
 
@@ -228,7 +238,7 @@ describe('GroupsController (integration)', () => {
         .send({
           name: 'Invite Test Group',
           emoji: '🎯',
-          createdById: 'user-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -252,13 +262,19 @@ describe('GroupsController (integration)', () => {
 
   describe('POST /groups/join', () => {
     it('should add a member to a group by invite code', async () => {
+      // Create a new user for joining
+      const newMemberResponse = await request(httpServer)
+        .post('/auth/guest')
+        .send({ deviceId: 'new-member-device', name: 'New Member' });
+      const newMemberId = newMemberResponse.body.user.id;
+
       // First create a group
       const createResponse = await request(httpServer)
         .post('/groups')
         .send({
           name: 'Join Test Group',
           emoji: '🤝',
-          createdById: 'creator-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -269,7 +285,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups/join')
         .send({
           inviteCode: createdGroup.inviteCode,
-          userId: 'new-member-456',
+          userId: newMemberId,
         })
         .expect(201);
 
@@ -278,7 +294,7 @@ describe('GroupsController (integration)', () => {
         membership: { userId: string; role: string };
       };
       expect(body.group.id).toBe(createdGroup.id);
-      expect(body.membership.userId).toBe('new-member-456');
+      expect(body.membership.userId).toBe(newMemberId);
       expect(body.membership.role).toBe('member');
     });
 
@@ -287,7 +303,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups/join')
         .send({
           inviteCode: 'INVALID',
-          userId: 'user-123',
+          userId: testUserId,
         })
         .expect(404);
     });
@@ -311,12 +327,18 @@ describe('GroupsController (integration)', () => {
     });
 
     it('should allow the same user to be added only once', async () => {
+      // Create a user for duplicate test
+      const duplicateUserResponse = await request(httpServer)
+        .post('/auth/guest')
+        .send({ deviceId: 'duplicate-user-device', name: 'Duplicate User' });
+      const duplicateUserId = duplicateUserResponse.body.user.id;
+
       // First create a group
       const createResponse = await request(httpServer)
         .post('/groups')
         .send({
           name: 'Duplicate Test Group',
-          createdById: 'creator-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -327,7 +349,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups/join')
         .send({
           inviteCode: createdGroup.inviteCode,
-          userId: 'duplicate-user-123',
+          userId: duplicateUserId,
         })
         .expect(201);
 
@@ -336,7 +358,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups/join')
         .send({
           inviteCode: createdGroup.inviteCode,
-          userId: 'duplicate-user-123',
+          userId: duplicateUserId,
         })
         .expect(200);
 
@@ -344,7 +366,7 @@ describe('GroupsController (integration)', () => {
         group: Group;
         membership: { userId: string; role: string };
       };
-      expect(body.membership.userId).toBe('duplicate-user-123');
+      expect(body.membership.userId).toBe(duplicateUserId);
     });
   });
 
@@ -365,7 +387,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups')
         .send({
           name: 'Members Test Group',
-          createdById: 'creator-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -378,18 +400,29 @@ describe('GroupsController (integration)', () => {
 
       const body = response.body as MembersResponse;
       expect(body.members).toHaveLength(1);
-      expect(body.members[0].userId).toBe('creator-123');
+      expect(body.members[0].userId).toBe(testUserId);
       expect(body.members[0].role).toBe('admin');
       expect(body.members[0]).toHaveProperty('joinedAt');
     });
 
     it('should return all members including those who joined', async () => {
+      // Create additional members
+      const member1Response = await request(httpServer)
+        .post('/auth/guest')
+        .send({ deviceId: 'member-1-device', name: 'Member 1' });
+      const member1Id = member1Response.body.user.id;
+
+      const member2Response = await request(httpServer)
+        .post('/auth/guest')
+        .send({ deviceId: 'member-2-device', name: 'Member 2' });
+      const member2Id = member2Response.body.user.id;
+
       // Create a group
       const createResponse = await request(httpServer)
         .post('/groups')
         .send({
           name: 'Multi Member Group',
-          createdById: 'creator-123',
+          createdById: testUserId,
         })
         .expect(201);
 
@@ -400,7 +433,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups/join')
         .send({
           inviteCode: createdGroup.inviteCode,
-          userId: 'member-1',
+          userId: member1Id,
         })
         .expect(201);
 
@@ -408,7 +441,7 @@ describe('GroupsController (integration)', () => {
         .post('/groups/join')
         .send({
           inviteCode: createdGroup.inviteCode,
-          userId: 'member-2',
+          userId: member2Id,
         })
         .expect(201);
 
@@ -421,19 +454,19 @@ describe('GroupsController (integration)', () => {
       expect(body.members).toHaveLength(3);
 
       // Creator should be admin
-      const creator = body.members.find((m) => m.userId === 'creator-123');
+      const creator = body.members.find((m) => m.userId === testUserId);
       expect(creator?.role).toBe('admin');
 
       // Others should be members
-      const member1 = body.members.find((m) => m.userId === 'member-1');
-      const member2 = body.members.find((m) => m.userId === 'member-2');
+      const member1 = body.members.find((m) => m.userId === member1Id);
+      const member2 = body.members.find((m) => m.userId === member2Id);
       expect(member1?.role).toBe('member');
       expect(member2?.role).toBe('member');
     });
 
     it('should return 404 for non-existent group', async () => {
       await request(httpServer)
-        .get('/groups/non-existent-id/members')
+        .get(`/groups/${NON_EXISTENT_UUID}/members`)
         .expect(404);
     });
   });

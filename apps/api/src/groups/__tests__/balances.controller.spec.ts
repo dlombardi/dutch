@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { GroupsModule } from '../groups.module';
-import { ExpensesModule } from '../../expenses/expenses.module';
+import { AppModule } from '../../app.module';
 
 interface Group {
   id: string;
@@ -28,14 +27,20 @@ interface BalancesResponse {
   memberBalances: Record<string, number>;
 }
 
+// Valid UUID format that doesn't exist in the database
+const NON_EXISTENT_UUID = '00000000-0000-0000-0000-000000000000';
+
 describe('Balances API (integration)', () => {
   let app: INestApplication;
   let httpServer: Server;
   let testGroup: Group;
+  let userA: string;
+  let userB: string;
+  let userC: string;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [GroupsModule, ExpensesModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -50,13 +55,29 @@ describe('Balances API (integration)', () => {
 
     httpServer = app.getHttpServer() as Server;
 
+    // Create test users
+    const userAResponse = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: 'user-a-device', name: 'User A' });
+    userA = userAResponse.body.user.id;
+
+    const userBResponse = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: 'user-b-device', name: 'User B' });
+    userB = userBResponse.body.user.id;
+
+    const userCResponse = await request(httpServer)
+      .post('/auth/guest')
+      .send({ deviceId: 'user-c-device', name: 'User C' });
+    userC = userCResponse.body.user.id;
+
     // Create a test group
     const groupResponse = await request(httpServer)
       .post('/groups')
       .send({
         name: 'Test Balance Group',
         emoji: '💰',
-        createdById: 'user-a',
+        createdById: userA,
         defaultCurrency: 'USD',
       })
       .expect(201);
@@ -66,12 +87,12 @@ describe('Balances API (integration)', () => {
     // Add members to the group
     await request(httpServer)
       .post('/groups/join')
-      .send({ inviteCode: testGroup.inviteCode, userId: 'user-b' })
+      .send({ inviteCode: testGroup.inviteCode, userId: userB })
       .expect(201);
 
     await request(httpServer)
       .post('/groups/join')
-      .send({ inviteCode: testGroup.inviteCode, userId: 'user-c' })
+      .send({ inviteCode: testGroup.inviteCode, userId: userC })
       .expect(201);
   });
 
@@ -100,9 +121,9 @@ describe('Balances API (integration)', () => {
           groupId: testGroup.id,
           amount: 100,
           description: 'Dinner',
-          paidById: 'user-a',
-          createdById: 'user-a',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userA,
+          createdById: userA,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -115,15 +136,15 @@ describe('Balances API (integration)', () => {
       // B owes A $50
       expect(body.balances).toHaveLength(1);
       expect(body.balances[0]).toEqual({
-        from: 'user-b',
-        to: 'user-a',
+        from: userB,
+        to: userA,
         amount: 50,
         currency: 'USD',
       });
 
       // Member balances: A is owed $50, B owes $50
-      expect(body.memberBalances['user-a']).toBe(50);
-      expect(body.memberBalances['user-b']).toBe(-50);
+      expect(body.memberBalances[userA]).toBe(50);
+      expect(body.memberBalances[userB]).toBe(-50);
     });
 
     it('should calculate balances with three people', async () => {
@@ -134,9 +155,9 @@ describe('Balances API (integration)', () => {
           groupId: testGroup.id,
           amount: 90,
           description: 'Lunch',
-          paidById: 'user-a',
-          createdById: 'user-a',
-          splitParticipants: ['user-a', 'user-b', 'user-c'],
+          paidById: userA,
+          createdById: userA,
+          splitParticipants: [userA, userB, userC],
         })
         .expect(201);
 
@@ -150,19 +171,19 @@ describe('Balances API (integration)', () => {
       expect(body.balances).toHaveLength(2);
 
       const bToA = body.balances.find(
-        (b) => b.from === 'user-b' && b.to === 'user-a',
+        (b) => b.from === userB && b.to === userA,
       );
       const cToA = body.balances.find(
-        (b) => b.from === 'user-c' && b.to === 'user-a',
+        (b) => b.from === userC && b.to === userA,
       );
 
       expect(bToA?.amount).toBe(30);
       expect(cToA?.amount).toBe(30);
 
       // Member balances
-      expect(body.memberBalances['user-a']).toBe(60); // Is owed $60
-      expect(body.memberBalances['user-b']).toBe(-30); // Owes $30
-      expect(body.memberBalances['user-c']).toBe(-30); // Owes $30
+      expect(body.memberBalances[userA]).toBe(60); // Is owed $60
+      expect(body.memberBalances[userB]).toBe(-30); // Owes $30
+      expect(body.memberBalances[userC]).toBe(-30); // Owes $30
     });
 
     it('should net out balances when people pay each other back', async () => {
@@ -173,9 +194,9 @@ describe('Balances API (integration)', () => {
           groupId: testGroup.id,
           amount: 100,
           description: 'Dinner',
-          paidById: 'user-a',
-          createdById: 'user-a',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userA,
+          createdById: userA,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -186,9 +207,9 @@ describe('Balances API (integration)', () => {
           groupId: testGroup.id,
           amount: 60,
           description: 'Breakfast',
-          paidById: 'user-b',
-          createdById: 'user-b',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userB,
+          createdById: userB,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -201,15 +222,15 @@ describe('Balances API (integration)', () => {
       // Net: B owes A $50 - $30 = $20
       expect(body.balances).toHaveLength(1);
       expect(body.balances[0]).toEqual({
-        from: 'user-b',
-        to: 'user-a',
+        from: userB,
+        to: userA,
         amount: 20,
         currency: 'USD',
       });
 
       // Member balances
-      expect(body.memberBalances['user-a']).toBe(20);
-      expect(body.memberBalances['user-b']).toBe(-20);
+      expect(body.memberBalances[userA]).toBe(20);
+      expect(body.memberBalances[userB]).toBe(-20);
     });
 
     it('should handle case where balances net to zero', async () => {
@@ -220,9 +241,9 @@ describe('Balances API (integration)', () => {
           groupId: testGroup.id,
           amount: 100,
           description: 'Dinner',
-          paidById: 'user-a',
-          createdById: 'user-a',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userA,
+          createdById: userA,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -233,9 +254,9 @@ describe('Balances API (integration)', () => {
           groupId: testGroup.id,
           amount: 100,
           description: 'Breakfast',
-          paidById: 'user-b',
-          createdById: 'user-b',
-          splitParticipants: ['user-a', 'user-b'],
+          paidById: userB,
+          createdById: userB,
+          splitParticipants: [userA, userB],
         })
         .expect(201);
 
@@ -247,13 +268,13 @@ describe('Balances API (integration)', () => {
 
       // No one owes anyone
       expect(body.balances).toHaveLength(0);
-      expect(body.memberBalances['user-a'] || 0).toBe(0);
-      expect(body.memberBalances['user-b'] || 0).toBe(0);
+      expect(body.memberBalances[userA] || 0).toBe(0);
+      expect(body.memberBalances[userB] || 0).toBe(0);
     });
 
     it('should return 404 for non-existent group', async () => {
       await request(httpServer)
-        .get('/groups/non-existent-group/balances')
+        .get(`/groups/${NON_EXISTENT_UUID}/balances`)
         .expect(404);
     });
 
@@ -266,9 +287,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 60,
             description: 'Expense 1',
-            paidById: 'user-b',
-            createdById: 'user-b',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userB,
+            createdById: userB,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -279,9 +300,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 60,
             description: 'Expense 2',
-            paidById: 'user-c',
-            createdById: 'user-c',
-            splitParticipants: ['user-b', 'user-c'],
+            paidById: userC,
+            createdById: userC,
+            splitParticipants: [userB, userC],
           })
           .expect(201);
 
@@ -297,10 +318,10 @@ describe('Balances API (integration)', () => {
         expect(body.balances.length).toBeLessThanOrEqual(2);
 
         // Check member balances are correct regardless of simplification
-        expect(body.memberBalances['user-a']).toBe(-30); // Owes $30
-        expect(body.memberBalances['user-c']).toBe(30); // Is owed $30
+        expect(body.memberBalances[userA]).toBe(-30); // Owes $30
+        expect(body.memberBalances[userC]).toBe(30); // Is owed $30
         // B should be at zero (owes C $30, is owed by A $30)
-        expect(body.memberBalances['user-b'] || 0).toBe(0);
+        expect(body.memberBalances[userB] || 0).toBe(0);
       });
 
       it('should minimize transactions in complex scenarios', async () => {
@@ -315,9 +336,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 80,
             description: 'Expense 1',
-            paidById: 'user-b',
-            createdById: 'user-b',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userB,
+            createdById: userB,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -328,9 +349,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 60,
             description: 'Expense 2',
-            paidById: 'user-c',
-            createdById: 'user-c',
-            splitParticipants: ['user-b', 'user-c'],
+            paidById: userC,
+            createdById: userC,
+            splitParticipants: [userB, userC],
           })
           .expect(201);
 
@@ -341,9 +362,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 20,
             description: 'Expense 3',
-            paidById: 'user-c',
-            createdById: 'user-c',
-            splitParticipants: ['user-a', 'user-c'],
+            paidById: userC,
+            createdById: userC,
+            splitParticipants: [userA, userC],
           })
           .expect(201);
 
@@ -355,9 +376,9 @@ describe('Balances API (integration)', () => {
 
         // Net balances: A owes $50, B is owed $10, C is owed $40
         // Minimum transactions: A pays B $10, A pays C $40 (2 transactions)
-        expect(body.memberBalances['user-a']).toBe(-50);
-        expect(body.memberBalances['user-b']).toBe(10);
-        expect(body.memberBalances['user-c']).toBe(40);
+        expect(body.memberBalances[userA]).toBe(-50);
+        expect(body.memberBalances[userB]).toBe(10);
+        expect(body.memberBalances[userC]).toBe(40);
 
         // Should have at most 2 transactions (minimum possible)
         expect(body.balances.length).toBeLessThanOrEqual(2);
@@ -379,9 +400,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 60,
             description: 'Expense 1',
-            paidById: 'user-b',
-            createdById: 'user-b',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userB,
+            createdById: userB,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -392,9 +413,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 60,
             description: 'Expense 2',
-            paidById: 'user-c',
-            createdById: 'user-c',
-            splitParticipants: ['user-b', 'user-c'],
+            paidById: userC,
+            createdById: userC,
+            splitParticipants: [userB, userC],
           })
           .expect(201);
 
@@ -405,9 +426,9 @@ describe('Balances API (integration)', () => {
             groupId: testGroup.id,
             amount: 60,
             description: 'Expense 3',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-c'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userC],
           })
           .expect(201);
 
@@ -419,9 +440,9 @@ describe('Balances API (integration)', () => {
 
         // All debts should cancel out - everyone is at $0
         expect(body.balances).toHaveLength(0);
-        expect(body.memberBalances['user-a'] || 0).toBe(0);
-        expect(body.memberBalances['user-b'] || 0).toBe(0);
-        expect(body.memberBalances['user-c'] || 0).toBe(0);
+        expect(body.memberBalances[userA] || 0).toBe(0);
+        expect(body.memberBalances[userB] || 0).toBe(0);
+        expect(body.memberBalances[userC] || 0).toBe(0);
       });
     });
 
@@ -437,9 +458,9 @@ describe('Balances API (integration)', () => {
             currency: 'EUR',
             exchangeRate: 1.1, // 1 EUR = 1.10 USD
             description: 'European Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -453,8 +474,8 @@ describe('Balances API (integration)', () => {
         // Split between 2 people = 55 USD each
         // B owes A $55 USD
         expect(body.balances).toHaveLength(1);
-        expect(body.balances[0].from).toBe('user-b');
-        expect(body.balances[0].to).toBe('user-a');
+        expect(body.balances[0].from).toBe(userB);
+        expect(body.balances[0].to).toBe(userA);
         expect(body.balances[0].amount).toBe(55);
         expect(body.balances[0].currency).toBe('USD');
       });
@@ -468,9 +489,9 @@ describe('Balances API (integration)', () => {
             amount: 100,
             currency: 'USD',
             description: 'American Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -483,9 +504,9 @@ describe('Balances API (integration)', () => {
             currency: 'EUR',
             exchangeRate: 1.2, // 1 EUR = 1.20 USD
             description: 'European Lunch',
-            paidById: 'user-b',
-            createdById: 'user-b',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userB,
+            createdById: userB,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -497,8 +518,8 @@ describe('Balances API (integration)', () => {
 
         // Net: B owes A $50, A owes B $30 → B owes A $20
         expect(body.balances).toHaveLength(1);
-        expect(body.balances[0].from).toBe('user-b');
-        expect(body.balances[0].to).toBe('user-a');
+        expect(body.balances[0].from).toBe(userB);
+        expect(body.balances[0].to).toBe(userA);
         expect(body.balances[0].amount).toBe(20);
         expect(body.balances[0].currency).toBe('USD');
       });
@@ -512,9 +533,9 @@ describe('Balances API (integration)', () => {
             amount: 100,
             currency: 'USD',
             description: 'Local Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -541,9 +562,9 @@ describe('Balances API (integration)', () => {
             amount: 100,
             currency: 'EUR',
             description: 'European Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(400);
       });
@@ -558,9 +579,9 @@ describe('Balances API (integration)', () => {
             currency: 'EUR',
             exchangeRate: 0,
             description: 'European Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(400);
 
@@ -573,9 +594,9 @@ describe('Balances API (integration)', () => {
             currency: 'EUR',
             exchangeRate: -1.5,
             description: 'European Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(400);
       });
@@ -589,9 +610,9 @@ describe('Balances API (integration)', () => {
             currency: 'EUR',
             exchangeRate: 1.15,
             description: 'European Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 
@@ -615,9 +636,9 @@ describe('Balances API (integration)', () => {
             currency: 'EUR',
             exchangeRate: 1.15,
             description: 'European Dinner',
-            paidById: 'user-a',
-            createdById: 'user-a',
-            splitParticipants: ['user-a', 'user-b'],
+            paidById: userA,
+            createdById: userA,
+            splitParticipants: [userA, userB],
           })
           .expect(201);
 

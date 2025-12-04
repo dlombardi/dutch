@@ -7,7 +7,7 @@ export class SettlementsController {
   constructor(private readonly settlementsService: SettlementsService) {}
 
   @Post()
-  createSettlement(@Body() createSettlementDto: CreateSettlementDto) {
+  async createSettlement(@Body() createSettlementDto: CreateSettlementDto) {
     return this.settlementsService.createSettlement(
       createSettlementDto.groupId,
       createSettlementDto.fromUserId,

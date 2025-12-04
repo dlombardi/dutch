@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { io, Socket } from 'socket.io-client';
+import request from 'supertest';
 import { AppModule } from '../../app.module';
 
 describe('SyncGateway', () => {
   let app: INestApplication;
   let clientSocket: Socket;
+  let accessToken: string;
+  let testUserId: string;
   const PORT = 3002;
 
   beforeAll(async () => {
@@ -15,6 +18,13 @@ describe('SyncGateway', () => {
 
     app = moduleFixture.createNestApplication();
     await app.listen(PORT);
+
+    // Create a guest user to get a valid JWT token
+    const authResponse = await request(app.getHttpServer())
+      .post('/auth/guest')
+      .send({ deviceId: 'ws-test-device', name: 'WS Test User' });
+    accessToken = authResponse.body.accessToken;
+    testUserId = authResponse.body.user.id;
   });
 
   afterAll(async () => {
@@ -35,9 +45,13 @@ describe('SyncGateway', () => {
       const socket = io(`http://localhost:${PORT}`, {
         transports: ['websocket'],
         forceNew: true,
+        auth: { token: accessToken },
       });
 
-      socket.on('connect', () => {
+      // Wait for 'welcome' event instead of 'connect' because
+      // the server's async handleConnection() sets client.user AFTER
+      // the connect event. The welcome event is emitted after client.user is set.
+      socket.on('welcome', () => {
         resolve(socket);
       });
 
@@ -63,6 +77,7 @@ describe('SyncGateway', () => {
         clientSocket = io(`http://localhost:${PORT}`, {
           transports: ['websocket'],
           forceNew: true,
+          auth: { token: accessToken },
         });
         clientSocket.on('welcome', (data) => {
           resolve(data);
@@ -79,6 +94,7 @@ describe('SyncGateway', () => {
         clientSocket = io(`http://localhost:${PORT}`, {
           transports: ['websocket'],
           forceNew: true,
+          auth: { token: accessToken },
         });
         clientSocket.on('welcome', (data) => {
           resolve(data);
@@ -93,12 +109,21 @@ describe('SyncGateway', () => {
 
   describe('group subscription', () => {
     it('should allow client to join a group room', async () => {
+      // Create a group for testing
+      const groupResponse = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Test Group',
+          createdById: testUserId,
+        });
+      const groupId = groupResponse.body.group.id;
+
       clientSocket = await connectClient();
 
       const response = await new Promise<any>((resolve) => {
         clientSocket.emit(
           'joinGroup',
-          { groupId: 'test-group-1' },
+          { groupId },
           (response: any) => {
             resolve(response);
           },
@@ -106,15 +131,24 @@ describe('SyncGateway', () => {
       });
 
       expect(response.success).toBe(true);
-      expect(response.groupId).toBe('test-group-1');
+      expect(response.groupId).toBe(groupId);
     });
 
     it('should allow client to leave a group room', async () => {
+      // Create a group for testing
+      const groupResponse = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Leave Test Group',
+          createdById: testUserId,
+        });
+      const groupId = groupResponse.body.group.id;
+
       clientSocket = await connectClient();
 
       // First join
       await new Promise<void>((resolve) => {
-        clientSocket.emit('joinGroup', { groupId: 'test-group-1' }, () => {
+        clientSocket.emit('joinGroup', { groupId }, () => {
           resolve();
         });
       });
@@ -123,7 +157,7 @@ describe('SyncGateway', () => {
       const response = await new Promise<any>((resolve) => {
         clientSocket.emit(
           'leaveGroup',
-          { groupId: 'test-group-1' },
+          { groupId },
           (response: any) => {
             resolve(response);
           },
@@ -131,16 +165,33 @@ describe('SyncGateway', () => {
       });
 
       expect(response.success).toBe(true);
-      expect(response.groupId).toBe('test-group-1');
+      expect(response.groupId).toBe(groupId);
     });
 
     it('should allow client to join multiple groups', async () => {
+      // Create groups for testing
+      const group1Response = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Multi Group 1',
+          createdById: testUserId,
+        });
+      const group1Id = group1Response.body.group.id;
+
+      const group2Response = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Multi Group 2',
+          createdById: testUserId,
+        });
+      const group2Id = group2Response.body.group.id;
+
       clientSocket = await connectClient();
 
       const response1 = await new Promise<any>((resolve) => {
         clientSocket.emit(
           'joinGroup',
-          { groupId: 'group-1' },
+          { groupId: group1Id },
           (response: any) => {
             resolve(response);
           },
@@ -150,7 +201,7 @@ describe('SyncGateway', () => {
       const response2 = await new Promise<any>((resolve) => {
         clientSocket.emit(
           'joinGroup',
-          { groupId: 'group-2' },
+          { groupId: group2Id },
           (response: any) => {
             resolve(response);
           },
@@ -178,6 +229,15 @@ describe('SyncGateway', () => {
 
   describe('broadcasting', () => {
     it('should receive expense:created event when broadcast to group', async () => {
+      // Create a group for testing
+      const groupResponse = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Broadcast Test Group',
+          createdById: testUserId,
+        });
+      const groupId = groupResponse.body.group.id;
+
       // Connect two clients
       clientSocket = await connectClient();
       const client2 = await connectClient();
@@ -186,7 +246,7 @@ describe('SyncGateway', () => {
       await new Promise<void>((resolve) => {
         clientSocket.emit(
           'joinGroup',
-          { groupId: 'broadcast-test-group' },
+          { groupId },
           () => {
             resolve();
           },
@@ -194,7 +254,7 @@ describe('SyncGateway', () => {
       });
 
       await new Promise<void>((resolve) => {
-        client2.emit('joinGroup', { groupId: 'broadcast-test-group' }, () => {
+        client2.emit('joinGroup', { groupId }, () => {
           resolve();
         });
       });
@@ -208,7 +268,7 @@ describe('SyncGateway', () => {
 
       // Emit test broadcast event from client1
       clientSocket.emit('testBroadcast', {
-        groupId: 'broadcast-test-group',
+        groupId,
         event: 'expense:created',
         data: { expenseId: 'test-expense-123', amount: 50 },
       });
@@ -221,18 +281,35 @@ describe('SyncGateway', () => {
     });
 
     it('should not receive events from groups not joined', async () => {
+      // Create two groups for testing
+      const groupAResponse = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Group A',
+          createdById: testUserId,
+        });
+      const groupAId = groupAResponse.body.group.id;
+
+      const groupBResponse = await request(app.getHttpServer())
+        .post('/groups')
+        .send({
+          name: 'WS Group B',
+          createdById: testUserId,
+        });
+      const groupBId = groupBResponse.body.group.id;
+
       clientSocket = await connectClient();
       const client2 = await connectClient();
 
       // Client1 joins group-a, client2 joins group-b
       await new Promise<void>((resolve) => {
-        clientSocket.emit('joinGroup', { groupId: 'group-a' }, () => {
+        clientSocket.emit('joinGroup', { groupId: groupAId }, () => {
           resolve();
         });
       });
 
       await new Promise<void>((resolve) => {
-        client2.emit('joinGroup', { groupId: 'group-b' }, () => {
+        client2.emit('joinGroup', { groupId: groupBId }, () => {
           resolve();
         });
       });
@@ -245,7 +322,7 @@ describe('SyncGateway', () => {
 
       // Emit broadcast to group-a (client2 is not in group-a)
       clientSocket.emit('testBroadcast', {
-        groupId: 'group-a',
+        groupId: groupAId,
         event: 'expense:created',
         data: { expenseId: 'test-expense-456' },
       });

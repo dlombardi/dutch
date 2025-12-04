@@ -4,11 +4,12 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
-import { randomBytes } from 'crypto';
-import { GroupsService } from '../groups/groups.service';
 import { SyncGateway } from '../sync/sync.gateway';
+import { ExpensesRepository, GroupsRepository } from '../db/repositories';
+import type { Expense, ExpenseSplit } from '../db/schema';
 import { ExpenseCategory } from './dto/create-expense.dto';
 
+// Legacy interface for API compatibility
 export interface ExpenseData {
   id: string;
   groupId: string;
@@ -28,16 +29,51 @@ export interface ExpenseData {
   updatedAt: Date;
 }
 
+// Helper to convert database expense + splits to ExpenseData
+function toExpenseData(expense: Expense, splits: ExpenseSplit[]): ExpenseData {
+  const amount = Number(expense.amount);
+  const exchangeRate = expense.exchangeRate ? Number(expense.exchangeRate) : 1;
+  const splitAmounts: Record<string, number> = {};
+
+  for (const split of splits) {
+    splitAmounts[split.userId] = Number(split.amount);
+  }
+
+  return {
+    id: expense.id,
+    groupId: expense.groupId,
+    amount,
+    currency: expense.currency,
+    exchangeRate,
+    amountInGroupCurrency: Math.round(amount * exchangeRate * 100) / 100,
+    description: expense.description,
+    category: expense.category as ExpenseCategory | undefined,
+    paidById: expense.paidById,
+    splitType: expense.splitType as 'equal' | 'exact',
+    splitParticipants: Object.keys(splitAmounts),
+    splitAmounts,
+    date: expense.date,
+    createdById: expense.createdById,
+    createdAt: expense.createdAt,
+    updatedAt: expense.updatedAt,
+  };
+}
+
 @Injectable()
 export class ExpensesService {
-  // In-memory storage for now (will be replaced with TypeORM later)
-  private expenses: Map<string, ExpenseData> = new Map();
-  private groupExpenses: Map<string, string[]> = new Map(); // groupId -> expenseIds
-
   constructor(
-    private readonly groupsService: GroupsService,
+    private readonly groupsRepo: GroupsRepository,
+    private readonly expensesRepo: ExpensesRepository,
     @Optional() private readonly syncGateway?: SyncGateway,
   ) {}
+
+  private async getGroupOrThrow(groupId: string) {
+    const group = await this.groupsRepo.findById(groupId);
+    if (!group) {
+      throw new NotFoundException('Group not found');
+    }
+    return group;
+  }
 
   private calculateEqualSplits(
     amount: number,
@@ -88,7 +124,7 @@ export class ExpensesService {
     }
   }
 
-  createExpense(
+  async createExpense(
     groupId: string,
     amount: number,
     description: string,
@@ -101,9 +137,9 @@ export class ExpensesService {
     splitAmounts?: Record<string, number>,
     exchangeRate?: number,
     category?: ExpenseCategory,
-  ): { expense: ExpenseData } {
+  ): Promise<{ expense: ExpenseData }> {
     // Verify group exists and get default currency
-    const { group } = this.groupsService.getGroupById(groupId);
+    const group = await this.getGroupOrThrow(groupId);
 
     const expenseCurrency = currency || group.defaultCurrency;
 
@@ -122,16 +158,10 @@ export class ExpensesService {
       finalExchangeRate = exchangeRate;
     }
 
-    // Calculate amount in group currency
-    const amountInGroupCurrency =
-      Math.round(amount * finalExchangeRate * 100) / 100;
-
-    const expenseId = randomBytes(16).toString('hex');
     const now = new Date();
     const expenseDate = date || now.toISOString().split('T')[0];
 
     const finalSplitType: 'equal' | 'exact' = splitType || 'equal';
-    let finalSplitParticipants: string[];
     let finalSplitAmounts: Record<string, number>;
 
     if (finalSplitType === 'exact') {
@@ -142,41 +172,36 @@ export class ExpensesService {
       }
       this.validateExactSplitAmounts(amount, splitAmounts);
       finalSplitAmounts = splitAmounts;
-      finalSplitParticipants = Object.keys(splitAmounts);
     } else {
       // Equal split
-      finalSplitParticipants = splitParticipants || [paidById];
-      finalSplitAmounts = this.calculateEqualSplits(
-        amount,
-        finalSplitParticipants,
-      );
+      const participants = splitParticipants || [paidById];
+      finalSplitAmounts = this.calculateEqualSplits(amount, participants);
     }
 
-    const expense: ExpenseData = {
-      id: expenseId,
-      groupId,
-      amount,
-      currency: expenseCurrency,
-      exchangeRate: finalExchangeRate,
-      amountInGroupCurrency,
-      description,
-      category,
-      paidById,
-      splitType: finalSplitType,
-      splitParticipants: finalSplitParticipants,
-      splitAmounts: finalSplitAmounts,
-      date: expenseDate,
-      createdById,
-      createdAt: now,
-      updatedAt: now,
-    };
+    // Create expense in database
+    const dbExpense = await this.expensesRepo.create(
+      {
+        groupId,
+        amount: String(amount),
+        currency: expenseCurrency,
+        description,
+        category: category || null,
+        paidById,
+        splitType: finalSplitType,
+        date: expenseDate,
+        createdById,
+        exchangeRate:
+          finalExchangeRate !== 1 ? String(finalExchangeRate) : null,
+      },
+      Object.entries(finalSplitAmounts).map(([userId, amt]) => ({
+        userId,
+        amount: String(amt),
+      })),
+    );
 
-    this.expenses.set(expenseId, expense);
-
-    // Track expense in group's expense list
-    const groupExpenseIds = this.groupExpenses.get(groupId) || [];
-    groupExpenseIds.push(expenseId);
-    this.groupExpenses.set(groupId, groupExpenseIds);
+    // Fetch the splits to return complete data
+    const splits = await this.expensesRepo.getSplits(dbExpense.id);
+    const expense = toExpenseData(dbExpense, splits);
 
     // Broadcast expense:created event to group members
     if (this.syncGateway) {
@@ -188,27 +213,29 @@ export class ExpensesService {
     return { expense };
   }
 
-  getExpenseById(id: string): { expense: ExpenseData } {
-    const expense = this.expenses.get(id);
-    if (!expense) {
+  async getExpenseById(id: string): Promise<{ expense: ExpenseData }> {
+    const result = await this.expensesRepo.findByIdWithSplits(id);
+    if (!result) {
       throw new NotFoundException('Expense not found');
     }
-    return { expense };
+    return { expense: toExpenseData(result.expense, result.splits) };
   }
 
-  getExpensesByGroupId(groupId: string): { expenses: ExpenseData[] } {
+  async getExpensesByGroupId(
+    groupId: string,
+  ): Promise<{ expenses: ExpenseData[] }> {
     // Verify group exists
-    this.groupsService.getGroupById(groupId);
+    await this.getGroupOrThrow(groupId);
 
-    const expenseIds = this.groupExpenses.get(groupId) || [];
-    const expenses = expenseIds
-      .map((id) => this.expenses.get(id))
-      .filter((expense): expense is ExpenseData => expense !== undefined);
+    const results = await this.expensesRepo.findByGroupIdWithSplits(groupId);
+    const expenses = results.map(({ expense, splits }) =>
+      toExpenseData(expense, splits),
+    );
 
     return { expenses };
   }
 
-  updateExpense(
+  async updateExpense(
     id: string,
     updates: {
       amount?: number;
@@ -221,81 +248,80 @@ export class ExpensesService {
       splitParticipants?: string[];
       splitAmounts?: Record<string, number>;
     },
-  ): { expense: ExpenseData } {
-    const expense = this.expenses.get(id);
-    if (!expense) {
+  ): Promise<{ expense: ExpenseData }> {
+    const existing = await this.expensesRepo.findByIdWithSplits(id);
+    if (!existing) {
       throw new NotFoundException('Expense not found');
     }
 
-    // Apply basic updates
-    if (updates.amount !== undefined) {
-      expense.amount = updates.amount;
-    }
-    if (updates.currency !== undefined) {
-      expense.currency = updates.currency;
-    }
-    if (updates.description !== undefined) {
-      expense.description = updates.description;
-    }
-    if (updates.category !== undefined) {
-      expense.category = updates.category;
-    }
-    if (updates.paidById !== undefined) {
-      expense.paidById = updates.paidById;
-    }
-    if (updates.date !== undefined) {
-      expense.date = updates.date;
-    }
+    const currentExpense = toExpenseData(existing.expense, existing.splits);
 
-    // Handle split type changes
-    const newSplitType = updates.splitType || expense.splitType;
+    // Calculate new values
+    const newAmount = updates.amount ?? currentExpense.amount;
+    const newSplitType = updates.splitType ?? currentExpense.splitType;
+
+    let newSplitAmounts: Record<string, number>;
 
     if (newSplitType === 'exact') {
       // Changing to or updating exact split
       if (updates.splitAmounts) {
-        this.validateExactSplitAmounts(expense.amount, updates.splitAmounts);
-        expense.splitAmounts = updates.splitAmounts;
-        expense.splitParticipants = Object.keys(updates.splitAmounts);
-        expense.splitType = 'exact';
+        this.validateExactSplitAmounts(newAmount, updates.splitAmounts);
+        newSplitAmounts = updates.splitAmounts;
       } else if (
         updates.splitType === 'exact' &&
-        expense.splitType !== 'exact'
+        currentExpense.splitType !== 'exact'
       ) {
         // Trying to change to exact without providing amounts
         throw new BadRequestException(
           'Split amounts are required for exact split type',
         );
-      }
-      // If just updating amount and keeping exact split, validate existing amounts
-      if (
-        updates.amount !== undefined &&
-        expense.splitType === 'exact' &&
-        !updates.splitAmounts
-      ) {
-        this.validateExactSplitAmounts(expense.amount, expense.splitAmounts);
+      } else {
+        // Keep existing splits but validate against new amount if changed
+        if (updates.amount !== undefined) {
+          this.validateExactSplitAmounts(
+            newAmount,
+            currentExpense.splitAmounts,
+          );
+        }
+        newSplitAmounts = currentExpense.splitAmounts;
       }
     } else {
       // Equal split
-      expense.splitType = 'equal';
-      if (updates.splitParticipants !== undefined) {
-        expense.splitParticipants = updates.splitParticipants;
-      }
-      // Recalculate splits if amount or participants changed, or if switching from exact to equal
+      const participants =
+        updates.splitParticipants ?? currentExpense.splitParticipants;
+      // Recalculate if amount, participants, or split type changed
       if (
         updates.amount !== undefined ||
         updates.splitParticipants !== undefined ||
         updates.splitType === 'equal'
       ) {
-        expense.splitAmounts = this.calculateEqualSplits(
-          expense.amount,
-          expense.splitParticipants,
-        );
+        newSplitAmounts = this.calculateEqualSplits(newAmount, participants);
+      } else {
+        newSplitAmounts = currentExpense.splitAmounts;
       }
     }
 
-    expense.updatedAt = new Date();
+    // Update in database
+    const dbExpense = await this.expensesRepo.update(
+      id,
+      {
+        amount:
+          updates.amount !== undefined ? String(updates.amount) : undefined,
+        currency: updates.currency,
+        description: updates.description,
+        category: updates.category,
+        paidById: updates.paidById,
+        date: updates.date,
+        splitType: updates.splitType,
+      },
+      Object.entries(newSplitAmounts).map(([userId, amt]) => ({
+        userId,
+        amount: String(amt),
+      })),
+    );
 
-    this.expenses.set(id, expense);
+    const splits = await this.expensesRepo.getSplits(dbExpense.id);
+    const expense = toExpenseData(dbExpense, splits);
 
     // Broadcast expense:updated event to group members
     if (this.syncGateway) {
@@ -307,26 +333,16 @@ export class ExpensesService {
     return { expense };
   }
 
-  deleteExpense(id: string): { message: string } {
-    const expense = this.expenses.get(id);
-    if (!expense) {
+  async deleteExpense(id: string): Promise<{ message: string }> {
+    const existing = await this.expensesRepo.findById(id);
+    if (!existing) {
       throw new NotFoundException('Expense not found');
     }
 
-    const groupId = expense.groupId;
+    const groupId = existing.groupId;
 
-    // Remove from expenses map
-    this.expenses.delete(id);
-
-    // Remove from group's expense list
-    const groupExpenseIds = this.groupExpenses.get(groupId);
-    if (groupExpenseIds) {
-      const index = groupExpenseIds.indexOf(id);
-      if (index > -1) {
-        groupExpenseIds.splice(index, 1);
-      }
-      this.groupExpenses.set(groupId, groupExpenseIds);
-    }
+    // Delete from database (cascade will delete splits)
+    await this.expensesRepo.delete(id);
 
     // Broadcast expense:deleted event to group members
     if (this.syncGateway) {

@@ -1,6 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
+import { UsersRepository, MagicLinksRepository } from '../db/repositories';
+import type { User, MagicLink } from '../db/schema';
+import type { JwtPayload } from './jwt.strategy';
 
+// Legacy interface for API compatibility
 export interface MagicLinkData {
   id: string;
   email: string;
@@ -8,7 +13,7 @@ export interface MagicLinkData {
   used: boolean;
   createdAt: Date;
   expiresAt: Date;
-  claimForUserId?: string; // If set, this magic link is for claiming a guest account
+  claimForUserId?: string;
 }
 
 export interface UserData {
@@ -24,47 +29,85 @@ export interface UserData {
   updatedAt: Date;
 }
 
+// Helper to convert database user to UserData
+function toUserData(user: User): UserData {
+  return {
+    id: user.id,
+    email: user.email ?? undefined,
+    name: user.name,
+    type: user.type,
+    authProvider: user.authProvider,
+    deviceId: user.deviceId ?? undefined,
+    sessionCount: user.sessionCount,
+    upgradePromptDismissedAt: user.upgradePromptDismissedAt ?? undefined,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+// Helper to convert database magic link to MagicLinkData
+function toMagicLinkData(magicLink: MagicLink): MagicLinkData {
+  return {
+    id: magicLink.id,
+    email: magicLink.email,
+    token: magicLink.token,
+    used: magicLink.used,
+    createdAt: magicLink.createdAt,
+    expiresAt: magicLink.expiresAt,
+    claimForUserId: magicLink.claimForUserId ?? undefined,
+  };
+}
+
+// Token expiration constants
+const MAGIC_LINK_EXPIRATION_MS = 15 * 60 * 1000; // 15 minutes
+
 @Injectable()
 export class AuthService {
-  // In-memory storage for now (will be replaced with TypeORM later)
-  private magicLinks: Map<string, MagicLinkData> = new Map();
-  private users: Map<string, UserData> = new Map();
-  private usersByEmail: Map<string, string> = new Map();
-  private usersByDeviceId: Map<string, string> = new Map();
+  constructor(
+    private readonly usersRepo: UsersRepository,
+    private readonly magicLinksRepo: MagicLinksRepository,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  requestMagicLink(email: string): { message: string } {
+  private generateAccessToken(user: User): string {
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email ?? undefined,
+      type: user.type,
+    };
+    return this.jwtService.sign(payload);
+  }
+
+  async requestMagicLink(email: string): Promise<{ message: string }> {
     // Generate a secure random token
     const token = randomBytes(32).toString('hex');
-    const tokenId = randomBytes(16).toString('hex');
 
     // Set expiration to 15 minutes from now
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRATION_MS);
 
     // Store the magic link
-    const magicLinkData: MagicLinkData = {
-      id: tokenId,
+    await this.magicLinksRepo.create({
       email: email.toLowerCase(),
       token,
-      used: false,
-      createdAt: new Date(),
       expiresAt,
-    };
-
-    this.magicLinks.set(token, magicLinkData);
+    });
 
     // In production, send email here
-    // For development, log the magic link
-    const magicLinkUrl = `evn://auth/verify?token=${token}`;
-    console.log(`[Auth] Magic link for ${email}: ${magicLinkUrl}`);
-    console.log(`[Auth] Token: ${token}`);
+    // For development, log the magic link URL (NOT the raw token)
+    if (process.env.NODE_ENV !== 'production') {
+      const magicLinkUrl = `evn://auth/verify?token=${token}`;
+      console.log(`[Auth] Magic link URL for ${email}: ${magicLinkUrl}`);
+    }
 
     return {
       message: 'Magic link sent to your email',
     };
   }
 
-  verifyMagicLink(token: string): { user: UserData; accessToken: string } {
-    const magicLink = this.magicLinks.get(token);
+  async verifyMagicLink(
+    token: string,
+  ): Promise<{ user: UserData; accessToken: string }> {
+    const magicLink = await this.magicLinksRepo.findByToken(token);
 
     if (!magicLink) {
       throw new BadRequestException('Invalid magic link');
@@ -79,98 +122,82 @@ export class AuthService {
     }
 
     // Mark the link as used
-    magicLink.used = true;
-    this.magicLinks.set(token, magicLink);
+    await this.magicLinksRepo.markAsUsed(token);
 
-    let user: UserData;
+    let user: User;
 
     // Check if this is a claim link (upgrading a guest account)
     if (magicLink.claimForUserId) {
       // Get the guest user and upgrade them
-      user = this.users.get(magicLink.claimForUserId)!;
-      if (!user) {
+      const guestUser = await this.usersRepo.findById(magicLink.claimForUserId);
+      if (!guestUser) {
         throw new BadRequestException('Guest user no longer exists');
       }
 
       // Upgrade the guest to a claimed user
-      user.email = magicLink.email;
-      user.type = 'claimed';
-      user.sessionCount = (user.sessionCount || 0) + 1;
-      user.updatedAt = new Date();
-      this.users.set(magicLink.claimForUserId, user);
-
-      // Register the email mapping
-      this.usersByEmail.set(magicLink.email, magicLink.claimForUserId);
+      user = await this.usersRepo.update(magicLink.claimForUserId, {
+        email: magicLink.email,
+        type: 'claimed',
+        sessionCount: (guestUser.sessionCount || 0) + 1,
+      });
     } else {
       // Normal login flow - find or create user
-      const existingUserId = this.usersByEmail.get(magicLink.email);
+      const existingUser = await this.usersRepo.findByEmail(magicLink.email);
 
-      if (existingUserId) {
-        user = this.users.get(existingUserId)!;
-        user.sessionCount = (user.sessionCount || 0) + 1;
-        user.updatedAt = new Date();
-        this.users.set(existingUserId, user);
+      if (existingUser) {
+        user = await this.usersRepo.update(existingUser.id, {
+          sessionCount: (existingUser.sessionCount || 0) + 1,
+        });
       } else {
         // Create new user
-        const userId = randomBytes(16).toString('hex');
-        user = {
-          id: userId,
+        user = await this.usersRepo.create({
           email: magicLink.email,
           name: magicLink.email.split('@')[0], // Default name from email
           type: 'full',
           authProvider: 'magic_link',
           sessionCount: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        this.users.set(userId, user);
-        this.usersByEmail.set(magicLink.email, userId);
+        });
       }
     }
 
-    // Generate access token (simplified for now)
-    const accessToken = randomBytes(32).toString('hex');
+    // Generate JWT access token
+    const accessToken = this.generateAccessToken(user);
 
-    return { user, accessToken };
+    return { user: toUserData(user), accessToken };
   }
 
-  createGuestUser(
+  async createGuestUser(
     name: string,
     deviceId: string,
-  ): { user: UserData; accessToken: string; showUpgradePrompt: boolean } {
+  ): Promise<{
+    user: UserData;
+    accessToken: string;
+    showUpgradePrompt: boolean;
+  }> {
     // Check if device already has a guest user
-    const existingUserId = this.usersByDeviceId.get(deviceId);
+    const existingUser = await this.usersRepo.findByDeviceId(deviceId);
 
-    let user: UserData;
-    let isNewUser = false;
+    let user: User;
 
-    if (existingUserId) {
+    if (existingUser) {
       // Update existing user's name and increment session count
-      user = this.users.get(existingUserId)!;
-      user.name = name;
-      user.sessionCount = (user.sessionCount || 1) + 1;
-      user.updatedAt = new Date();
-      this.users.set(existingUserId, user);
+      user = await this.usersRepo.update(existingUser.id, {
+        name,
+        sessionCount: (existingUser.sessionCount || 1) + 1,
+      });
     } else {
       // Create new guest user
-      isNewUser = true;
-      const userId = randomBytes(16).toString('hex');
-      user = {
-        id: userId,
+      user = await this.usersRepo.create({
         name,
         type: 'guest',
         authProvider: 'guest',
         deviceId,
         sessionCount: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      this.users.set(userId, user);
-      this.usersByDeviceId.set(deviceId, userId);
+      });
     }
 
-    // Generate access token
-    const accessToken = randomBytes(32).toString('hex');
+    // Generate JWT access token
+    const accessToken = this.generateAccessToken(user);
 
     // Determine whether to show upgrade prompt:
     // - Show if session count > 1 (not first session)
@@ -178,46 +205,39 @@ export class AuthService {
     const showUpgradePrompt =
       user.sessionCount > 1 && !user.upgradePromptDismissedAt;
 
-    return { user, accessToken, showUpgradePrompt };
+    return { user: toUserData(user), accessToken, showUpgradePrompt };
   }
 
-  dismissUpgradePrompt(deviceId: string): { success: boolean } | null {
-    const userId = this.usersByDeviceId.get(deviceId);
-    if (!userId) {
-      return null;
-    }
-
-    const user = this.users.get(userId);
+  async dismissUpgradePrompt(
+    deviceId: string,
+  ): Promise<{ success: boolean } | null> {
+    const user = await this.usersRepo.findByDeviceId(deviceId);
     if (!user) {
       return null;
     }
 
-    user.upgradePromptDismissedAt = new Date();
-    user.updatedAt = new Date();
-    this.users.set(userId, user);
+    await this.usersRepo.update(user.id, {
+      upgradePromptDismissedAt: new Date(),
+    });
 
     return { success: true };
   }
 
-  claimGuestAccount(
+  async claimGuestAccount(
     deviceId: string,
     email: string,
-  ): { message: string } | { error: string; code: number } {
+  ): Promise<{ message: string } | { error: string; code: number }> {
     // Find the guest user by device ID
-    const userId = this.usersByDeviceId.get(deviceId);
-    if (!userId) {
-      return { error: 'Guest user not found for this device', code: 404 };
-    }
-
-    const user = this.users.get(userId);
+    const user = await this.usersRepo.findByDeviceId(deviceId);
     if (!user) {
       return { error: 'Guest user not found for this device', code: 404 };
     }
 
     // Check if email is already in use
     const normalizedEmail = email.toLowerCase();
-    const existingUserId = this.usersByEmail.get(normalizedEmail);
-    if (existingUserId) {
+    const existingUserWithEmail =
+      await this.usersRepo.findByEmail(normalizedEmail);
+    if (existingUserWithEmail) {
       return {
         error: 'This email is already associated with an account',
         code: 409,
@@ -226,25 +246,20 @@ export class AuthService {
 
     // Generate a magic link for verification
     const token = randomBytes(32).toString('hex');
-    const tokenId = randomBytes(16).toString('hex');
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + MAGIC_LINK_EXPIRATION_MS);
 
-    const magicLinkData: MagicLinkData = {
-      id: tokenId,
+    await this.magicLinksRepo.create({
       email: normalizedEmail,
       token,
-      used: false,
-      createdAt: new Date(),
       expiresAt,
-      claimForUserId: userId, // Mark this as a claim link
-    };
-
-    this.magicLinks.set(token, magicLinkData);
+      claimForUserId: user.id, // Mark this as a claim link
+    });
 
     // In production, send email here
-    const magicLinkUrl = `evn://auth/verify?token=${token}`;
-    console.log(`[Auth] Claim link for ${email}: ${magicLinkUrl}`);
-    console.log(`[Auth] Token: ${token}`);
+    if (process.env.NODE_ENV !== 'production') {
+      const magicLinkUrl = `evn://auth/verify?token=${token}`;
+      console.log(`[Auth] Claim link URL for ${email}: ${magicLinkUrl}`);
+    }
 
     return {
       message: 'Verification email sent. Please check your inbox.',
@@ -252,27 +267,20 @@ export class AuthService {
   }
 
   // Helper method to get magic link info (for testing)
-  getMagicLinkByToken(token: string): MagicLinkData | undefined {
-    return this.magicLinks.get(token);
+  async getMagicLinkByToken(token: string): Promise<MagicLinkData | undefined> {
+    const magicLink = await this.magicLinksRepo.findByToken(token);
+    return magicLink ? toMagicLinkData(magicLink) : undefined;
   }
 
   // Helper method to find token by email (for testing)
-  findTokenByEmail(email: string): string | undefined {
-    for (const [token, data] of this.magicLinks.entries()) {
-      if (data.email === email && !data.used) {
-        return token;
-      }
-    }
-    return undefined;
+  async findTokenByEmail(email: string): Promise<string | undefined> {
+    const magicLink = await this.magicLinksRepo.findUnusedByEmail(email);
+    return magicLink?.token;
   }
 
   // Helper method to find any token by email including used ones (for testing)
-  findAnyTokenByEmail(email: string): string | undefined {
-    for (const [token, data] of this.magicLinks.entries()) {
-      if (data.email === email) {
-        return token;
-      }
-    }
-    return undefined;
+  async findAnyTokenByEmail(email: string): Promise<string | undefined> {
+    const magicLink = await this.magicLinksRepo.findAnyByEmail(email);
+    return magicLink?.token;
   }
 }

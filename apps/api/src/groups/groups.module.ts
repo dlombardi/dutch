@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { GroupsController } from './groups.controller';
 import { GroupsService } from './groups.service';
 import { BalancesService } from './balances.service';
@@ -6,10 +6,7 @@ import { ExpensesModule } from '../expenses/expenses.module';
 import { SettlementsModule } from '../settlements/settlements.module';
 
 @Module({
-  imports: [
-    forwardRef(() => ExpensesModule),
-    forwardRef(() => SettlementsModule),
-  ],
+  imports: [ExpensesModule, SettlementsModule],
   controllers: [GroupsController],
   providers: [GroupsService, BalancesService],
   exports: [GroupsService],

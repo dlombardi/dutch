@@ -15,42 +15,51 @@ import {
   DismissUpgradePromptDto,
   ClaimAccountDto,
 } from './dto';
+import { Public } from './public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('magic-link/request')
   @HttpCode(HttpStatus.OK)
-  requestMagicLink(@Body() dto: RequestMagicLinkDto) {
+  async requestMagicLink(@Body() dto: RequestMagicLinkDto) {
     return this.authService.requestMagicLink(dto.email);
   }
 
+  @Public()
   @Post('magic-link/verify')
   @HttpCode(HttpStatus.OK)
-  verifyMagicLink(@Body() dto: VerifyMagicLinkDto) {
+  async verifyMagicLink(@Body() dto: VerifyMagicLinkDto) {
     return this.authService.verifyMagicLink(dto.token);
   }
 
+  @Public()
   @Post('guest')
-  createGuestUser(@Body() dto: GuestAuthDto) {
+  async createGuestUser(@Body() dto: GuestAuthDto) {
     return this.authService.createGuestUser(dto.name, dto.deviceId);
   }
 
+  @Public()
   @Post('guest/dismiss-upgrade-prompt')
   @HttpCode(HttpStatus.OK)
-  dismissUpgradePrompt(@Body() dto: DismissUpgradePromptDto) {
-    const result = this.authService.dismissUpgradePrompt(dto.deviceId);
+  async dismissUpgradePrompt(@Body() dto: DismissUpgradePromptDto) {
+    const result = await this.authService.dismissUpgradePrompt(dto.deviceId);
     if (!result) {
       throw new NotFoundException('Guest user not found for this device');
     }
     return result;
   }
 
+  @Public()
   @Post('guest/claim')
   @HttpCode(HttpStatus.OK)
-  claimGuestAccount(@Body() dto: ClaimAccountDto) {
-    const result = this.authService.claimGuestAccount(dto.deviceId, dto.email);
+  async claimGuestAccount(@Body() dto: ClaimAccountDto) {
+    const result = await this.authService.claimGuestAccount(
+      dto.deviceId,
+      dto.email,
+    );
     if ('error' in result) {
       if (result.code === 404) {
         throw new NotFoundException(result.error);

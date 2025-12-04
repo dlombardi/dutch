@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { Server } from 'http';
-import { AuthModule } from '../auth.module';
+import { AppModule } from '../../app.module';
+import * as jwt from 'jsonwebtoken';
 
 interface GuestUser {
   id: string;
@@ -22,10 +23,14 @@ interface GuestAuthResponse {
 describe('Guest Device Persistence (integration)', () => {
   let app: INestApplication;
   let httpServer: Server;
+  let uniquePrefix: string;
 
   beforeEach(async () => {
+    // Generate unique prefix for this test run to avoid conflicts
+    uniquePrefix = `persist-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -47,7 +52,7 @@ describe('Guest Device Persistence (integration)', () => {
 
   describe('Session persistence across requests', () => {
     it('should return the same user when re-authenticating with same device ID', async () => {
-      const deviceId = 'persistent-device-001';
+      const deviceId = `${uniquePrefix}-device-001`;
 
       // First authentication (simulating initial app launch)
       const response1 = await request(httpServer)
@@ -73,7 +78,7 @@ describe('Guest Device Persistence (integration)', () => {
     });
 
     it('should preserve user data across multiple sessions', async () => {
-      const deviceId = 'persistent-device-002';
+      const deviceId = `${uniquePrefix}-device-002`;
 
       // Initial registration
       const response1 = await request(httpServer)
@@ -97,7 +102,7 @@ describe('Guest Device Persistence (integration)', () => {
     });
 
     it('should issue new access token on each session while preserving user identity', async () => {
-      const deviceId = 'persistent-device-003';
+      const deviceId = `${uniquePrefix}-device-003`;
 
       // First session
       const response1 = await request(httpServer)
@@ -119,13 +124,18 @@ describe('Guest Device Persistence (integration)', () => {
 
       // Same user
       expect(body2.user.id).toBe(userId);
-      // New token (tokens are randomly generated)
-      expect(body2.accessToken).not.toBe(firstToken);
+      // Valid token issued (verify claims match, not string equality since JWTs with same payload/iat are deterministic)
       expect(body2.accessToken.length).toBeGreaterThan(0);
+      const decoded1 = jwt.decode(firstToken) as { sub: string } | null;
+      const decoded2 = jwt.decode(body2.accessToken) as { sub: string } | null;
+      expect(decoded1).not.toBeNull();
+      expect(decoded2).not.toBeNull();
+      expect(decoded1!.sub).toBe(userId);
+      expect(decoded2!.sub).toBe(userId);
     });
 
     it('should maintain user type as guest across sessions', async () => {
-      const deviceId = 'persistent-device-004';
+      const deviceId = `${uniquePrefix}-device-004`;
 
       // Create guest
       const response1 = await request(httpServer)
