@@ -1,10 +1,4 @@
-import {
-  Alert,
-  Share,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, Share } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,8 +11,9 @@ import { queryKeys } from '@/lib/query-client';
 import type { Balance } from '@/modules/groups';
 import { useGroupData } from '@/modules/groups';
 import { BalancesTab, ExpensesTab, MembersTab, SettleModal } from '@/components/group';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 import { LoadingSpinner, PrimaryButton } from '@/components/ui';
-import { formatBalance, getUserDisplayName } from '@/lib/utils/formatters';
+import { formatBalance } from '@/lib/utils/formatters';
 import { colors, gradients, shadows } from '@/constants/theme';
 
 // React Query hooks
@@ -124,7 +119,8 @@ export default function GroupDetailScreen() {
   }, []);
 
   const getDisplayName = useCallback((userId: string) => {
-    return getUserDisplayName(userId, user?.id);
+    if (userId === user?.id) return 'You';
+    return `User ${userId.slice(0, 8)}...`;
   }, [user?.id]);
 
   const handleAddExpense = useCallback(() => {
@@ -254,12 +250,12 @@ export default function GroupDetailScreen() {
           headerTintColor: themeColors.textPrimary,
           headerRight: () => (
             <View className="flex-row items-center gap-3">
-              <TouchableOpacity onPress={handleShareInvite} className="px-2">
+              <Pressable onPress={handleShareInvite} className="px-2 active:opacity-70">
                 <Text className="text-dutch-orange text-base">Invite</Text>
-              </TouchableOpacity>
-              <TouchableOpacity>
+              </Pressable>
+              <Pressable className="active:opacity-70">
                 <Text className="text-dutch-orange text-base">Settings</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           ),
         }}
@@ -301,9 +297,9 @@ export default function GroupDetailScreen() {
       {/* Tabs */}
       <View className={`flex-row border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
         {(['expenses', 'balances', 'members'] as const).map((tab) => (
-          <TouchableOpacity
+          <Pressable
             key={tab}
-            className={`flex-1 py-3 items-center ${
+            className={`flex-1 py-3 items-center active:opacity-70 ${
               activeTab === tab
                 ? 'border-b-2 border-dutch-orange'
                 : ''
@@ -321,7 +317,7 @@ export default function GroupDetailScreen() {
             >
               {tab === 'members' ? `Members (${members.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -347,14 +343,13 @@ export default function GroupDetailScreen() {
       </View>
 
       {/* Add Expense FAB */}
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-dutch-orange px-5 py-3.5 rounded-3xl"
+      <Pressable
+        className="absolute bottom-6 right-6 bg-dutch-orange px-5 py-3.5 rounded-3xl active:scale-95"
         style={shadows.orangeGlow}
         onPress={handleAddExpense}
-        activeOpacity={0.9}
       >
         <Text className="text-white text-base font-semibold">+ Add Expense</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Settle Up Modal */}
       <SettleModal

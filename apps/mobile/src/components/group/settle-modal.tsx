@@ -1,12 +1,6 @@
-import {
-  ActivityIndicator,
-  Modal,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text, Pressable, TextInput } from '@/components/ui/primitives';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/formatters';
 import { colors } from '@/constants/theme';
 import type { Balance } from '@/modules/groups';
@@ -50,9 +44,9 @@ export function SettleModal({
             <Text className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
               Record Payment
             </Text>
-            <TouchableOpacity onPress={onClose}>
+            <Pressable onPress={onClose} className="active:opacity-70">
               <Text className="text-dutch-orange text-base">Cancel</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {selectedBalance && (
@@ -87,18 +81,17 @@ export function SettleModal({
           )}
 
           {/* Confirm Button */}
-          <TouchableOpacity
-            className={`bg-dutch-green py-4 rounded-2xl items-center ${isPending ? 'opacity-60' : ''}`}
+          <Pressable
+            className={`bg-dutch-green py-4 rounded-2xl items-center active:opacity-90 ${isPending ? 'opacity-60' : ''}`}
             onPress={onConfirm}
             disabled={isPending}
-            activeOpacity={0.9}
           >
             {isPending ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text className="text-white text-lg font-semibold">Confirm Payment</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </Modal>

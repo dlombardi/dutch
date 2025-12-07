@@ -6,10 +6,6 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -17,6 +13,7 @@ import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
 import { type Currency, getDefaultCurrency, searchCurrencies } from '@evn/shared';
 import { VALIDATION } from '@evn/shared';
+import { View, Text, Pressable, FormInput, SearchInput } from '@/components/ui/primitives';
 import { colors } from '@/constants/theme';
 
 // React Query hooks
@@ -33,7 +30,6 @@ export default function CreateGroupScreen() {
   const { user } = useAuthStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query mutation
   const createGroupMutation = useCreateGroup();
@@ -84,15 +80,16 @@ export default function CreateGroupScreen() {
       >
         {/* Header */}
         <View className={`flex-row justify-between items-center p-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <Pressable onPress={() => router.back()} className="active:opacity-70">
             <Text className="text-dutch-orange text-base">Cancel</Text>
-          </TouchableOpacity>
+          </Pressable>
           <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
             New Group
           </Text>
-          <TouchableOpacity
+          <Pressable
             onPress={handleCreateGroup}
             disabled={!isValidName(name) || isCreating}
+            className="active:opacity-70"
           >
             {isCreating ? (
               <ActivityIndicator size="small" color="#FF6B00" />
@@ -105,7 +102,7 @@ export default function CreateGroupScreen() {
                 Create
               </Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <ScrollView className="flex-1 px-6 pt-6">
@@ -122,9 +119,9 @@ export default function CreateGroupScreen() {
           {/* Emoji Picker */}
           <View className="flex-row flex-wrap justify-center mb-8">
             {POPULAR_EMOJIS.map((emoji) => (
-              <TouchableOpacity
+              <Pressable
                 key={emoji}
-                className={`w-12 h-12 justify-center items-center rounded-lg m-1 ${
+                className={`w-12 h-12 justify-center items-center rounded-lg m-1 active:scale-95 ${
                   selectedEmoji === emoji
                     ? 'bg-dutch-orange/20'
                     : ''
@@ -132,7 +129,7 @@ export default function CreateGroupScreen() {
                 onPress={() => setSelectedEmoji(emoji)}
               >
                 <Text className="text-3xl">{emoji}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
@@ -141,14 +138,9 @@ export default function CreateGroupScreen() {
             <Text className={`text-base font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
               Group Name
             </Text>
-            <TextInput
-              className={`border rounded-2xl p-4 text-base ${
-                isDark
-                  ? 'bg-dark-card border-dark-border text-white'
-                  : 'bg-light-card border-light-border text-black'
-              } ${createError ? 'border-dutch-red' : ''}`}
+            <FormInput
+              hasError={!!createError}
               placeholder="e.g., Trip to Paris"
-              placeholderTextColor={themeColors.textTertiary}
               value={name}
               onChangeText={(text) => {
                 setName(text);
@@ -169,8 +161,8 @@ export default function CreateGroupScreen() {
             <Text className={`text-base font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
               Default Currency
             </Text>
-            <TouchableOpacity
-              className={`flex-row items-center justify-between border rounded-2xl p-4 ${
+            <Pressable
+              className={`flex-row items-center justify-between border rounded-2xl p-4 active:opacity-70 ${
                 isDark ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'
               }`}
               onPress={() => setCurrencyModalVisible(true)}
@@ -190,7 +182,7 @@ export default function CreateGroupScreen() {
                 </View>
               </View>
               <Text className={`text-2xl ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>›</Text>
-            </TouchableOpacity>
+            </Pressable>
             <Text className={`text-xs mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               New expenses will default to this currency
             </Text>
@@ -208,9 +200,9 @@ export default function CreateGroupScreen() {
         <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
           {/* Modal Header */}
           <View className={`flex-row justify-between items-center p-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-            <TouchableOpacity onPress={() => setCurrencyModalVisible(false)}>
+            <Pressable onPress={() => setCurrencyModalVisible(false)} className="active:opacity-70">
               <Text className="text-dutch-orange text-base">Cancel</Text>
-            </TouchableOpacity>
+            </Pressable>
             <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
               Select Currency
             </Text>
@@ -219,12 +211,8 @@ export default function CreateGroupScreen() {
 
           {/* Search */}
           <View className={`p-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-            <TextInput
-              className={`rounded-xl p-3 text-base ${
-                isDark ? 'bg-dark-card text-white' : 'bg-light-border text-black'
-              }`}
+            <SearchInput
               placeholder="Search currencies..."
-              placeholderTextColor={themeColors.textTertiary}
               value={currencySearch}
               onChangeText={setCurrencySearch}
               autoCapitalize="none"
@@ -237,8 +225,8 @@ export default function CreateGroupScreen() {
             data={filteredCurrencies}
             keyExtractor={(item) => item.code}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                className={`flex-row items-center p-4 border-b ${
+              <Pressable
+                className={`flex-row items-center p-4 border-b active:opacity-70 ${
                   isDark ? 'border-dark-border' : 'border-light-border'
                 } ${selectedCurrency.code === item.code ? (isDark ? 'bg-dutch-orange/10' : 'bg-dutch-orange/5') : ''}`}
                 onPress={() => handleSelectCurrency(item)}
@@ -257,7 +245,7 @@ export default function CreateGroupScreen() {
                 {selectedCurrency.code === item.code && (
                   <Text className="text-xl text-dutch-orange font-semibold">✓</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             )}
             ListEmptyComponent={
               <View className="p-8 items-center">

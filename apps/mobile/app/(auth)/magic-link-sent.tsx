@@ -1,11 +1,14 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 
 export default function MagicLinkSentScreen() {
   const { magicLinkEmail, resetMagicLinkState, requestMagicLink, isLoading } =
     useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleResend = async () => {
     if (magicLinkEmail) {
@@ -19,102 +22,41 @@ export default function MagicLinkSentScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>✉️</Text>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+      <View className="flex-1 p-6 justify-center items-center">
+        <View className={`w-24 h-24 rounded-full items-center justify-center mb-8 ${isDark ? 'bg-dutch-blue/20' : 'bg-dutch-blue/10'}`}>
+          <Text className="text-5xl">✉️</Text>
         </View>
 
-        <Text style={styles.title}>Check your email</Text>
+        <Text className={`text-2xl font-bold mb-4 text-center ${isDark ? 'text-white' : 'text-black'}`}>
+          Check your email
+        </Text>
 
-        <Text style={styles.subtitle}>
+        <Text className={`text-base text-center leading-6 mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
           We sent a magic link to{'\n'}
-          <Text style={styles.email}>{magicLinkEmail}</Text>
+          <Text className="font-semibold text-dutch-blue">{magicLinkEmail}</Text>
         </Text>
 
-        <Text style={styles.instructions}>
-          Click the link in the email to sign in. The link will expire in 15
-          minutes.
+        <Text className={`text-sm text-center leading-5 mb-8 ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+          Click the link in the email to sign in. The link will expire in 15 minutes.
         </Text>
 
-        <TouchableOpacity
-          style={styles.resendButton}
+        <Pressable
+          className="p-4 active:opacity-70"
           onPress={handleResend}
           disabled={isLoading}
         >
-          <Text style={styles.resendButtonText}>
+          <Text className="text-dutch-blue text-base font-semibold">
             {isLoading ? 'Sending...' : "Didn't receive it? Send again"}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>Use different email</Text>
-        </TouchableOpacity>
+        <Pressable className="p-4 active:opacity-70" onPress={handleBack}>
+          <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            Use different email
+          </Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: '#f0f8ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  icon: {
-    fontSize: 48,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  email: {
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  instructions: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
-  },
-  resendButton: {
-    padding: 16,
-  },
-  resendButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  backButton: {
-    padding: 16,
-  },
-  backButtonText: {
-    color: '#666',
-    fontSize: 14,
-  },
-});

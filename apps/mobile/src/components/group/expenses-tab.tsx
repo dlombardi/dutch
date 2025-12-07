@@ -1,5 +1,6 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 import { LoadingSpinner } from '@/components/ui';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/formatters';
 import type { Expense } from '@/modules/expenses';
@@ -37,13 +38,12 @@ export function ExpensesTab({ expenses, isLoading, onExpensePress }: ExpensesTab
   return (
     <ScrollView className="flex-1">
       {expenses.map((expense) => (
-        <TouchableOpacity
+        <Pressable
           key={expense.id}
-          className={`flex-row justify-between items-center p-4 border-b ${
+          className={`flex-row justify-between items-center p-4 border-b active:opacity-70 ${
             isDark ? 'border-dark-border' : 'border-light-border'
           }`}
           onPress={() => onExpensePress(expense.id)}
-          activeOpacity={0.7}
         >
           <View className="flex-1">
             <Text className={`text-base mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
@@ -57,7 +57,7 @@ export function ExpensesTab({ expenses, isLoading, onExpensePress }: ExpensesTab
             {getCurrencySymbol(expense.currency)}
             {formatAmount(expense.amount, expense.currency)}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ))}
     </ScrollView>
   );

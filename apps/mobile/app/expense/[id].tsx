@@ -1,18 +1,13 @@
 import { useCallback } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
-import { LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner, PrimaryButton } from '@/components/ui';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 import { formatAmount, getCurrencySymbol, getUserDisplayName } from '@/lib/utils/formatters';
+import { colors } from '@/constants/theme';
 
 // React Query hooks
 import { useExpense, useDeleteExpense } from '@/modules/expenses';
@@ -22,6 +17,9 @@ export default function ExpenseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query hooks - automatic caching and deduplication
   const {
@@ -104,7 +102,7 @@ export default function ExpenseDetailScreen() {
 
   if (isLoadingExpense && !expense) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
         <Stack.Screen options={{ title: 'Expense' }} />
         <LoadingSpinner fullScreen />
       </SafeAreaView>
@@ -113,72 +111,86 @@ export default function ExpenseDetailScreen() {
 
   if (expenseError || !expense) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
         <Stack.Screen options={{ title: 'Expense' }} />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>😕</Text>
-          <Text style={styles.errorTitle}>Unable to load expense</Text>
-          <Text style={styles.errorText}>
+        <View className="flex-1 justify-center items-center px-8">
+          <Text className="text-5xl mb-4">😕</Text>
+          <Text className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+            Unable to load expense
+          </Text>
+          <Text className={`text-base text-center mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
             {expenseError?.message || 'Expense not found'}
           </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
+          <PrimaryButton onPress={handleRetry}>
+            Try Again
+          </PrimaryButton>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`} edges={['bottom']}>
       <Stack.Screen
         options={{
           title: 'Expense Details',
+          headerStyle: { backgroundColor: themeColors.bgElevated },
+          headerTintColor: themeColors.textPrimary,
           headerRight: () => (
-            <TouchableOpacity onPress={handleEdit}>
-              <Text style={styles.editButton}>Edit</Text>
-            </TouchableOpacity>
+            <Pressable onPress={handleEdit} className="active:opacity-70">
+              <Text className="text-dutch-orange text-base">Edit</Text>
+            </Pressable>
           ),
         }}
       />
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView className="flex-1">
         {/* Amount Header */}
-        <View style={styles.amountHeader}>
-          <Text style={styles.amount}>
+        <View className={`items-center py-8 px-4 ${isDark ? 'bg-dark-card' : 'bg-light-border'}`}>
+          <Text className={`text-5xl font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
             {getCurrencySymbol(expense.currency)}
             {formatAmount(expense.amount, expense.currency)}
           </Text>
-          <Text style={styles.description}>{expense.description}</Text>
+          <Text className={`text-lg mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            {expense.description}
+          </Text>
         </View>
 
         {/* Details Section */}
-        <View style={styles.section}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Paid by</Text>
-            <Text style={styles.detailValue}>
+        <View className={`px-4 py-4 border-b-8 ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+          <View className={`flex-row justify-between py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Paid by
+            </Text>
+            <Text className={`text-base font-medium ${isDark ? 'text-white' : 'text-black'}`}>
               {getDisplayName(expense.paidById)}
             </Text>
           </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date</Text>
-            <Text style={styles.detailValue}>{formatDate(expense.date)}</Text>
+          <View className={`flex-row justify-between py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Date
+            </Text>
+            <Text className={`text-base font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+              {formatDate(expense.date)}
+            </Text>
           </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Split</Text>
-            <Text style={styles.detailValue}>
-              {expense.splitType === 'equal'
-                ? 'Split equally'
-                : expense.splitType}
+          <View className={`flex-row justify-between py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Split
+            </Text>
+            <Text className={`text-base font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+              {expense.splitType === 'equal' ? 'Split equally' : expense.splitType}
             </Text>
           </View>
 
           {group && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Group</Text>
-              <Text style={styles.detailValue}>
+            <View className={`flex-row justify-between py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+              <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                Group
+              </Text>
+              <Text className={`text-base font-medium ${isDark ? 'text-white' : 'text-black'}`}>
                 {group.emoji} {group.name}
               </Text>
             </View>
@@ -186,24 +198,26 @@ export default function ExpenseDetailScreen() {
         </View>
 
         {/* Split Breakdown Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Split breakdown</Text>
+        <View className={`px-4 py-4 border-b-8 ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+          <Text className={`text-sm font-semibold uppercase mb-3 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            Split breakdown
+          </Text>
           {members.length > 0 ? (
             members.map((member) => {
               const perPerson = expense.amount / Math.max(members.length, 1);
               return (
-                <View key={member.userId} style={styles.splitRow}>
-                  <View style={styles.splitMember}>
-                    <View style={styles.memberAvatar}>
-                      <Text style={styles.memberAvatarText}>
+                <View key={member.userId} className={`flex-row items-center justify-between py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+                  <View className="flex-row items-center">
+                    <View className="w-9 h-9 rounded-full bg-dutch-orange justify-center items-center mr-3">
+                      <Text className="text-white text-sm font-semibold">
                         {member.userId.substring(0, 2).toUpperCase()}
                       </Text>
                     </View>
-                    <Text style={styles.splitMemberName}>
+                    <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
                       {getDisplayName(member.userId)}
                     </Text>
                   </View>
-                  <Text style={styles.splitAmount}>
+                  <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
                     {getCurrencySymbol(expense.currency)}
                     {formatAmount(perPerson, expense.currency)}
                   </Text>
@@ -211,31 +225,40 @@ export default function ExpenseDetailScreen() {
               );
             })
           ) : (
-            <Text style={styles.noMembersText}>No members to split with</Text>
+            <Text className={`text-sm italic ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+              No members to split with
+            </Text>
           )}
         </View>
 
         {/* Metadata Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Details</Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>Created by</Text>
-            <Text style={styles.metaValue}>
+        <View className={`px-4 py-4 border-b-8 ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+          <Text className={`text-sm font-semibold uppercase mb-3 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            Details
+          </Text>
+          <View className="flex-row justify-between py-2">
+            <Text className={`text-sm ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+              Created by
+            </Text>
+            <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               {getDisplayName(expense.createdById)}
             </Text>
           </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>Created on</Text>
-            <Text style={styles.metaValue}>
+          <View className="flex-row justify-between py-2">
+            <Text className={`text-sm ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+              Created on
+            </Text>
+            <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               {formatDate(expense.createdAt)} at {formatTime(expense.createdAt)}
             </Text>
           </View>
           {expense.updatedAt !== expense.createdAt && (
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>Last updated</Text>
-              <Text style={styles.metaValue}>
-                {formatDate(expense.updatedAt)} at{' '}
-                {formatTime(expense.updatedAt)}
+            <View className="flex-row justify-between py-2">
+              <Text className={`text-sm ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+                Last updated
+              </Text>
+              <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                {formatDate(expense.updatedAt)} at {formatTime(expense.updatedAt)}
               </Text>
             </View>
           )}
@@ -243,183 +266,19 @@ export default function ExpenseDetailScreen() {
       </ScrollView>
 
       {/* Delete button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.deleteButton}
+      <View className={`p-4 border-t ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+        <Pressable
+          className="py-3 items-center active:opacity-70"
           onPress={handleDelete}
           disabled={deleteExpenseMutation.isPending}
         >
           {deleteExpenseMutation.isPending ? (
-            <ActivityIndicator size="small" color="#FF3B30" />
+            <ActivityIndicator size="small" color={themeColors.red} />
           ) : (
-            <Text style={styles.deleteButtonText}>Delete Expense</Text>
+            <Text className="text-dutch-red text-base font-semibold">Delete Expense</Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  editButton: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  amountHeader: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8f8f8',
-  },
-  amount: {
-    fontSize: 48,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  description: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 8,
-  },
-  section: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 8,
-    borderBottomColor: '#f0f0f0',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  detailLabel: {
-    fontSize: 16,
-    color: '#666',
-  },
-  detailValue: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    fontWeight: '500',
-  },
-  splitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  splitMember: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  memberAvatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  splitMemberName: {
-    fontSize: 16,
-    color: '#1a1a1a',
-  },
-  splitAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  noMembersText: {
-    fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  metaLabel: {
-    fontSize: 14,
-    color: '#999',
-  },
-  metaValue: {
-    fontSize: 14,
-    color: '#666',
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  deleteButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

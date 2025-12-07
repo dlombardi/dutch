@@ -1,5 +1,6 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/formatters';
 import type { Balance, BalancesData } from '@/modules/groups';
 
@@ -66,12 +67,12 @@ export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTa
               {getCurrencySymbol(balance.currency)}
               {formatAmount(balance.amount, balance.currency)}
             </Text>
-            <TouchableOpacity
-              className="bg-dutch-green px-3 py-1.5 rounded"
+            <Pressable
+              className="bg-dutch-green px-3 py-1.5 rounded active:opacity-80"
               onPress={() => onSettleUp(balance)}
             >
               <Text className="text-white text-xs font-semibold">Settle</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       ))}

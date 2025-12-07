@@ -1,14 +1,10 @@
 import { useCallback } from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
 import { LoadingSpinner } from '@/components/ui';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 
 // React Query hooks
 import { useGroupByInviteCode, useJoinGroup } from '@/modules/groups';
@@ -17,6 +13,8 @@ export default function JoinGroupScreen() {
   const { code } = useLocalSearchParams<{ code: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // React Query hooks - automatic caching and fetching
   const {
@@ -56,148 +54,80 @@ export default function JoinGroupScreen() {
 
   if (displayError) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.emoji}>❌</Text>
-        <Text style={styles.errorTitle}>Invalid Invite</Text>
-        <Text style={styles.errorText}>{displayError}</Text>
-        <TouchableOpacity style={styles.button} onPress={handleCancel}>
-          <Text style={styles.buttonText}>Go Back</Text>
-        </TouchableOpacity>
+      <View className={`flex-1 items-center justify-center p-6 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+        <Text className="text-6xl mb-4">❌</Text>
+        <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+          Invalid Invite
+        </Text>
+        <Text className={`text-base text-center mb-8 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          {displayError}
+        </Text>
+        <Pressable
+          className={`rounded-xl p-4 items-center justify-center w-full ${isDark ? 'bg-dark-card' : 'bg-light-border'} active:opacity-70`}
+          onPress={handleCancel}
+        >
+          <Text className={`text-lg font-semibold ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            Go Back
+          </Text>
+        </Pressable>
       </View>
     );
   }
 
   if (!previewGroup) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>No group found</Text>
+      <View className={`flex-1 items-center justify-center p-6 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+        <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          No group found
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.emoji}>{previewGroup.emoji}</Text>
-      <Text style={styles.title}>{previewGroup.name}</Text>
-      <Text style={styles.subtitle}>You've been invited to join this group</Text>
+    <View className={`flex-1 items-center justify-center p-6 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+      <Text className="text-6xl mb-4">{previewGroup.emoji}</Text>
+      <Text className={`text-3xl font-bold mb-2 text-center ${isDark ? 'text-white' : 'text-black'}`}>
+        {previewGroup.name}
+      </Text>
+      <Text className={`text-base text-center mb-8 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+        You've been invited to join this group
+      </Text>
 
-      <View style={styles.details}>
-        <Text style={styles.detailLabel}>Default Currency</Text>
-        <Text style={styles.detailValue}>{previewGroup.defaultCurrency}</Text>
+      <View className={`rounded-xl p-4 w-full mb-8 ${isDark ? 'bg-dark-card' : 'bg-light-border'}`}>
+        <Text className={`text-sm mb-1 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          Default Currency
+        </Text>
+        <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+          {previewGroup.defaultCurrency}
+        </Text>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, styles.primaryButton]}
+      <View className="w-full gap-3">
+        <Pressable
+          className="rounded-xl p-4 items-center justify-center bg-dutch-orange active:opacity-90"
           onPress={handleJoin}
           disabled={isJoining}
         >
           {isJoining ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={[styles.buttonText, styles.primaryButtonText]}>
+            <Text className="text-lg font-semibold text-white">
               Join Group
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
-          style={[styles.button, styles.secondaryButton]}
+        <Pressable
+          className={`rounded-xl p-4 items-center justify-center ${isDark ? 'bg-dark-card' : 'bg-light-border'} active:opacity-70`}
           onPress={handleCancel}
           disabled={isJoining}
         >
-          <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+          <Text className={`text-lg font-semibold ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
             Cancel
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  details: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
-    width: '100%',
-    marginBottom: 32,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  buttonContainer: {
-    width: '100%',
-    gap: 12,
-  },
-  button: {
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButton: {
-    backgroundColor: '#007AFF',
-  },
-  secondaryButton: {
-    backgroundColor: '#f5f5f5',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  primaryButtonText: {
-    color: '#fff',
-  },
-  secondaryButtonText: {
-    color: '#666',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-});

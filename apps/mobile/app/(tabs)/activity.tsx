@@ -1,5 +1,5 @@
-import { Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text } from '@/components/ui/primitives';
 
 export default function ActivityScreen() {
   const { colorScheme } = useColorScheme();

@@ -1,10 +1,11 @@
-import { Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text } from '../primitives';
 import { PrimaryButton } from '../button';
 import type { EmptyStateProps } from './empty-state.types';
 
 /**
  * Empty state component for displaying when there's no content.
+ * Used for empty lists, initial states, and placeholder content.
  */
 export function EmptyState({
   title,

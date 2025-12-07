@@ -1,6 +1,7 @@
-import { Platform, View } from 'react-native';
+import { Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useColorScheme } from 'nativewind';
+import { View } from '../primitives';
 import { glassStyle, glassStyleSubtle } from '@/constants/theme';
 import type { GlassCardProps } from './glass-card.types';
 
@@ -46,9 +47,7 @@ export function GlassCard({
         ]}
         {...props}
       >
-        <View
-          className={`p-4 ${isDark ? 'bg-white/[0.03]' : 'bg-black/[0.02]'}`}
-        >
+        <View className={`p-4 ${isDark ? 'bg-white/[0.03]' : 'bg-black/[0.02]'}`}>
           {children}
         </View>
       </BlurView>

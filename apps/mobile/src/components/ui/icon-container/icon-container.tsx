@@ -1,11 +1,11 @@
-import { View } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View } from '../primitives';
 import type { IconContainerProps } from './icon-container.types';
 import { colorClasses, iconContainerVariants } from './icon-container.styles';
 
 /**
  * Icon container with colored background and border.
- * Used for category icons and similar elements.
+ * Used for category icons, avatars, and similar elements.
  */
 export function IconContainer({
   children,

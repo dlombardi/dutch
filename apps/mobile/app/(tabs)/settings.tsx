@@ -1,4 +1,4 @@
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
 import { router } from 'expo-router';
@@ -6,6 +6,7 @@ import { useGroupsStore } from '@/modules/groups';
 import { useOfflineQueueStore } from '@/store/offline-queue-store';
 import { useAuthStore } from '@/modules/auth';
 import { type ThemePreference, useThemeStore } from '@/store/theme-store';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 import { DangerButton } from '@/components/ui';
 
 const themeLabels: Record<ThemePreference, string> = {
@@ -109,12 +110,12 @@ export default function SettingsScreen() {
     hint?: string;
     onPress?: () => void;
   }) => (
-    <TouchableOpacity
-      className={`flex-row justify-between items-center py-3.5 px-4 border-b ${
+    <Pressable
+      className={`flex-row justify-between items-center py-3.5 px-4 border-b active:opacity-70 ${
         isDark ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'
       }`}
       onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
     >
       <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
         {label}
@@ -129,7 +130,7 @@ export default function SettingsScreen() {
           {hint}
         </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const SectionTitle = ({ children }: { children: string }) => (

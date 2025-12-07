@@ -1,9 +1,11 @@
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text } from '../primitives';
 import type { LoadingSpinnerProps } from './loading-spinner.types';
 
 /**
  * Loading spinner component with optional message.
+ * Can be displayed inline or as a full-screen overlay.
  */
 export function LoadingSpinner({
   size = 'large',

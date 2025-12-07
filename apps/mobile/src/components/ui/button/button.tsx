@@ -1,18 +1,14 @@
-import {
-  ActivityIndicator,
-  Platform,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useColorScheme } from 'nativewind';
+import { View, Text, Pressable } from '../primitives';
 import { glassStyle, shadows } from '@/constants/theme';
 import type { ButtonProps } from './button.types';
 import { buttonVariants, textVariants } from './button.styles';
 
 /**
  * Primary button with orange glow effect.
+ * Use for primary actions like "Create", "Save", "Submit".
  */
 export function PrimaryButton({
   children,
@@ -25,12 +21,13 @@ export function PrimaryButton({
   style,
   ...props
 }: ButtonProps) {
+  const isDisabled = disabled || isLoading;
+
   return (
-    <TouchableOpacity
-      className={`bg-dutch-orange rounded-2xl ${buttonVariants({ size })} active:scale-[0.98] ${disabled || isLoading ? 'opacity-50' : ''} ${className}`}
+    <Pressable
+      className={`bg-dutch-orange rounded-2xl ${buttonVariants({ size })} active:scale-[0.98] ${isDisabled ? 'opacity-50' : ''} ${className}`}
       style={[shadows.orangeGlow, style]}
-      disabled={disabled || isLoading}
-      activeOpacity={0.9}
+      disabled={isDisabled}
       {...props}
     >
       {isLoading ? (
@@ -44,12 +41,13 @@ export function PrimaryButton({
           {rightIcon && <View className="ml-2">{rightIcon}</View>}
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 /**
  * Secondary button with glass effect.
+ * Use for secondary actions that complement primary actions.
  */
 export function SecondaryButton({
   children,
@@ -65,15 +63,15 @@ export function SecondaryButton({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const glassStyles = isDark ? glassStyle.dark : glassStyle.light;
+  const isDisabled = disabled || isLoading;
 
-  // Use BlurView on iOS
+  // Use BlurView on iOS for native glass effect
   if (Platform.OS === 'ios') {
     return (
-      <TouchableOpacity
-        className={`rounded-xl overflow-hidden ${disabled || isLoading ? 'opacity-50' : ''} active:opacity-80 ${className}`}
-        disabled={disabled || isLoading}
+      <Pressable
+        className={`rounded-xl overflow-hidden ${isDisabled ? 'opacity-50' : ''} active:opacity-80 ${className}`}
+        disabled={isDisabled}
         style={style}
-        activeOpacity={0.8}
         {...props}
       >
         <BlurView
@@ -98,17 +96,16 @@ export function SecondaryButton({
             </>
           )}
         </BlurView>
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
-  // Fallback for Android
+  // Fallback for Android - semi-transparent background
   return (
-    <TouchableOpacity
-      className={`rounded-xl ${buttonVariants({ size })} ${disabled || isLoading ? 'opacity-50' : ''} active:opacity-80 ${className}`}
+    <Pressable
+      className={`rounded-xl ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-80 ${className}`}
       style={[glassStyles, { borderRadius: 12 }, style]}
-      disabled={disabled || isLoading}
-      activeOpacity={0.8}
+      disabled={isDisabled}
       {...props}
     >
       {isLoading ? (
@@ -122,12 +119,13 @@ export function SecondaryButton({
           {rightIcon && <View className="ml-2">{rightIcon}</View>}
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 /**
  * Ghost button (text only, no background).
+ * Use for tertiary actions or navigation.
  */
 export function GhostButton({
   children,
@@ -140,12 +138,13 @@ export function GhostButton({
   style,
   ...props
 }: ButtonProps) {
+  const isDisabled = disabled || isLoading;
+
   return (
-    <TouchableOpacity
-      className={`rounded-xl ${buttonVariants({ size })} ${disabled || isLoading ? 'opacity-50' : ''} active:opacity-60 ${className}`}
+    <Pressable
+      className={`rounded-xl ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-60 ${className}`}
       style={style}
-      disabled={disabled || isLoading}
-      activeOpacity={0.6}
+      disabled={isDisabled}
       {...props}
     >
       {isLoading ? (
@@ -159,12 +158,13 @@ export function GhostButton({
           {rightIcon && <View className="ml-2">{rightIcon}</View>}
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 /**
  * Danger button (red, for destructive actions).
+ * Use for delete, remove, or other destructive operations.
  */
 export function DangerButton({
   children,
@@ -179,13 +179,13 @@ export function DangerButton({
 }: ButtonProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const isDisabled = disabled || isLoading;
 
   return (
-    <TouchableOpacity
-      className={`rounded-xl border ${isDark ? 'border-dutch-red' : 'border-dutch-red-light'} ${buttonVariants({ size })} ${disabled || isLoading ? 'opacity-50' : ''} active:opacity-80 ${className}`}
+    <Pressable
+      className={`rounded-xl border ${isDark ? 'border-dutch-red' : 'border-dutch-red-light'} ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-80 ${className}`}
       style={style}
-      disabled={disabled || isLoading}
-      activeOpacity={0.8}
+      disabled={isDisabled}
       {...props}
     >
       {isLoading ? (
@@ -201,6 +201,45 @@ export function DangerButton({
           {rightIcon && <View className="ml-2">{rightIcon}</View>}
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
+  );
+}
+
+/**
+ * Success button (green, for confirmations).
+ * Use for confirm, settle, complete actions.
+ */
+export function SuccessButton({
+  children,
+  size = 'md',
+  isLoading = false,
+  disabled = false,
+  leftIcon,
+  rightIcon,
+  className = '',
+  style,
+  ...props
+}: ButtonProps) {
+  const isDisabled = disabled || isLoading;
+
+  return (
+    <Pressable
+      className={`bg-dutch-green rounded-xl ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-90 ${className}`}
+      style={style}
+      disabled={isDisabled}
+      {...props}
+    >
+      {isLoading ? (
+        <ActivityIndicator color="#FFFFFF" />
+      ) : (
+        <>
+          {leftIcon && <View className="mr-2">{leftIcon}</View>}
+          <Text className={`text-white ${textVariants({ size })}`}>
+            {children}
+          </Text>
+          {rightIcon && <View className="ml-2">{rightIcon}</View>}
+        </>
+      )}
+    </Pressable>
   );
 }

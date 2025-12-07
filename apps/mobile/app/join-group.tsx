@@ -4,20 +4,22 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  TextInput as RNTextInput,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
 import { useGroupByInviteCode, useJoinGroup } from '@/modules/groups';
+import { View, Text, Pressable } from '@/components/ui/primitives';
+import { colors } from '@/constants/theme';
 
 export default function JoinGroupScreen() {
   const [inviteCode, setInviteCode] = useState('');
   const [searchCode, setSearchCode] = useState('');
   const user = useAuthStore((state) => state.user);
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query hooks
   const {
@@ -81,9 +83,11 @@ export default function JoinGroupScreen() {
     setInviteCode('');
   };
 
+  const isButtonDisabled = inviteCode.length < 6 || isLoading;
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <Stack.Screen
@@ -93,18 +97,29 @@ export default function JoinGroupScreen() {
         }}
       />
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Enter Invite Code</Text>
-        <Text style={styles.subtitle}>
+      <View className="flex-1 p-6 items-center">
+        <Text className={`text-2xl font-bold mb-2 text-center ${isDark ? 'text-white' : 'text-black'}`}>
+          Enter Invite Code
+        </Text>
+        <Text className={`text-base text-center mb-8 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
           Ask a group member for the 6-character invite code
         </Text>
 
-        <TextInput
-          style={styles.codeInput}
+        <RNTextInput
+          className={`w-full max-w-[200px] text-center rounded-xl mb-4 ${isDark ? 'bg-dark-card border-dutch-orange' : 'bg-light-card border-dutch-orange'}`}
+          style={{
+            fontSize: 32,
+            fontWeight: 'bold',
+            letterSpacing: 8,
+            paddingVertical: 16,
+            paddingHorizontal: 24,
+            borderWidth: 2,
+            color: isDark ? themeColors.textPrimary : '#000000',
+          }}
           value={inviteCode}
           onChangeText={handleCodeChange}
           placeholder="ABC123"
-          placeholderTextColor="#999"
+          placeholderTextColor={themeColors.textTertiary}
           autoCapitalize="characters"
           autoCorrect={false}
           maxLength={6}
@@ -114,36 +129,39 @@ export default function JoinGroupScreen() {
           testID="invite-code-input"
         />
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && (
+          <Text className="text-dutch-red text-sm mb-4 text-center">{error}</Text>
+        )}
 
         {!previewGroup && (
-          <TouchableOpacity
-            style={[
-              styles.lookupButton,
-              (inviteCode.length < 6 || isLoading) && styles.buttonDisabled,
-            ]}
+          <Pressable
+            className={`py-3.5 px-8 rounded-lg min-w-[160px] items-center ${isButtonDisabled ? (isDark ? 'bg-dark-border' : 'bg-light-border') : 'bg-dutch-orange'} active:opacity-90`}
             onPress={handleLookup}
-            disabled={inviteCode.length < 6 || isLoading}
+            disabled={isButtonDisabled}
             testID="lookup-button"
           >
             {isLoadingPreview ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.lookupButtonText}>Look Up Group</Text>
+              <Text className={`text-base font-semibold ${isButtonDisabled ? (isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary') : 'text-white'}`}>
+                Look Up Group
+              </Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         )}
 
         {previewGroup && (
-          <View style={styles.previewCard}>
-            <Text style={styles.previewEmoji}>{previewGroup.emoji}</Text>
-            <Text style={styles.previewName}>{previewGroup.name}</Text>
-            <Text style={styles.previewCurrency}>
+          <View className={`w-full rounded-xl p-6 items-center mt-4 ${isDark ? 'bg-dark-card' : 'bg-light-card'}`}>
+            <Text className="text-5xl mb-3">{previewGroup.emoji}</Text>
+            <Text className={`text-xl font-bold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
+              {previewGroup.name}
+            </Text>
+            <Text className={`text-sm mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
               Currency: {previewGroup.defaultCurrency}
             </Text>
 
-            <TouchableOpacity
-              style={[styles.joinButton, joinGroupMutation.isPending && styles.buttonDisabled]}
+            <Pressable
+              className={`py-3.5 px-12 rounded-lg min-w-[160px] items-center mb-3 ${joinGroupMutation.isPending ? (isDark ? 'bg-dark-border' : 'bg-light-border') : 'bg-dutch-green'} active:opacity-90`}
               onPress={handleJoin}
               disabled={joinGroupMutation.isPending}
               testID="join-button"
@@ -151,122 +169,16 @@ export default function JoinGroupScreen() {
               {joinGroupMutation.isPending ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.joinButtonText}>Join Group</Text>
+                <Text className="text-base font-semibold text-white">Join Group</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handleReset}
-            >
-              <Text style={styles.cancelButtonText}>Try Different Code</Text>
-            </TouchableOpacity>
+            <Pressable className="py-2 active:opacity-70" onPress={handleReset}>
+              <Text className="text-dutch-orange text-sm">Try Different Code</Text>
+            </Pressable>
           </View>
         )}
       </View>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  codeInput: {
-    width: '100%',
-    maxWidth: 200,
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#FF3B30',
-    fontSize: 14,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  lookupButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    minWidth: 160,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  lookupButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  previewCard: {
-    width: '100%',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  previewEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  previewName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  previewCurrency: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 24,
-  },
-  joinButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: 14,
-    paddingHorizontal: 48,
-    borderRadius: 8,
-    minWidth: 160,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  joinButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    paddingVertical: 8,
-  },
-  cancelButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-  },
-});

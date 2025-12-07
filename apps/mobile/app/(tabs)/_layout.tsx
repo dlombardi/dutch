@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
-import { Platform, Text, View } from 'react-native';
+import { Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useColorScheme } from 'nativewind';
+import { View, Text } from '@/components/ui/primitives';
 import { colors, glassStyle } from '@/constants/theme';
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {

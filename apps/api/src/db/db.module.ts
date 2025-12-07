@@ -1,7 +1,7 @@
 import { Module, Global, OnModuleDestroy, Inject } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres, { Sql } from 'postgres';
+import postgres, { type Sql } from 'postgres';
 import * as schema from './schema';
 import {
   UsersRepository,

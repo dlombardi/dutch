@@ -6,15 +6,14 @@ import {
   Modal,
   Platform,
   ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
+import { LoadingSpinner } from '@/components/ui';
+import { View, Text, Pressable, TextInput } from '@/components/ui/primitives';
+import { colors } from '@/constants/theme';
 
 // React Query hooks
 import { useExpense, useUpdateExpense } from '@/modules/expenses';
@@ -24,6 +23,9 @@ export default function EditExpenseScreen() {
   const { id: expenseId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query hooks - automatic caching and deduplication
   const {
@@ -117,110 +119,120 @@ export default function EditExpenseScreen() {
     parseFloat(amount) > 0 &&
     description.trim() !== '';
 
+  // Get currency symbol
+  const getCurrencySymbol = () => {
+    const currency = group?.defaultCurrency || 'USD';
+    switch (currency) {
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'JPY': return '¥';
+      default: return currency;
+    }
+  };
+
   if (!expense && isFetchingExpense) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
         <Stack.Screen options={{ title: 'Edit Expense' }} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
+        <LoadingSpinner fullScreen />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`} edges={['bottom']}>
       <Stack.Screen
         options={{
           title: 'Edit Expense',
+          headerStyle: { backgroundColor: themeColors.bgElevated },
+          headerTintColor: themeColors.textPrimary,
           headerLeft: () => (
-            <TouchableOpacity onPress={handleCancel}>
-              <Text style={styles.cancelButton}>Cancel</Text>
-            </TouchableOpacity>
+            <Pressable onPress={handleCancel} className="active:opacity-70">
+              <Text className="text-dutch-orange text-base">Cancel</Text>
+            </Pressable>
           ),
           headerRight: () => (
-            <TouchableOpacity
+            <Pressable
               onPress={handleSave}
               disabled={!isValid || isUpdating}
+              className="active:opacity-70"
             >
               {isUpdating ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color={themeColors.orange} />
               ) : (
                 <Text
-                  style={[
-                    styles.saveButton,
-                    !isValid && styles.saveButtonDisabled,
-                  ]}
+                  className={`text-base font-semibold ${isValid ? 'text-dutch-orange' : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}
                 >
                   Save
                 </Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           ),
         }}
       />
 
       <KeyboardAvoidingView
-        style={styles.keyboardView}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView style={styles.scrollView}>
+        <ScrollView className="flex-1">
           {updateError && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{updateError}</Text>
+            <View className={`mx-4 mt-4 p-3 rounded-lg ${isDark ? 'bg-dutch-red/15' : 'bg-dutch-red/10'}`}>
+              <Text className="text-dutch-red text-sm">{updateError}</Text>
             </View>
           )}
 
           {/* Amount Input */}
-          <View style={styles.amountContainer}>
-            <Text style={styles.currencySymbol}>
-              {group?.defaultCurrency === 'USD'
-                ? '$'
-                : group?.defaultCurrency === 'EUR'
-                  ? '€'
-                  : group?.defaultCurrency || '$'}
+          <View className="flex-row items-center justify-center py-10 px-4">
+            <Text className={`text-5xl font-light mr-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              {getCurrencySymbol()}
             </Text>
             <TextInput
-              style={styles.amountInput}
+              className="text-6xl font-extralight min-w-[100px] text-center"
               value={amount}
               onChangeText={setAmount}
               placeholder="0.00"
-              placeholderTextColor="#ccc"
               keyboardType="decimal-pad"
             />
           </View>
 
           {/* Description Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Description
+            </Text>
             <TextInput
-              style={styles.input}
+              className="text-base py-2"
               value={description}
               onChangeText={setDescription}
               placeholder="What was this for?"
-              placeholderTextColor="#999"
             />
           </View>
 
           {/* Paid By Selector */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Paid by</Text>
-            <TouchableOpacity
-              style={styles.pickerButton}
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Paid by
+            </Text>
+            <Pressable
+              className="flex-row items-center justify-between py-2 active:opacity-70"
               onPress={() => setShowPayerPicker(true)}
             >
-              <Text style={styles.pickerButtonText}>
+              <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
                 {getPayerDisplayName(paidById)}
               </Text>
-              <Text style={styles.pickerChevron}>›</Text>
-            </TouchableOpacity>
+              <Text className={`text-xl ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>›</Text>
+            </Pressable>
           </View>
 
           {/* Split (simplified - always equal) */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Split</Text>
-            <View style={styles.staticValue}>
-              <Text style={styles.staticValueText}>
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Split
+            </Text>
+            <View className="py-2">
+              <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
                 Split equally among all members
               </Text>
             </View>
@@ -235,39 +247,43 @@ export default function EditExpenseScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowPayerPicker(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Who paid?</Text>
-            <TouchableOpacity onPress={() => setShowPayerPicker(false)}>
-              <Text style={styles.modalClose}>Done</Text>
-            </TouchableOpacity>
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+          <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              Who paid?
+            </Text>
+            <Pressable onPress={() => setShowPayerPicker(false)} className="active:opacity-70">
+              <Text className="text-dutch-orange text-base font-semibold">Done</Text>
+            </Pressable>
           </View>
           <FlatList
             data={members}
             keyExtractor={(item) => item.userId}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.memberOption}
+              <Pressable
+                className={`flex-row items-center p-4 border-b active:opacity-70 ${isDark ? 'border-dark-border' : 'border-light-border'}`}
                 onPress={() => handleSelectPayer(item.userId)}
               >
-                <View style={styles.memberOptionAvatar}>
-                  <Text style={styles.memberOptionAvatarText}>
+                <View className="w-10 h-10 rounded-full bg-dutch-orange justify-center items-center mr-3">
+                  <Text className="text-white text-sm font-semibold">
                     {item.userId.substring(0, 2).toUpperCase()}
                   </Text>
                 </View>
-                <Text style={styles.memberOptionName}>
+                <Text className={`flex-1 text-base ${isDark ? 'text-white' : 'text-black'}`}>
                   {item.userId === user?.id
                     ? 'You'
                     : `User ${item.userId.slice(0, 8)}...`}
                 </Text>
                 {paidById === item.userId && (
-                  <Text style={styles.memberOptionCheck}>✓</Text>
+                  <Text className="text-lg text-dutch-orange font-semibold">✓</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             )}
             ListEmptyComponent={
-              <View style={styles.emptyMembersList}>
-                <Text style={styles.emptyMembersText}>No members found</Text>
+              <View className="p-8 items-center">
+                <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                  No members found
+                </Text>
               </View>
             }
           />
@@ -276,163 +292,3 @@ export default function EditExpenseScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  cancelButton: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  saveButton: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButtonDisabled: {
-    color: '#ccc',
-  },
-  errorContainer: {
-    backgroundColor: '#FFE5E5',
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-  },
-  errorText: {
-    color: '#FF3B30',
-    fontSize: 14,
-  },
-  amountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 16,
-  },
-  currencySymbol: {
-    fontSize: 48,
-    fontWeight: '300',
-    color: '#666',
-    marginRight: 8,
-  },
-  amountInput: {
-    fontSize: 64,
-    fontWeight: '200',
-    color: '#1a1a1a',
-    minWidth: 100,
-    textAlign: 'center',
-  },
-  inputGroup: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  input: {
-    fontSize: 16,
-    color: '#1a1a1a',
-    paddingVertical: 8,
-  },
-  staticValue: {
-    paddingVertical: 8,
-  },
-  staticValueText: {
-    fontSize: 16,
-    color: '#1a1a1a',
-  },
-  pickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  pickerButtonText: {
-    fontSize: 16,
-    color: '#1a1a1a',
-  },
-  pickerChevron: {
-    fontSize: 20,
-    color: '#999',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  modalClose: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  memberOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  memberOptionAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  memberOptionAvatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  memberOptionName: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1a1a1a',
-  },
-  memberOptionCheck: {
-    fontSize: 18,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  emptyMembersList: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptyMembersText: {
-    fontSize: 16,
-    color: '#666',
-  },
-});

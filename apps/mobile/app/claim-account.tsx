@@ -1,18 +1,13 @@
 import { useState, useEffect } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
+import { View, Text, FormInput } from '@/components/ui/primitives';
 import { PrimaryButton, SecondaryButton } from '@/components/ui';
-import { colors, gradients } from '@/constants/theme';
+import { gradients } from '@/constants/theme';
 
 export default function ClaimAccountScreen() {
   const [email, setEmail] = useState('');
@@ -28,7 +23,6 @@ export default function ClaimAccountScreen() {
   } = useAuthStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const themeColors = isDark ? colors.dark : colors.light;
 
   // Reset claim state when the screen mounts
   useEffect(() => {
@@ -169,14 +163,10 @@ export default function ClaimAccountScreen() {
             </Text>
           </View>
 
-          <TextInput
-            className={`border rounded-2xl p-4 text-base mb-2 ${
-              isDark
-                ? 'bg-dark-card border-dark-border text-white'
-                : 'bg-light-card border-light-border text-black'
-            } ${error ? 'border-dutch-red' : ''}`}
+          <FormInput
+            className="mb-2"
+            hasError={!!error}
             placeholder="your@email.com"
-            placeholderTextColor={themeColors.textTertiary}
             value={email}
             onChangeText={(text) => {
               setEmail(text);

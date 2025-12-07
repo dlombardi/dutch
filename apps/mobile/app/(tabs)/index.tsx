@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
-import { FlatList, ListRenderItemInfo, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, type ListRenderItemInfo } from 'react-native';
 import { Link, router, Stack } from 'expo-router';
 import { useColorScheme } from 'nativewind';
-import { Group, useGroupsStore } from '@/modules/groups';
+import { type Group, useGroupsStore } from '@/modules/groups';
+import { View, Text, Pressable } from '@/components/ui/primitives';
 import { GhostButton, PrimaryButton } from '@/components/ui';
 import { colors } from '@/constants/theme';
 
@@ -26,11 +27,10 @@ export default function GroupsScreen() {
   // Memoized render function for FlatList optimization
   const renderGroup = useCallback(({ item }: ListRenderItemInfo<Group>) => (
     <Link href={`/group/${item.id}`} asChild>
-      <TouchableOpacity
-        className={`flex-row items-center p-4 mx-4 mb-3 rounded-2xl ${
+      <Pressable
+        className={`flex-row items-center p-4 mx-4 mb-3 rounded-2xl active:opacity-70 ${
           isDark ? 'bg-dark-card' : 'bg-light-card'
         }`}
-        activeOpacity={0.7}
       >
         <View className="w-12 h-12 rounded-xl items-center justify-center bg-dutch-orange/10 border border-dutch-orange/20">
           <Text className="text-2xl">{item.emoji}</Text>
@@ -46,7 +46,7 @@ export default function GroupsScreen() {
         <Text className={`text-lg ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
           {'>'}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
     </Link>
   ), [isDark]);
 
@@ -69,15 +69,15 @@ export default function GroupsScreen() {
           headerTintColor: themeColors.textPrimary,
           headerRight: () => (
             <View className="flex-row items-center gap-3">
-              <TouchableOpacity className="px-3 py-1.5" onPress={handleJoinGroup}>
+              <Pressable className="px-3 py-1.5 active:opacity-70" onPress={handleJoinGroup}>
                 <Text className="text-dutch-orange text-base font-medium">Join</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="w-8 h-8 rounded-full bg-dutch-orange items-center justify-center"
+              </Pressable>
+              <Pressable
+                className="w-8 h-8 rounded-full bg-dutch-orange items-center justify-center active:opacity-90"
                 onPress={handleCreateGroup}
               >
                 <Text className="text-white text-xl font-bold">+</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           ),
         }}

@@ -1,25 +1,19 @@
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
+import { View, Text, FormInput } from '@/components/ui/primitives';
 import { GhostButton, PrimaryButton } from '@/components/ui';
-import { colors, gradients } from '@/constants/theme';
+import { gradients } from '@/constants/theme';
 
 export default function GuestJoinScreen() {
   const [name, setName] = useState('');
   const { loginAsGuest, isLoading, error, clearError } = useAuthStore();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const themeColors = isDark ? colors.dark : colors.light;
 
   const isValidName = (value: string) => {
     return value.trim().length >= 1;
@@ -81,14 +75,10 @@ export default function GuestJoinScreen() {
               This is how others will see you in the group
             </Text>
 
-            <TextInput
-              className={`border rounded-2xl p-4 text-base mb-2 ${
-                isDark
-                  ? 'bg-dark-card border-dark-border text-white'
-                  : 'bg-light-card border-light-border text-black'
-              } ${error ? 'border-dutch-red' : ''}`}
+            <FormInput
+              className="mb-2"
+              hasError={!!error}
               placeholder="Enter your name"
-              placeholderTextColor={themeColors.textTertiary}
               value={name}
               onChangeText={(text) => {
                 setName(text);

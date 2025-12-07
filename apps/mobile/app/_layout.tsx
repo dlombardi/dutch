@@ -1,12 +1,13 @@
 import '../global.css';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, Stack, useRootNavigationState, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, Appearance, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Appearance } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from 'nativewind';
+import DropdownAlert, { DropdownAlertData } from 'react-native-dropdownalert';
 import { getQueryClient } from '@/lib/query-client';
 import { useAuthStore } from '@/modules/auth';
 import { useSyncStore } from '@/store/sync-store';
@@ -14,7 +15,8 @@ import { setOnOnlineCallback, useNetworkStore } from '@/store/network-store';
 import { useOfflineQueueStore } from '@/store/offline-queue-store';
 import { useThemeStore } from '@/store/theme-store';
 import { colors } from '@/constants/theme';
-import { UpgradePromptBanner } from '@/components/ui';
+import { UpgradePromptBannerContent } from '@/components/ui';
+import { View, Text } from '@/components/ui/primitives';
 
 // Offline banner as a pure presentational component (no hooks)
 function OfflineBannerView({
@@ -34,14 +36,14 @@ function OfflineBannerView({
   if (!isOffline && !hasPending) return null;
 
   let message = "You're offline. Data shown may be outdated.";
-  let bgColor = '#F59E0B'; // warning orange
-  let textColor = '#78350F'; // dark warning
+  let bgClass = 'bg-amber-500';
+  let textClass = 'text-amber-900';
 
   if (hasPending && !isOffline) {
     if (isSyncing) {
       message = `Syncing ${pendingCount} pending expense${pendingCount > 1 ? 's' : ''}...`;
-      bgColor = colors.dark.blue;
-      textColor = '#FFFFFF';
+      bgClass = 'bg-blue-500';
+      textClass = 'text-white';
     } else {
       message = `${pendingCount} expense${pendingCount > 1 ? 's' : ''} pending sync`;
     }
@@ -50,20 +52,11 @@ function OfflineBannerView({
   }
 
   return (
-    <View
-      style={{
-        backgroundColor: bgColor,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
+    <View className={`${bgClass} py-2 px-4 flex-row justify-center items-center`}>
       {isSyncing && (
-        <ActivityIndicator size="small" color={textColor} style={{ marginRight: 8 }} />
+        <ActivityIndicator size="small" color={textClass === 'text-white' ? '#FFFFFF' : '#78350F'} style={{ marginRight: 8 }} />
       )}
-      <Text style={{ color: textColor, fontWeight: '600', fontSize: 14 }}>
+      <Text className={`${textClass} font-semibold text-sm`}>
         {message}
       </Text>
     </View>
@@ -74,7 +67,7 @@ function OfflineBannerView({
 function LoadingScreen({ isDark }: { isDark: boolean }) {
   const themeColors = isDark ? colors.dark : colors.light;
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: themeColors.bg }}>
+    <View className={`flex-1 justify-center items-center ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
       <ActivityIndicator size="large" color={themeColors.orange} />
     </View>
   );
@@ -90,6 +83,7 @@ function AppContent({
   showUpgradePrompt,
   onClaimAccount,
   onDismissUpgradePrompt,
+  onSwipeDismiss,
 }: {
   isConnected: boolean;
   isInternetReachable: boolean | null;
@@ -99,11 +93,34 @@ function AppContent({
   showUpgradePrompt: boolean;
   onClaimAccount: () => void;
   onDismissUpgradePrompt: () => void;
+  onSwipeDismiss: () => void;
 }) {
   const themeColors = isDark ? colors.dark : colors.light;
+  const alertRef = useRef<((data?: DropdownAlertData) => Promise<DropdownAlertData>) | undefined>(undefined);
+  const alertShownRef = useRef(false);
+
+  // Trigger alert when showUpgradePrompt becomes true
+  useEffect(() => {
+    if (showUpgradePrompt && alertRef.current && !alertShownRef.current) {
+      alertShownRef.current = true;
+      alertRef.current({
+        type: 'info',
+        title: '',
+        message: '',
+      });
+    } else if (!showUpgradePrompt) {
+      alertShownRef.current = false;
+    }
+  }, [showUpgradePrompt]);
+
+  // Handle claim button - dismiss alert then navigate
+  const handleClaimPress = useCallback(() => {
+    alertShownRef.current = false;
+    onClaimAccount();
+  }, [onClaimAccount]);
 
   return (
-    <>
+    <View className="flex-1">
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <OfflineBannerView
         isConnected={isConnected}
@@ -111,13 +128,6 @@ function AppContent({
         pendingCount={pendingCount}
         isSyncing={isSyncing}
       />
-      {showUpgradePrompt && (
-        <UpgradePromptBanner
-          onClaim={onClaimAccount}
-          onDismiss={onDismissUpgradePrompt}
-          isDark={isDark}
-        />
-      )}
       <Stack
         screenOptions={{
           headerShadowVisible: false,
@@ -125,6 +135,9 @@ function AppContent({
             backgroundColor: themeColors.bgElevated,
           },
           headerTintColor: themeColors.textPrimary,
+          contentStyle: {
+            backgroundColor: themeColors.bg,
+          },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -172,7 +185,30 @@ function AppContent({
           }}
         />
       </Stack>
-    </>
+      <DropdownAlert
+        alert={(func) => (alertRef.current = func)}
+        dismissInterval={0}
+        panResponderEnabled={true}
+        onDismissPanResponder={() => {
+          alertShownRef.current = false;
+          onSwipeDismiss();
+        }}
+        onDismissCancel={() => {
+          alertShownRef.current = false;
+        }}
+        alertViewStyle={{
+          backgroundColor: themeColors.blue,
+          paddingTop: 50,
+          paddingBottom: 12,
+          paddingHorizontal: 16,
+        }}
+      >
+        <UpgradePromptBannerContent
+          onClaim={handleClaimPress}
+          onDismiss={onDismissUpgradePrompt}
+        />
+      </DropdownAlert>
+    </View>
   );
 }
 
@@ -296,6 +332,7 @@ export default function RootLayout() {
             showUpgradePrompt={showUpgradePrompt && user?.type === 'guest'}
             onClaimAccount={handleClaimAccount}
             onDismissUpgradePrompt={handleDismissUpgradePrompt}
+            onSwipeDismiss={dismissUpgradePrompt}
           />
         )}
       </SafeAreaProvider>

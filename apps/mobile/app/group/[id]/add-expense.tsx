@@ -6,10 +6,6 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +13,7 @@ import { useColorScheme } from 'nativewind';
 import { useAuthStore } from '@/modules/auth';
 import { api } from '@/lib/api-client';
 import { colors } from '@/constants/theme';
+import { View, Text, Pressable, SearchInput, TextInput } from '@/components/ui/primitives';
 
 // React Query hooks
 import { useGroup, useGroupMembers } from '@/modules/groups';
@@ -258,9 +255,6 @@ export default function AddExpenseScreen() {
 
   const isCreating = createExpenseMutation.isPending;
 
-  // Create dynamic styles
-  const styles = useMemo(() => createStyles(isDark, themeColors), [isDark, themeColors]);
-
   return (
     <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`} edges={['bottom']}>
       <Stack.Screen
@@ -269,14 +263,15 @@ export default function AddExpenseScreen() {
           headerStyle: { backgroundColor: themeColors.bgElevated },
           headerTintColor: themeColors.textPrimary,
           headerLeft: () => (
-            <TouchableOpacity onPress={handleCancel}>
+            <Pressable onPress={handleCancel} className="active:opacity-70">
               <Text className="text-dutch-orange text-base">Cancel</Text>
-            </TouchableOpacity>
+            </Pressable>
           ),
           headerRight: () => (
-            <TouchableOpacity
+            <Pressable
               onPress={handleSave}
               disabled={!isValid || isCreating}
+              className="active:opacity-70"
             >
               {isCreating ? (
                 <ActivityIndicator size="small" color={themeColors.orange} />
@@ -287,89 +282,92 @@ export default function AddExpenseScreen() {
                   Save
                 </Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           ),
         }}
       />
 
       <KeyboardAvoidingView
-        style={styles.keyboardView}
+        className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView style={styles.scrollView}>
+        <ScrollView className="flex-1">
           {createExpenseMutation.error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>
+            <View className={`mx-4 mt-4 p-3 rounded-lg ${isDark ? 'bg-dutch-red/15' : 'bg-dutch-red/10'}`}>
+              <Text className="text-dutch-red text-sm">
                 {createExpenseMutation.error.message || 'Failed to create expense'}
               </Text>
             </View>
           )}
 
           {/* Amount Input with Currency Selector */}
-          <View style={styles.amountContainer}>
-            <TouchableOpacity
-              style={styles.currencyButton}
+          <View className="flex-row items-center justify-center py-10 px-4">
+            <Pressable
+              className={`items-center mr-2 p-2 rounded-lg active:opacity-70 ${isDark ? 'bg-dark-card' : 'bg-light-border'}`}
               onPress={() => setShowCurrencyPicker(true)}
             >
-              <Text style={styles.currencySymbol}>{currentCurrency.symbol}</Text>
-              <Text style={styles.currencyCode}>{currentCurrency.code}</Text>
-            </TouchableOpacity>
+              <Text className={`text-3xl ${isDark ? 'text-white' : 'text-black'}`}>
+                {currentCurrency.symbol}
+              </Text>
+              <Text className={`text-xs mt-0.5 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                {currentCurrency.code}
+              </Text>
+            </Pressable>
             <TextInput
-              style={styles.amountInput}
+              className="text-6xl font-extralight min-w-[100px] text-center"
               value={amount}
               onChangeText={setAmount}
               placeholder="0.00"
-              placeholderTextColor={themeColors.textTertiary}
               keyboardType="decimal-pad"
               autoFocus
             />
           </View>
 
           {/* Description Input */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Description
+            </Text>
             <TextInput
-              style={styles.input}
+              className="text-base py-2"
               value={description}
               onChangeText={setDescription}
               placeholder="What was this for?"
-              placeholderTextColor={themeColors.textTertiary}
             />
           </View>
 
           {/* Exchange Rate Input - shown when currency differs from group default */}
           {needsExchangeRate && (
-            <View style={styles.inputGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>
+            <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+              <View className="flex-row items-center justify-between">
+                <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
                   Exchange Rate (1 {currentCurrency.code} = ? {groupCurrency.code})
                 </Text>
                 {isFetchingRate && (
-                  <ActivityIndicator size="small" color={themeColors.orange} style={styles.rateLoader} />
+                  <ActivityIndicator size="small" color={themeColors.orange} />
                 )}
               </View>
-              <View style={styles.rateInputRow}>
+              <View className="flex-row items-center mt-2">
                 <TextInput
-                  style={[styles.input, styles.rateInput]}
+                  className="flex-1 text-base py-2"
                   value={exchangeRate}
                   onChangeText={(text) => {
                     setExchangeRate(text);
                     setRateAutoFetched(false);
                   }}
                   placeholder={isFetchingRate ? "Fetching rate..." : "Enter exchange rate"}
-                  placeholderTextColor={themeColors.textTertiary}
                   keyboardType="decimal-pad"
                   editable={!isFetchingRate}
                 />
                 {rateAutoFetched && (
-                  <View style={styles.autoFetchBadge}>
-                    <Text style={styles.autoFetchText}>Auto</Text>
+                  <View className="bg-dutch-green px-2 py-1 rounded ml-2">
+                    <Text className="text-white text-xs font-semibold">Auto</Text>
                   </View>
                 )}
               </View>
               {parseFloat(amount) > 0 && parseFloat(exchangeRate) > 0 && (
-                <View style={styles.conversionPreview}>
-                  <Text style={styles.conversionText}>
+                <View className={`mt-2 py-2 px-3 rounded-lg ${isDark ? 'bg-dutch-orange/15' : 'bg-dutch-orange/10'}`}>
+                  <Text className="text-dutch-orange text-sm font-medium">
                     {currentCurrency.symbol}{parseFloat(amount).toFixed(2)} {currentCurrency.code} = {groupCurrency.symbol}{(parseFloat(amount) * parseFloat(exchangeRate)).toFixed(2)} {groupCurrency.code}
                   </Text>
                 </View>
@@ -378,36 +376,40 @@ export default function AddExpenseScreen() {
           )}
 
           {/* Paid By Selector */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Paid by</Text>
-            <TouchableOpacity
-              style={styles.pickerButton}
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Paid by
+            </Text>
+            <Pressable
+              className="flex-row items-center justify-between py-2 active:opacity-70"
               onPress={() => setShowPayerPicker(true)}
             >
-              <Text style={styles.pickerButtonText}>
+              <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
                 {getPayerDisplayName(paidById)}
               </Text>
-              <Text style={styles.pickerChevron}>›</Text>
-            </TouchableOpacity>
+              <Text className={`text-xl ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>›</Text>
+            </Pressable>
           </View>
 
           {/* Split Participants Selector */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Split equally among</Text>
-            <TouchableOpacity
-              style={styles.pickerButton}
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              Split equally among
+            </Text>
+            <Pressable
+              className="flex-row items-center justify-between py-2 active:opacity-70"
               onPress={() => setShowSplitPicker(true)}
             >
-              <Text style={styles.pickerButtonText}>
+              <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
                 {splitParticipants.length === members.length
                   ? 'All members'
                   : `${splitParticipants.length} ${splitParticipants.length === 1 ? 'person' : 'people'}`}
               </Text>
-              <Text style={styles.pickerChevron}>›</Text>
-            </TouchableOpacity>
+              <Text className={`text-xl ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>›</Text>
+            </Pressable>
             {parseFloat(amount) > 0 && splitParticipants.length > 0 && (
-              <View style={styles.perPersonPreview}>
-                <Text style={styles.perPersonText}>
+              <View className={`mt-2 py-2 px-3 rounded-lg ${isDark ? 'bg-dark-card' : 'bg-light-border'}`}>
+                <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
                   {currentCurrency.symbol}
                   {getPerPersonAmount().toFixed(2)} per person
                 </Text>
@@ -417,21 +419,22 @@ export default function AddExpenseScreen() {
         </ScrollView>
 
         {/* Add Expense Button */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[
-              styles.addButton,
-              (!isValid || isCreating) && styles.addButtonDisabled,
-            ]}
+        <View className={`p-4 border-t ${isDark ? 'border-dark-border bg-dark-bg' : 'border-light-border bg-light-bg'}`}>
+          <Pressable
+            className={`py-4 rounded-xl items-center active:opacity-90 ${
+              isValid && !isCreating ? 'bg-dutch-orange' : isDark ? 'bg-dark-card' : 'bg-light-border'
+            }`}
             onPress={handleSave}
             disabled={!isValid || isCreating}
           >
             {isCreating ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.addButtonText}>Add Expense</Text>
+              <Text className={`text-lg font-semibold ${isValid ? 'text-white' : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+                Add Expense
+              </Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
 
@@ -442,37 +445,41 @@ export default function AddExpenseScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowPayerPicker(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Who paid?</Text>
-            <TouchableOpacity onPress={() => setShowPayerPicker(false)}>
-              <Text style={styles.modalClose}>Done</Text>
-            </TouchableOpacity>
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+          <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              Who paid?
+            </Text>
+            <Pressable onPress={() => setShowPayerPicker(false)} className="active:opacity-70">
+              <Text className="text-dutch-orange text-base font-semibold">Done</Text>
+            </Pressable>
           </View>
           <FlatList
             data={members}
             keyExtractor={(item) => item.userId}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.memberOption}
+              <Pressable
+                className={`flex-row items-center p-4 border-b active:opacity-70 ${isDark ? 'border-dark-border' : 'border-light-border'}`}
                 onPress={() => handleSelectPayer(item.userId)}
               >
-                <View style={styles.memberOptionAvatar}>
-                  <Text style={styles.memberOptionAvatarText}>
+                <View className="w-10 h-10 rounded-full bg-dutch-orange justify-center items-center mr-3">
+                  <Text className="text-white text-sm font-semibold">
                     {item.userId.substring(0, 2).toUpperCase()}
                   </Text>
                 </View>
-                <Text style={styles.memberOptionName}>
+                <Text className={`flex-1 text-base ${isDark ? 'text-white' : 'text-black'}`}>
                   {item.userId === user?.id ? 'You' : `User ${item.userId.slice(0, 8)}...`}
                 </Text>
                 {paidById === item.userId && (
-                  <Text style={styles.memberOptionCheck}>✓</Text>
+                  <Text className="text-lg text-dutch-orange font-semibold">✓</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             )}
             ListEmptyComponent={
-              <View style={styles.emptyMembersList}>
-                <Text style={styles.emptyMembersText}>No members found</Text>
+              <View className="p-8 items-center">
+                <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                  No members found
+                </Text>
               </View>
             }
           />
@@ -486,57 +493,52 @@ export default function AddExpenseScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowSplitPicker(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Split with</Text>
-            <TouchableOpacity onPress={() => setShowSplitPicker(false)}>
-              <Text style={styles.modalClose}>Done</Text>
-            </TouchableOpacity>
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+          <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              Split with
+            </Text>
+            <Pressable onPress={() => setShowSplitPicker(false)} className="active:opacity-70">
+              <Text className="text-dutch-orange text-base font-semibold">Done</Text>
+            </Pressable>
           </View>
           <FlatList
             data={members}
             keyExtractor={(item) => item.userId}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.memberOption}
-                onPress={() => toggleParticipant(item.userId)}
-              >
-                <View
-                  style={[
-                    styles.memberOptionAvatar,
-                    !splitParticipants.includes(item.userId) &&
-                      styles.memberOptionAvatarInactive,
-                  ]}
+            renderItem={({ item }) => {
+              const isParticipant = splitParticipants.includes(item.userId);
+              return (
+                <Pressable
+                  className={`flex-row items-center p-4 border-b active:opacity-70 ${isDark ? 'border-dark-border' : 'border-light-border'}`}
+                  onPress={() => toggleParticipant(item.userId)}
                 >
-                  <Text
-                    style={[
-                      styles.memberOptionAvatarText,
-                      !splitParticipants.includes(item.userId) &&
-                        styles.memberOptionAvatarTextInactive,
-                    ]}
-                  >
-                    {item.userId.substring(0, 2).toUpperCase()}
+                  <View className={`w-10 h-10 rounded-full justify-center items-center mr-3 ${
+                    isParticipant ? 'bg-dutch-orange' : isDark ? 'bg-dark-card' : 'bg-light-border'
+                  }`}>
+                    <Text className={`text-sm font-semibold ${
+                      isParticipant ? 'text-white' : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'
+                    }`}>
+                      {item.userId.substring(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text className={`flex-1 text-base ${
+                    isParticipant
+                      ? isDark ? 'text-white' : 'text-black'
+                      : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'
+                  }`}>
+                    {item.userId === user?.id ? 'You' : `User ${item.userId.slice(0, 8)}...`}
                   </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.memberOptionName,
-                    !splitParticipants.includes(item.userId) &&
-                      styles.memberOptionNameInactive,
-                  ]}
-                >
-                  {item.userId === user?.id
-                    ? 'You'
-                    : `User ${item.userId.slice(0, 8)}...`}
-                </Text>
-                {splitParticipants.includes(item.userId) && (
-                  <Text style={styles.memberOptionCheck}>✓</Text>
-                )}
-              </TouchableOpacity>
-            )}
+                  {isParticipant && (
+                    <Text className="text-lg text-dutch-orange font-semibold">✓</Text>
+                  )}
+                </Pressable>
+              );
+            }}
             ListEmptyComponent={
-              <View style={styles.emptyMembersList}>
-                <Text style={styles.emptyMembersText}>No members found</Text>
+              <View className="p-8 items-center">
+                <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                  No members found
+                </Text>
               </View>
             }
           />
@@ -553,25 +555,26 @@ export default function AddExpenseScreen() {
           setCurrencySearch('');
         }}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Currency</Text>
-            <TouchableOpacity
+        <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+          <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+              Select Currency
+            </Text>
+            <Pressable
               onPress={() => {
                 setShowCurrencyPicker(false);
                 setCurrencySearch('');
               }}
+              className="active:opacity-70"
             >
-              <Text style={styles.modalClose}>Done</Text>
-            </TouchableOpacity>
+              <Text className="text-dutch-orange text-base font-semibold">Done</Text>
+            </Pressable>
           </View>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
+          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
+            <SearchInput
+              placeholder="Search currencies..."
               value={currencySearch}
               onChangeText={setCurrencySearch}
-              placeholder="Search currencies..."
-              placeholderTextColor={themeColors.textTertiary}
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -580,25 +583,35 @@ export default function AddExpenseScreen() {
             data={filteredCurrencies}
             keyExtractor={(item) => item.code}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.currencyOption}
+              <Pressable
+                className={`flex-row items-center justify-between p-4 border-b active:opacity-70 ${
+                  isDark ? 'border-dark-border' : 'border-light-border'
+                } ${currency === item.code ? (isDark ? 'bg-dutch-orange/10' : 'bg-dutch-orange/5') : ''}`}
                 onPress={() => handleSelectCurrency(item.code)}
               >
-                <View style={styles.currencyInfo}>
-                  <Text style={styles.currencyOptionSymbol}>{item.symbol}</Text>
-                  <View style={styles.currencyTextContainer}>
-                    <Text style={styles.currencyOptionCode}>{item.code}</Text>
-                    <Text style={styles.currencyOptionName}>{item.name}</Text>
+                <View className="flex-row items-center">
+                  <Text className={`text-2xl w-10 text-center mr-3 ${isDark ? 'text-white' : 'text-black'}`}>
+                    {item.symbol}
+                  </Text>
+                  <View>
+                    <Text className={`text-base font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+                      {item.code}
+                    </Text>
+                    <Text className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                      {item.name}
+                    </Text>
                   </View>
                 </View>
                 {currency === item.code && (
-                  <Text style={styles.currencyOptionCheck}>✓</Text>
+                  <Text className="text-lg text-dutch-orange font-semibold">✓</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             )}
             ListEmptyComponent={
-              <View style={styles.emptyMembersList}>
-                <Text style={styles.emptyMembersText}>No currencies found</Text>
+              <View className="p-8 items-center">
+                <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                  No currencies found
+                </Text>
               </View>
             }
           />
@@ -607,276 +620,3 @@ export default function AddExpenseScreen() {
     </SafeAreaView>
   );
 }
-
-// Create dynamic styles based on theme
-const createStyles = (isDark: boolean, themeColors: typeof colors.dark | typeof colors.light) => ({
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  errorContainer: {
-    backgroundColor: isDark ? 'rgba(255,69,58,0.15)' : '#FFE5E5',
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-  },
-  errorText: {
-    color: themeColors.red,
-    fontSize: 14,
-  },
-  amountContainer: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    paddingVertical: 40,
-    paddingHorizontal: 16,
-  },
-  currencyButton: {
-    alignItems: 'center' as const,
-    marginRight: 8,
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: isDark ? themeColors.bgCard : '#f0f0f0',
-  },
-  currencySymbol: {
-    fontSize: 32,
-    fontWeight: '400' as const,
-    color: themeColors.textPrimary,
-  },
-  currencyCode: {
-    fontSize: 12,
-    color: themeColors.textSecondary,
-    marginTop: 2,
-  },
-  amountInput: {
-    fontSize: 64,
-    fontWeight: '200' as const,
-    color: themeColors.textPrimary,
-    minWidth: 100,
-    textAlign: 'center' as const,
-  },
-  inputGroup: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: themeColors.border,
-  },
-  label: {
-    fontSize: 14,
-    color: themeColors.textSecondary,
-    marginBottom: 8,
-  },
-  input: {
-    fontSize: 16,
-    color: themeColors.textPrimary,
-    paddingVertical: 8,
-  },
-  perPersonPreview: {
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: isDark ? themeColors.bgCard : '#f8f8f8',
-    borderRadius: 8,
-  },
-  perPersonText: {
-    fontSize: 14,
-    color: themeColors.textSecondary,
-  },
-  conversionPreview: {
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: isDark ? 'rgba(255,107,0,0.15)' : '#FFF5EB',
-    borderRadius: 8,
-  },
-  conversionText: {
-    fontSize: 14,
-    color: themeColors.orange,
-    fontWeight: '500' as const,
-  },
-  labelRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-  },
-  rateLoader: {
-    marginLeft: 8,
-  },
-  rateInputRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-  },
-  rateInput: {
-    flex: 1,
-  },
-  autoFetchBadge: {
-    backgroundColor: themeColors.green,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  autoFetchText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600' as const,
-  },
-  pickerButton: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    paddingVertical: 8,
-  },
-  pickerButtonText: {
-    fontSize: 16,
-    color: themeColors.textPrimary,
-  },
-  pickerChevron: {
-    fontSize: 20,
-    color: themeColors.textTertiary,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: themeColors.bg,
-  },
-  modalHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: themeColors.border,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-    color: themeColors.textPrimary,
-  },
-  modalClose: {
-    fontSize: 16,
-    color: themeColors.orange,
-    fontWeight: '600' as const,
-  },
-  memberOption: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: themeColors.border,
-  },
-  memberOptionAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: themeColors.orange,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    marginRight: 12,
-  },
-  memberOptionAvatarText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600' as const,
-  },
-  memberOptionName: {
-    flex: 1,
-    fontSize: 16,
-    color: themeColors.textPrimary,
-  },
-  memberOptionCheck: {
-    fontSize: 18,
-    color: themeColors.orange,
-    fontWeight: '600' as const,
-  },
-  emptyMembersList: {
-    padding: 32,
-    alignItems: 'center' as const,
-  },
-  emptyMembersText: {
-    fontSize: 16,
-    color: themeColors.textSecondary,
-  },
-  memberOptionAvatarInactive: {
-    backgroundColor: isDark ? themeColors.bgCard : '#e0e0e0',
-  },
-  memberOptionAvatarTextInactive: {
-    color: themeColors.textTertiary,
-  },
-  memberOptionNameInactive: {
-    color: themeColors.textTertiary,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: themeColors.border,
-  },
-  searchInput: {
-    fontSize: 16,
-    color: themeColors.textPrimary,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: isDark ? themeColors.bgCard : '#f5f5f5',
-    borderRadius: 8,
-  },
-  currencyOption: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: themeColors.border,
-  },
-  currencyInfo: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-  },
-  currencyOptionSymbol: {
-    fontSize: 24,
-    width: 40,
-    textAlign: 'center' as const,
-    color: themeColors.textPrimary,
-    marginRight: 12,
-  },
-  currencyTextContainer: {
-    flexDirection: 'column' as const,
-  },
-  currencyOptionCode: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: themeColors.textPrimary,
-  },
-  currencyOptionName: {
-    fontSize: 14,
-    color: themeColors.textSecondary,
-  },
-  currencyOptionCheck: {
-    fontSize: 18,
-    color: themeColors.orange,
-    fontWeight: '600' as const,
-  },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: themeColors.border,
-    backgroundColor: themeColors.bg,
-  },
-  addButton: {
-    backgroundColor: themeColors.orange,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center' as const,
-  },
-  addButtonDisabled: {
-    backgroundColor: isDark ? themeColors.bgCard : '#ccc',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600' as const,
-  },
-});

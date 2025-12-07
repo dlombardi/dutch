@@ -1,2 +1,2 @@
-export { UpgradePromptBanner } from './upgrade-prompt-banner';
+export { UpgradePromptBanner, UpgradePromptBannerContent } from './upgrade-prompt-banner';
 export type { UpgradePromptBannerProps } from './upgrade-prompt-banner';

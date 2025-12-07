@@ -1,5 +1,6 @@
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import { View, Text } from '@/components/ui/primitives';
 import type { GroupMember } from '@/modules/groups';
 
 interface MembersTabProps {
