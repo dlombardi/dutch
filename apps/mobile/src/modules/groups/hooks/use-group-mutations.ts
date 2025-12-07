@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-client";
 import { groupService } from "../services";
 import { useGroupsStore } from "../store";
-import type { CreateGroupInput, Group, JoinGroupInput } from "../types";
+import type { CreateGroupInput, Group, JoinGroupInput, UpdateGroupInput } from "../types";
 
 /**
  * Mutation hook for creating a group.
@@ -80,6 +80,91 @@ export function useJoinGroup() {
 
       // Update Zustand store (persists to AsyncStorage for offline access)
       addGroup(joinedGroup);
+    },
+  });
+}
+
+/**
+ * Mutation hook for updating a group's details.
+ *
+ * Features:
+ * - Optimistic updates for immediate UI feedback
+ * - Updates both React Query cache and Zustand store
+ * - Rolls back on error
+ */
+export function useUpdateGroup() {
+  const queryClient = useQueryClient();
+  const updateGroupInStore = useGroupsStore((state) => state.updateGroup);
+
+  return useMutation({
+    mutationFn: async ({
+      groupId,
+      updates,
+    }: {
+      groupId: string;
+      updates: UpdateGroupInput;
+    }) => {
+      const response = await groupService.updateGroup(groupId, updates);
+      return response.group as Group;
+    },
+
+    onMutate: async ({ groupId, updates }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.groups.detail(groupId),
+      });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.groups.list(),
+      });
+
+      // Snapshot previous values
+      const previousGroup = queryClient.getQueryData<Group>(
+        queryKeys.groups.detail(groupId),
+      );
+      const previousGroups = queryClient.getQueryData<Group[]>(
+        queryKeys.groups.list(),
+      );
+
+      // Optimistically update caches
+      if (previousGroup) {
+        const optimisticGroup = { ...previousGroup, ...updates };
+        queryClient.setQueryData(
+          queryKeys.groups.detail(groupId),
+          optimisticGroup,
+        );
+        queryClient.setQueryData<Group[]>(queryKeys.groups.list(), (old) =>
+          old?.map((g) => (g.id === groupId ? optimisticGroup : g)),
+        );
+      }
+
+      return { previousGroup, previousGroups };
+    },
+
+    onError: (_err, { groupId }, context) => {
+      // Rollback on error
+      if (context?.previousGroup) {
+        queryClient.setQueryData(
+          queryKeys.groups.detail(groupId),
+          context.previousGroup,
+        );
+      }
+      if (context?.previousGroups) {
+        queryClient.setQueryData(queryKeys.groups.list(), context.previousGroups);
+      }
+    },
+
+    onSuccess: (updatedGroup) => {
+      // Update caches with real server data
+      queryClient.setQueryData(
+        queryKeys.groups.detail(updatedGroup.id),
+        updatedGroup,
+      );
+      queryClient.setQueryData<Group[]>(queryKeys.groups.list(), (old) =>
+        old?.map((g) => (g.id === updatedGroup.id ? updatedGroup : g)),
+      );
+
+      // Update Zustand store
+      updateGroupInStore(updatedGroup.id, updatedGroup);
     },
   });
 }

@@ -41,6 +41,12 @@ export interface CreateGroupInput {
   defaultCurrency?: string;
 }
 
+export interface UpdateGroupInput {
+  name?: string;
+  emoji?: string;
+  defaultCurrency?: string;
+}
+
 export interface JoinGroupInput {
   inviteCode: string;
   userId: string;

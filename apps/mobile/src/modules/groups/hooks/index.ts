@@ -7,4 +7,4 @@ export {
   usePrefetchGroupData,
 } from "./use-group";
 
-export { useCreateGroup, useJoinGroup } from "./use-group-mutations";
+export { useCreateGroup, useJoinGroup, useUpdateGroup } from "./use-group-mutations";

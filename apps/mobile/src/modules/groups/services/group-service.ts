@@ -11,6 +11,7 @@ import type {
   GroupBalancesApiResponse,
   GroupMembersApiResponse,
   JoinGroupApiResponse,
+  UpdateGroupInput,
 } from "../types";
 
 /**
@@ -71,6 +72,16 @@ export async function getGroupBalances(
   return api.getGroupBalances(groupId);
 }
 
+/**
+ * Update a group's details
+ */
+export async function updateGroup(
+  groupId: string,
+  updates: UpdateGroupInput,
+): Promise<GroupApiResponse> {
+  return api.updateGroup(groupId, updates);
+}
+
 export const groupService = {
   createGroup,
   getGroup,
@@ -78,4 +89,5 @@ export const groupService = {
   joinGroup,
   getGroupMembers,
   getGroupBalances,
+  updateGroup,
 };

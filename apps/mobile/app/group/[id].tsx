@@ -303,9 +303,14 @@ export default function GroupDetailScreen() {
               >
                 <Text className="text-dutch-orange text-base">Invite</Text>
               </Pressable>
-              <Pressable className="active:opacity-70">
-                <Text className="text-dutch-orange text-base">Settings</Text>
-              </Pressable>
+              {user?.id === group.createdById && (
+                <Pressable
+                  onPress={() => router.push(`/group/${id}/edit`)}
+                  className="active:opacity-70"
+                >
+                  <Text className="text-dutch-orange text-base">Edit</Text>
+                </Pressable>
+              )}
             </View>
           ),
         }}

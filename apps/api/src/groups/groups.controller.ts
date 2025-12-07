@@ -1,9 +1,9 @@
-import { Controller, Post, Get, Body, Param, Res } from '@nestjs/common';
+import { Controller, Post, Get, Put, Body, Param, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { GroupsService } from './groups.service';
 import { BalancesService } from './balances.service';
 import { SettlementsService } from '../settlements/settlements.service';
-import { CreateGroupDto, JoinGroupDto } from './dto';
+import { CreateGroupDto, JoinGroupDto, UpdateGroupDto } from './dto';
 
 @Controller('groups')
 export class GroupsController {
@@ -64,5 +64,15 @@ export class GroupsController {
   @Get(':id')
   async getGroup(@Param('id') id: string) {
     return this.groupsService.getGroupById(id);
+  }
+
+  @Put(':id')
+  async updateGroup(@Param('id') id: string, @Body() dto: UpdateGroupDto) {
+    return this.groupsService.updateGroup(
+      id,
+      dto.name,
+      dto.emoji,
+      dto.defaultCurrency,
+    );
   }
 }

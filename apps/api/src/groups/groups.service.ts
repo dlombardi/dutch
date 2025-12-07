@@ -83,6 +83,26 @@ export class GroupsService {
     return { group: toGroupData(group) };
   }
 
+  async updateGroup(
+    id: string,
+    name?: string,
+    emoji?: string,
+    defaultCurrency?: string,
+  ): Promise<{ group: GroupData }> {
+    const existing = await this.groupsRepo.findById(id);
+    if (!existing) {
+      throw new NotFoundException('Group not found');
+    }
+
+    const updates: Partial<{ name: string; emoji: string; defaultCurrency: string }> = {};
+    if (name !== undefined) updates.name = name;
+    if (emoji !== undefined) updates.emoji = emoji;
+    if (defaultCurrency !== undefined) updates.defaultCurrency = defaultCurrency;
+
+    const group = await this.groupsRepo.update(id, updates);
+    return { group: toGroupData(group) };
+  }
+
   async getGroupByInviteCode(
     inviteCode: string,
   ): Promise<{ group: GroupData }> {

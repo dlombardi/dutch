@@ -209,6 +209,31 @@ class ApiClient {
     }>(`/groups/${id}`, { method: "GET" });
   }
 
+  async updateGroup(
+    id: string,
+    updates: {
+      name?: string;
+      emoji?: string;
+      defaultCurrency?: string;
+    },
+  ) {
+    return this.request<{
+      group: {
+        id: string;
+        name: string;
+        emoji: string;
+        createdById: string;
+        inviteCode: string;
+        defaultCurrency: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/groups/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+  }
+
   async getGroupByInviteCode(inviteCode: string) {
     return this.request<{
       group: {
