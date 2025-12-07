@@ -3,7 +3,7 @@
  * Types shared across the auth module
  */
 
-export type UserType = 'guest' | 'claimed' | 'full';
+export type UserType = "guest" | "claimed" | "full";
 
 export interface User {
   id: string;
@@ -51,8 +51,8 @@ export interface GuestUserResponse {
   user: {
     id: string;
     name: string;
-    type: 'guest';
-    authProvider: 'guest';
+    type: "guest";
+    authProvider: "guest";
     deviceId: string;
     sessionCount: number;
     upgradePromptDismissedAt?: string;

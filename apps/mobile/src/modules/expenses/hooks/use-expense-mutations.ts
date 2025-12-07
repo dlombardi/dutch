@@ -3,12 +3,12 @@
  * React Query mutation hooks for expense CRUD operations
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-client';
-import { isOffline } from '@/store/network-store';
-import { useOfflineQueueStore } from '@/store/offline-queue-store';
-import { expenseService } from '../services';
-import type { CreateExpenseInput, Expense, UpdateExpenseInput } from '../types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-client";
+import { isOffline } from "@/store/network-store";
+import { useOfflineQueueStore } from "@/store/offline-queue-store";
+import { expenseService } from "../services";
+import type { CreateExpenseInput, Expense, UpdateExpenseInput } from "../types";
 
 /**
  * Mutation hook for creating an expense with optimistic updates and offline support.
@@ -46,12 +46,12 @@ export function useCreateExpense() {
           id: pending.localId,
           groupId: input.groupId,
           amount: input.amount,
-          currency: input.currency || 'USD',
+          currency: input.currency || "USD",
           exchangeRate: input.exchangeRate || 1,
           amountInGroupCurrency: input.amount * (input.exchangeRate || 1),
           description: input.description,
           paidById: input.paidById,
-          splitType: input.splitType || 'equal',
+          splitType: input.splitType || "equal",
           splitParticipants: input.splitParticipants || [input.paidById],
           splitAmounts: input.splitAmounts || {},
           date: input.date || new Date().toISOString(),
@@ -74,7 +74,7 @@ export function useCreateExpense() {
 
       // Snapshot the previous value
       const previousExpenses = queryClient.getQueryData<Expense[]>(
-        queryKeys.expenses.byGroup(newExpense.groupId)
+        queryKeys.expenses.byGroup(newExpense.groupId),
       );
 
       // Create an optimistic expense
@@ -82,13 +82,16 @@ export function useCreateExpense() {
         id: `temp-${Date.now()}`,
         groupId: newExpense.groupId,
         amount: newExpense.amount,
-        currency: newExpense.currency || 'USD',
+        currency: newExpense.currency || "USD",
         exchangeRate: newExpense.exchangeRate || 1,
-        amountInGroupCurrency: newExpense.amount * (newExpense.exchangeRate || 1),
+        amountInGroupCurrency:
+          newExpense.amount * (newExpense.exchangeRate || 1),
         description: newExpense.description,
         paidById: newExpense.paidById,
-        splitType: newExpense.splitType || 'equal',
-        splitParticipants: newExpense.splitParticipants || [newExpense.paidById],
+        splitType: newExpense.splitType || "equal",
+        splitParticipants: newExpense.splitParticipants || [
+          newExpense.paidById,
+        ],
         splitAmounts: newExpense.splitAmounts || {},
         date: newExpense.date || new Date().toISOString(),
         createdById: newExpense.createdById,
@@ -99,7 +102,7 @@ export function useCreateExpense() {
       // Optimistically update the cache
       queryClient.setQueryData<Expense[]>(
         queryKeys.expenses.byGroup(newExpense.groupId),
-        (old) => (old ? [...old, optimisticExpense] : [optimisticExpense])
+        (old) => (old ? [...old, optimisticExpense] : [optimisticExpense]),
       );
 
       // Return context with snapshot for rollback
@@ -111,7 +114,7 @@ export function useCreateExpense() {
       if (context?.previousExpenses) {
         queryClient.setQueryData(
           queryKeys.expenses.byGroup(newExpense.groupId),
-          context.previousExpenses
+          context.previousExpenses,
         );
       }
     },
@@ -122,7 +125,9 @@ export function useCreateExpense() {
       queryClient.setQueryData<Expense[]>(
         queryKeys.expenses.byGroup(input.groupId),
         (old) =>
-          old?.map((e) => (e.id === context?.optimisticId ? expense : e)) || [expense]
+          old?.map((e) => (e.id === context?.optimisticId ? expense : e)) || [
+            expense,
+          ],
       );
 
       // Invalidate balances since they've changed
@@ -148,7 +153,7 @@ export function useUpdateExpense() {
     onMutate: async ({ id, updates }) => {
       // Get the current expense to find its groupId
       const currentExpense = queryClient.getQueryData<Expense>(
-        queryKeys.expenses.detail(id)
+        queryKeys.expenses.detail(id),
       );
 
       if (!currentExpense) return { previousExpense: undefined };
@@ -164,7 +169,7 @@ export function useUpdateExpense() {
       // Snapshot previous values
       const previousExpense = currentExpense;
       const previousExpenses = queryClient.getQueryData<Expense[]>(
-        queryKeys.expenses.byGroup(currentExpense.groupId)
+        queryKeys.expenses.byGroup(currentExpense.groupId),
       );
 
       // Create optimistically updated expense
@@ -175,25 +180,35 @@ export function useUpdateExpense() {
       };
 
       // Update detail cache
-      queryClient.setQueryData(queryKeys.expenses.detail(id), optimisticExpense);
+      queryClient.setQueryData(
+        queryKeys.expenses.detail(id),
+        optimisticExpense,
+      );
 
       // Update list cache
       queryClient.setQueryData<Expense[]>(
         queryKeys.expenses.byGroup(currentExpense.groupId),
-        (old) => old?.map((e) => (e.id === id ? optimisticExpense : e))
+        (old) => old?.map((e) => (e.id === id ? optimisticExpense : e)),
       );
 
-      return { previousExpense, previousExpenses, groupId: currentExpense.groupId };
+      return {
+        previousExpense,
+        previousExpenses,
+        groupId: currentExpense.groupId,
+      };
     },
 
     onError: (err, { id }, context) => {
       if (context?.previousExpense) {
-        queryClient.setQueryData(queryKeys.expenses.detail(id), context.previousExpense);
+        queryClient.setQueryData(
+          queryKeys.expenses.detail(id),
+          context.previousExpense,
+        );
       }
       if (context?.previousExpenses && context?.groupId) {
         queryClient.setQueryData(
           queryKeys.expenses.byGroup(context.groupId),
-          context.previousExpenses
+          context.previousExpenses,
         );
       }
     },
@@ -203,7 +218,7 @@ export function useUpdateExpense() {
       queryClient.setQueryData(queryKeys.expenses.detail(expense.id), expense);
       queryClient.setQueryData<Expense[]>(
         queryKeys.expenses.byGroup(expense.groupId),
-        (old) => old?.map((e) => (e.id === expense.id ? expense : e))
+        (old) => old?.map((e) => (e.id === expense.id ? expense : e)),
       );
 
       // Invalidate balances
@@ -234,13 +249,13 @@ export function useDeleteExpense() {
 
       // Snapshot previous value
       const previousExpenses = queryClient.getQueryData<Expense[]>(
-        queryKeys.expenses.byGroup(groupId)
+        queryKeys.expenses.byGroup(groupId),
       );
 
       // Optimistically remove the expense
       queryClient.setQueryData<Expense[]>(
         queryKeys.expenses.byGroup(groupId),
-        (old) => old?.filter((e) => e.id !== id)
+        (old) => old?.filter((e) => e.id !== id),
       );
 
       // Remove from detail cache
@@ -255,7 +270,7 @@ export function useDeleteExpense() {
       if (context?.previousExpenses) {
         queryClient.setQueryData(
           queryKeys.expenses.byGroup(groupId),
-          context.previousExpenses
+          context.previousExpenses,
         );
       }
     },

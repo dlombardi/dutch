@@ -1,7 +1,7 @@
-import { useColorScheme } from 'nativewind';
-import { View } from '../primitives';
-import type { IconContainerProps } from './icon-container.types';
-import { colorClasses, iconContainerVariants } from './icon-container.styles';
+import { useColorScheme } from "nativewind";
+import { View } from "../primitives";
+import type { IconContainerProps } from "./icon-container.types";
+import { colorClasses, iconContainerVariants } from "./icon-container.styles";
 
 /**
  * Icon container with colored background and border.
@@ -9,14 +9,14 @@ import { colorClasses, iconContainerVariants } from './icon-container.styles';
  */
 export function IconContainer({
   children,
-  size = 'md',
-  color = 'orange',
-  className = '',
+  size = "md",
+  color = "orange",
+  className = "",
   style,
   ...props
 }: IconContainerProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   const colors = isDark ? colorClasses.dark : colorClasses.light;
 

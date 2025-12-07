@@ -3,7 +3,7 @@
  * Types shared across the expenses module
  */
 
-export type SplitType = 'equal' | 'exact';
+export type SplitType = "equal" | "exact";
 
 export interface Expense {
   id: string;

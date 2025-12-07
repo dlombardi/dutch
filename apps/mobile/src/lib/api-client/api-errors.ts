@@ -2,7 +2,7 @@
  * API Error Classes
  */
 
-import type { ApiErrorResponse } from './api-client.types';
+import type { ApiErrorResponse } from "./api-client.types";
 
 /**
  * Base class for all API-related errors
@@ -24,9 +24,9 @@ export class NetworkError extends BaseApiError {
   constructor(originalError?: Error) {
     super(
       originalError?.message ||
-        'Network connection failed. Please check your internet connection.'
+        "Network connection failed. Please check your internet connection.",
     );
-    this.name = 'NetworkError';
+    this.name = "NetworkError";
     this.cause = originalError;
   }
 }
@@ -42,8 +42,8 @@ export class RequestTimeoutError extends BaseApiError {
   readonly timeoutMs: number;
 
   constructor(url: string, timeoutMs: number) {
-    super('Request timed out. Please try again.');
-    this.name = 'RequestTimeoutError';
+    super("Request timed out. Please try again.");
+    this.name = "RequestTimeoutError";
     this.url = url;
     this.timeoutMs = timeoutMs;
   }
@@ -62,10 +62,10 @@ export class ApiError extends BaseApiError {
 
   constructor(response: ApiErrorResponse) {
     const message = Array.isArray(response.message)
-      ? response.message.join(', ')
+      ? response.message.join(", ")
       : response.message;
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.statusCode = response.statusCode;
     this.errorCode = response.error;
     this.details = response.message;
@@ -90,7 +90,7 @@ export class ApiError extends BaseApiError {
  * Type guard to check if an error is a network-related error
  */
 export function isNetworkError(
-  error: unknown
+  error: unknown,
 ): error is NetworkError | RequestTimeoutError {
   return error instanceof NetworkError || error instanceof RequestTimeoutError;
 }
@@ -108,23 +108,23 @@ export function isApiError(error: unknown): error is ApiError {
 export function getErrorMessage(error: unknown): string {
   if (isNetworkError(error)) {
     if (error instanceof RequestTimeoutError) {
-      return 'The request took too long. Please try again.';
+      return "The request took too long. Please try again.";
     }
-    return 'Unable to connect. Please check your internet connection.';
+    return "Unable to connect. Please check your internet connection.";
   }
 
   if (isApiError(error)) {
     if (error.isAuthError()) {
-      return 'Please sign in again to continue.';
+      return "Please sign in again to continue.";
     }
     if (error.isNotFoundError()) {
-      return 'The requested item was not found.';
+      return "The requested item was not found.";
     }
     if (error.isValidationError()) {
-      return error.message || 'Please check your input and try again.';
+      return error.message || "Please check your input and try again.";
     }
     if (error.isServerError) {
-      return 'Something went wrong on our end. Please try again later.';
+      return "Something went wrong on our end. Please try again later.";
     }
     return error.message;
   }
@@ -133,5 +133,5 @@ export function getErrorMessage(error: unknown): string {
     return error.message;
   }
 
-  return 'An unexpected error occurred.';
+  return "An unexpected error occurred.";
 }

@@ -1,19 +1,19 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useColorScheme } from 'nativewind';
-import { useAuthStore } from '@/modules/auth';
-import { View, Text, FormInput } from '@/components/ui/primitives';
-import { GhostButton, PrimaryButton } from '@/components/ui';
-import { gradients } from '@/constants/theme';
+import { useState } from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { useColorScheme } from "nativewind";
+import { useAuthStore } from "@/modules/auth";
+import { View, Text, FormInput } from "@/components/ui/primitives";
+import { GhostButton, PrimaryButton } from "@/components/ui";
+import { gradients } from "@/constants/theme";
 
 export default function GuestJoinScreen() {
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const { loginAsGuest, isLoading, error, clearError } = useAuthStore();
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   const isValidName = (value: string) => {
     return value.trim().length >= 1;
@@ -29,13 +29,13 @@ export default function GuestJoinScreen() {
   };
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+    <SafeAreaView className={`flex-1 ${isDark ? "bg-dark-bg" : "bg-light-bg"}`}>
       {/* Ambient gradient */}
       <LinearGradient
         colors={gradients.orangeAmbient.colors}
         locations={gradients.orangeAmbient.locations}
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           right: 0,
           top: 0,
@@ -45,7 +45,7 @@ export default function GuestJoinScreen() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <View className="flex-1 px-6 justify-between">
@@ -61,17 +61,23 @@ export default function GuestJoinScreen() {
           {/* Header */}
           <View className="items-center mt-5">
             <Text className="text-5xl font-bold text-dutch-orange">dutch</Text>
-            <Text className={`text-base mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            <Text
+              className={`text-base mt-2 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+            >
               Join as a guest
             </Text>
           </View>
 
           {/* Form */}
           <View className="flex-1 justify-center">
-            <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+            <Text
+              className={`text-2xl font-bold mb-2 ${isDark ? "text-white" : "text-black"}`}
+            >
               What's your name?
             </Text>
-            <Text className={`text-base mb-6 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            <Text
+              className={`text-base mb-6 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+            >
               This is how others will see you in the group
             </Text>
 
@@ -105,7 +111,9 @@ export default function GuestJoinScreen() {
           </View>
 
           {/* Footer */}
-          <Text className={`text-center text-xs leading-5 pb-4 ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>
+          <Text
+            className={`text-center text-xs leading-5 pb-4 ${isDark ? "text-dark-text-tertiary" : "text-light-text-tertiary"}`}
+          >
             Your identity is tied to this device. You can claim your account
             later to sync across devices.
           </Text>

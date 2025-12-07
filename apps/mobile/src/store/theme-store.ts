@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = "system" | "light" | "dark";
 
 interface ThemeState {
   preference: ThemePreference;
@@ -16,14 +16,14 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      preference: 'dark', // Default to dark
+      preference: "dark", // Default to dark
       _hasHydrated: false,
 
       setPreference: (preference) => set({ preference }),
       setHasHydrated: (value) => set({ _hasHydrated: value }),
     }),
     {
-      name: 'theme-storage',
+      name: "theme-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         preference: state.preference,
@@ -31,6 +31,6 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => () => {
         useThemeStore.getState().setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );

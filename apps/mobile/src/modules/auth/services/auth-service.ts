@@ -3,20 +3,24 @@
  * Handles all authentication-related API calls
  */
 
-import { api } from '@/lib/api-client';
-import type { GuestUserResponse, MagicLinkVerifyResponse } from '../types';
+import { api } from "@/lib/api-client";
+import type { GuestUserResponse, MagicLinkVerifyResponse } from "../types";
 
 /**
  * Request a magic link to be sent to the user's email
  */
-export async function requestMagicLink(email: string): Promise<{ message: string }> {
+export async function requestMagicLink(
+  email: string,
+): Promise<{ message: string }> {
   return api.requestMagicLink(email);
 }
 
 /**
  * Verify a magic link token and get user data
  */
-export async function verifyMagicLink(token: string): Promise<MagicLinkVerifyResponse> {
+export async function verifyMagicLink(
+  token: string,
+): Promise<MagicLinkVerifyResponse> {
   return api.verifyMagicLink(token);
 }
 
@@ -25,7 +29,7 @@ export async function verifyMagicLink(token: string): Promise<MagicLinkVerifyRes
  */
 export async function createGuestUser(
   name: string,
-  deviceId: string
+  deviceId: string,
 ): Promise<GuestUserResponse> {
   return api.createGuestUser(name, deviceId);
 }
@@ -33,7 +37,9 @@ export async function createGuestUser(
 /**
  * Dismiss the upgrade prompt for a guest user
  */
-export async function dismissUpgradePrompt(deviceId: string): Promise<{ success: boolean }> {
+export async function dismissUpgradePrompt(
+  deviceId: string,
+): Promise<{ success: boolean }> {
   return api.dismissUpgradePrompt(deviceId);
 }
 
@@ -43,7 +49,7 @@ export async function dismissUpgradePrompt(deviceId: string): Promise<{ success:
  */
 export async function claimGuestAccount(
   deviceId: string,
-  email: string
+  email: string,
 ): Promise<{ message: string }> {
   return api.claimGuestAccount(deviceId, email);
 }

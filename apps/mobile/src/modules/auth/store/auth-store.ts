@@ -3,17 +3,17 @@
  * Zustand store for authentication state management
  */
 
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
-import { registerTokenGetter } from '@/lib/api-client';
-import { logger } from '@/lib/utils/logger';
-import { authService } from '../services';
-import type { AuthStore, User } from '../types';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
+import { registerTokenGetter } from "@/lib/api-client";
+import { logger } from "@/lib/utils/logger";
+import { authService } from "../services";
+import type { AuthStore, User } from "../types";
 
 // Device ID management
-const DEVICE_ID_KEY = 'evn-device-id';
+const DEVICE_ID_KEY = "evn-device-id";
 
 async function getOrCreateDeviceId(): Promise<string> {
   let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
@@ -65,14 +65,18 @@ export const useAuthStore = create<AuthStore>()(
             accessToken: response.accessToken,
             isAuthenticated: true,
             showUpgradePrompt: response.showUpgradePrompt,
-            upgradePromptDismissedAt: response.user.upgradePromptDismissedAt || null,
+            upgradePromptDismissedAt:
+              response.user.upgradePromptDismissedAt || null,
           });
           logger.setUser({ id: user.id, name: user.name });
-          logger.info('Guest user logged in', { userId: user.id, sessionCount: user.sessionCount });
+          logger.info("Guest user logged in", {
+            userId: user.id,
+            sessionCount: user.sessionCount,
+          });
         } catch (error: unknown) {
           const errorMessage =
-            error instanceof Error ? error.message : 'Failed to login as guest';
-          logger.error('Guest login failed', error);
+            error instanceof Error ? error.message : "Failed to login as guest";
+          logger.error("Guest login failed", error);
           set({ error: errorMessage });
         } finally {
           set({ isLoading: false });
@@ -87,14 +91,14 @@ export const useAuthStore = create<AuthStore>()(
             magicLinkSent: true,
             magicLinkEmail: email,
           });
-          logger.info('Magic link requested', { email });
+          logger.info("Magic link requested", { email });
           return true;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error
               ? error.message
-              : 'Failed to send magic link';
-          logger.error('Magic link request failed', error, { email });
+              : "Failed to send magic link";
+          logger.error("Magic link request failed", error, { email });
           set({ error: errorMessage });
           return false;
         } finally {
@@ -121,14 +125,14 @@ export const useAuthStore = create<AuthStore>()(
             magicLinkEmail: null,
           });
           logger.setUser({ id: user.id, email: user.email, name: user.name });
-          logger.info('Magic link verified', { userId: user.id });
+          logger.info("Magic link verified", { userId: user.id });
           return true;
         } catch (error: unknown) {
           const errorMessage =
             error instanceof Error
               ? error.message
-              : 'Failed to verify magic link';
-          logger.error('Magic link verification failed', error);
+              : "Failed to verify magic link";
+          logger.error("Magic link verification failed", error);
           set({ error: errorMessage });
           return false;
         } finally {
@@ -138,8 +142,8 @@ export const useAuthStore = create<AuthStore>()(
 
       claimAccount: async (email) => {
         const { user } = get();
-        if (!user || user.type !== 'guest') {
-          set({ error: 'Only guest users can claim an account' });
+        if (!user || user.type !== "guest") {
+          set({ error: "Only guest users can claim an account" });
           return false;
         }
 
@@ -152,14 +156,12 @@ export const useAuthStore = create<AuthStore>()(
             claimEmail: email,
             showUpgradePrompt: false,
           });
-          logger.info('Claim account email sent', { email });
+          logger.info("Claim account email sent", { email });
           return true;
         } catch (error: unknown) {
           const errorMessage =
-            error instanceof Error
-              ? error.message
-              : 'Failed to claim account';
-          logger.error('Claim account failed', error, { email });
+            error instanceof Error ? error.message : "Failed to claim account";
+          logger.error("Claim account failed", error, { email });
           set({ error: errorMessage });
           return false;
         } finally {
@@ -175,9 +177,9 @@ export const useAuthStore = create<AuthStore>()(
             showUpgradePrompt: false,
             upgradePromptDismissedAt: new Date().toISOString(),
           });
-          logger.info('Upgrade prompt dismissed');
+          logger.info("Upgrade prompt dismissed");
         } catch (error: unknown) {
-          logger.error('Failed to dismiss upgrade prompt', error);
+          logger.error("Failed to dismiss upgrade prompt", error);
         }
       },
 
@@ -193,7 +195,7 @@ export const useAuthStore = create<AuthStore>()(
           upgradePromptDismissedAt: null,
         });
         logger.setUser(null);
-        logger.info('User logged out');
+        logger.info("User logged out");
       },
 
       clearError: () => {
@@ -217,7 +219,7 @@ export const useAuthStore = create<AuthStore>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
@@ -228,8 +230,8 @@ export const useAuthStore = create<AuthStore>()(
       onRehydrateStorage: () => (state) => {
         useAuthStore.getState().setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );
 
 // Register token getter with API client

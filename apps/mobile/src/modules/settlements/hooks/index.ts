@@ -1,6 +1,6 @@
 export {
   useGroupSettlements,
   usePrefetchGroupSettlements,
-} from './use-settlements';
+} from "./use-settlements";
 
-export { useCreateSettlement } from './use-settlement-mutations';
+export { useCreateSettlement } from "./use-settlement-mutations";

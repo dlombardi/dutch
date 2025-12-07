@@ -1,22 +1,27 @@
-import '../global.css';
+import "../global.css";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { router, Stack, useRootNavigationState, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ActivityIndicator, Alert, Appearance } from 'react-native';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { useColorScheme } from 'nativewind';
-import DropdownAlert, { DropdownAlertData } from 'react-native-dropdownalert';
-import { getQueryClient } from '@/lib/query-client';
-import { useAuthStore } from '@/modules/auth';
-import { useSyncStore } from '@/store/sync-store';
-import { setOnOnlineCallback, useNetworkStore } from '@/store/network-store';
-import { useOfflineQueueStore } from '@/store/offline-queue-store';
-import { useThemeStore } from '@/store/theme-store';
-import { colors } from '@/constants/theme';
-import { UpgradePromptBannerContent } from '@/components/ui';
-import { View, Text } from '@/components/ui/primitives';
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  router,
+  Stack,
+  useRootNavigationState,
+  useSegments,
+} from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ActivityIndicator, Alert, Appearance } from "react-native";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useColorScheme } from "nativewind";
+import DropdownAlert, { DropdownAlertData } from "react-native-dropdownalert";
+import { getQueryClient } from "@/lib/query-client";
+import { useAuthStore } from "@/modules/auth";
+import { useSyncStore } from "@/store/sync-store";
+import { setOnOnlineCallback, useNetworkStore } from "@/store/network-store";
+import { useOfflineQueueStore } from "@/store/offline-queue-store";
+import { useThemeStore } from "@/store/theme-store";
+import { colors } from "@/constants/theme";
+import { UpgradePromptBannerContent } from "@/components/ui";
+import { View, Text } from "@/components/ui/primitives";
 
 // Offline banner as a pure presentational component (no hooks)
 function OfflineBannerView({
@@ -36,29 +41,33 @@ function OfflineBannerView({
   if (!isOffline && !hasPending) return null;
 
   let message = "You're offline. Data shown may be outdated.";
-  let bgClass = 'bg-amber-500';
-  let textClass = 'text-amber-900';
+  let bgClass = "bg-amber-500";
+  let textClass = "text-amber-900";
 
   if (hasPending && !isOffline) {
     if (isSyncing) {
-      message = `Syncing ${pendingCount} pending expense${pendingCount > 1 ? 's' : ''}...`;
-      bgClass = 'bg-blue-500';
-      textClass = 'text-white';
+      message = `Syncing ${pendingCount} pending expense${pendingCount > 1 ? "s" : ""}...`;
+      bgClass = "bg-blue-500";
+      textClass = "text-white";
     } else {
-      message = `${pendingCount} expense${pendingCount > 1 ? 's' : ''} pending sync`;
+      message = `${pendingCount} expense${pendingCount > 1 ? "s" : ""} pending sync`;
     }
   } else if (hasPending && isOffline) {
-    message = `Offline - ${pendingCount} expense${pendingCount > 1 ? 's' : ''} will sync when online`;
+    message = `Offline - ${pendingCount} expense${pendingCount > 1 ? "s" : ""} will sync when online`;
   }
 
   return (
-    <View className={`${bgClass} py-2 px-4 flex-row justify-center items-center`}>
+    <View
+      className={`${bgClass} py-2 px-4 flex-row justify-center items-center`}
+    >
       {isSyncing && (
-        <ActivityIndicator size="small" color={textClass === 'text-white' ? '#FFFFFF' : '#78350F'} style={{ marginRight: 8 }} />
+        <ActivityIndicator
+          size="small"
+          color={textClass === "text-white" ? "#FFFFFF" : "#78350F"}
+          style={{ marginRight: 8 }}
+        />
       )}
-      <Text className={`${textClass} font-semibold text-sm`}>
-        {message}
-      </Text>
+      <Text className={`${textClass} font-semibold text-sm`}>{message}</Text>
     </View>
   );
 }
@@ -67,7 +76,9 @@ function OfflineBannerView({
 function LoadingScreen({ isDark }: { isDark: boolean }) {
   const themeColors = isDark ? colors.dark : colors.light;
   return (
-    <View className={`flex-1 justify-center items-center ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
+    <View
+      className={`flex-1 justify-center items-center ${isDark ? "bg-dark-bg" : "bg-light-bg"}`}
+    >
       <ActivityIndicator size="large" color={themeColors.orange} />
     </View>
   );
@@ -96,7 +107,9 @@ function AppContent({
   onSwipeDismiss: () => void;
 }) {
   const themeColors = isDark ? colors.dark : colors.light;
-  const alertRef = useRef<((data?: DropdownAlertData) => Promise<DropdownAlertData>) | undefined>(undefined);
+  const alertRef = useRef<
+    ((data?: DropdownAlertData) => Promise<DropdownAlertData>) | undefined
+  >(undefined);
   const alertShownRef = useRef(false);
 
   // Trigger alert when showUpgradePrompt becomes true
@@ -104,9 +117,9 @@ function AppContent({
     if (showUpgradePrompt && alertRef.current && !alertShownRef.current) {
       alertShownRef.current = true;
       alertRef.current({
-        type: 'info',
-        title: '',
-        message: '',
+        type: "info",
+        title: "",
+        message: "",
       });
     } else if (!showUpgradePrompt) {
       alertShownRef.current = false;
@@ -121,7 +134,7 @@ function AppContent({
 
   return (
     <View className="flex-1">
-      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? "light" : "dark"} />
       <OfflineBannerView
         isConnected={isConnected}
         isInternetReachable={isInternetReachable}
@@ -147,20 +160,20 @@ function AppContent({
           name="create-group"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: "modal",
           }}
         />
         <Stack.Screen
           name="group/[id]"
           options={{
-            headerBackTitle: 'Groups',
+            headerBackTitle: "Groups",
           }}
         />
         <Stack.Screen
           name="group/[id]/add-expense"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: "modal",
           }}
         />
         <Stack.Screen name="expense/[id]" />
@@ -168,20 +181,20 @@ function AppContent({
           name="expense/[id]/edit"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: "modal",
           }}
         />
         <Stack.Screen
           name="join/[code]"
           options={{
-            title: 'Join Group',
+            title: "Join Group",
           }}
         />
         <Stack.Screen
           name="claim-account"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: "modal",
           }}
         />
       </Stack>
@@ -224,20 +237,28 @@ export default function RootLayout() {
   const _hasHydrated = useAuthStore((state) => state._hasHydrated);
   const showUpgradePrompt = useAuthStore((state) => state.showUpgradePrompt);
   const user = useAuthStore((state) => state.user);
-  const dismissUpgradePrompt = useAuthStore((state) => state.dismissUpgradePrompt);
+  const dismissUpgradePrompt = useAuthStore(
+    (state) => state.dismissUpgradePrompt,
+  );
   const connect = useSyncStore((state) => state.connect);
   const disconnect = useSyncStore((state) => state.disconnect);
   const initializeNetwork = useNetworkStore((state) => state.initialize);
   const isConnected = useNetworkStore((state) => state.isConnected);
-  const isInternetReachable = useNetworkStore((state) => state.isInternetReachable);
-  const syncPendingExpenses = useOfflineQueueStore((state) => state.syncPendingExpenses);
-  const pendingExpenses = useOfflineQueueStore((state) => state.pendingExpenses);
+  const isInternetReachable = useNetworkStore(
+    (state) => state.isInternetReachable,
+  );
+  const syncPendingExpenses = useOfflineQueueStore(
+    (state) => state.syncPendingExpenses,
+  );
+  const pendingExpenses = useOfflineQueueStore(
+    (state) => state.pendingExpenses,
+  );
   const isSyncing = useOfflineQueueStore((state) => state.isSyncing);
   const themePreference = useThemeStore((state) => state.preference);
   const themeHasHydrated = useThemeStore((state) => state._hasHydrated);
 
   // Determine if we're in dark mode
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   // Memoize callbacks to avoid re-creating functions
   const handleOnline = useCallback(() => {
@@ -246,17 +267,17 @@ export default function RootLayout() {
 
   const handleClaimAccount = useCallback(() => {
     // Navigate to settings where the user can add their email
-    router.push('/(tabs)/settings');
+    router.push("/(tabs)/settings");
   }, []);
 
   const handleDismissUpgradePrompt = useCallback(() => {
     Alert.alert(
-      'Dismiss Reminder',
-      'You can always add your email later in Settings.',
+      "Dismiss Reminder",
+      "You can always add your email later in Settings.",
       [
-        { text: 'Keep Showing', style: 'cancel' },
-        { text: 'Dismiss', onPress: dismissUpgradePrompt },
-      ]
+        { text: "Keep Showing", style: "cancel" },
+        { text: "Dismiss", onPress: dismissUpgradePrompt },
+      ],
     );
   }, [dismissUpgradePrompt]);
 
@@ -268,9 +289,9 @@ export default function RootLayout() {
   useEffect(() => {
     if (!themeHasHydrated) return;
 
-    if (themePreference === 'system') {
+    if (themePreference === "system") {
       // Use system preference
-      const systemScheme = Appearance.getColorScheme() || 'dark';
+      const systemScheme = Appearance.getColorScheme() || "dark";
       setColorScheme(systemScheme);
     } else {
       // Use explicit preference
@@ -304,17 +325,24 @@ export default function RootLayout() {
   useEffect(() => {
     if (!isMounted || !navigationState?.key || !_hasHydrated) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const inAuthVerify = segments[0] === 'auth' && (segments as string[])[1] === 'verify';
+    const inAuthGroup = segments[0] === "(auth)";
+    const inAuthVerify =
+      segments[0] === "auth" && (segments as string[])[1] === "verify";
 
     if (inAuthVerify) return;
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)/sign-in');
+      router.replace("/(auth)/sign-in");
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
-  }, [isAuthenticated, segments, navigationState?.key, isMounted, _hasHydrated]);
+  }, [
+    isAuthenticated,
+    segments,
+    navigationState?.key,
+    isMounted,
+    _hasHydrated,
+  ]);
 
   // Always render SafeAreaProvider - switch content based on hydration state
   return (
@@ -329,7 +357,7 @@ export default function RootLayout() {
             pendingCount={pendingExpenses.length}
             isSyncing={isSyncing}
             isDark={isDark}
-            showUpgradePrompt={showUpgradePrompt && user?.type === 'guest'}
+            showUpgradePrompt={showUpgradePrompt && user?.type === "guest"}
             onClaimAccount={handleClaimAccount}
             onDismissUpgradePrompt={handleDismissUpgradePrompt}
             onSwipeDismiss={dismissUpgradePrompt}

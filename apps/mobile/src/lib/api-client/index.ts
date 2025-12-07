@@ -1,4 +1,4 @@
-export { api, registerTokenGetter } from './api-client';
+export { api, registerTokenGetter } from "./api-client";
 export {
   ApiError,
   NetworkError,
@@ -7,5 +7,5 @@ export {
   isNetworkError,
   isApiError,
   getErrorMessage,
-} from './api-errors';
-export type { ApiErrorResponse, ApiRequestOptions } from './api-client.types';
+} from "./api-errors";
+export type { ApiErrorResponse, ApiRequestOptions } from "./api-client.types";

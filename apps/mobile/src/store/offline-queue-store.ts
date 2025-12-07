@@ -3,13 +3,13 @@
  * Zustand store for managing pending expenses when offline
  */
 
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '@/lib/api-client';
-import { isOffline } from './network-store';
-import { logger } from '@/lib/utils/logger';
-import { getQueryClient, queryKeys } from '@/lib/query-client';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { api } from "@/lib/api-client";
+import { isOffline } from "./network-store";
+import { logger } from "@/lib/utils/logger";
+import { getQueryClient, queryKeys } from "@/lib/query-client";
 
 export interface PendingExpense {
   localId: string;
@@ -21,7 +21,7 @@ export interface PendingExpense {
   createdById: string;
   date?: string;
   splitParticipants?: string[];
-  splitType?: 'equal' | 'exact';
+  splitType?: "equal" | "exact";
   splitAmounts?: Record<string, number>;
   exchangeRate?: number;
   createdAt: string;
@@ -58,7 +58,7 @@ interface OfflineQueueState {
   isSyncing: boolean;
 
   queueExpense: (
-    expense: Omit<PendingExpense, 'localId' | 'createdAt'>
+    expense: Omit<PendingExpense, "localId" | "createdAt">,
   ) => PendingExpense;
   removePendingExpense: (localId: string) => void;
   syncPendingExpenses: () => Promise<void>;
@@ -88,7 +88,7 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
       removePendingExpense: (localId) => {
         set((state) => ({
           pendingExpenses: state.pendingExpenses.filter(
-            (p) => p.localId !== localId
+            (p) => p.localId !== localId,
           ),
         }));
       },
@@ -110,7 +110,7 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
 
           set((state) => ({
             pendingExpenses: state.pendingExpenses.map((p) =>
-              p.localId === pending.localId ? { ...p, isSyncing: true } : p
+              p.localId === pending.localId ? { ...p, isSyncing: true } : p,
             ),
           }));
 
@@ -126,12 +126,12 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
               pending.splitParticipants,
               pending.splitType,
               pending.splitAmounts,
-              pending.exchangeRate
+              pending.exchangeRate,
             );
 
             set((state) => ({
               pendingExpenses: state.pendingExpenses.filter(
-                (p) => p.localId !== pending.localId
+                (p) => p.localId !== pending.localId,
               ),
             }));
 
@@ -145,7 +145,7 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
             const currentRetryCount = pending.retryCount ?? 0;
             const newRetryCount = currentRetryCount + 1;
             const errorMessage =
-              error instanceof Error ? error.message : 'Sync failed';
+              error instanceof Error ? error.message : "Sync failed";
 
             set((state) => ({
               pendingExpenses: state.pendingExpenses.map((p) =>
@@ -160,13 +160,13 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
                           ? `Failed after ${MAX_RETRY_COUNT} attempts: ${errorMessage}`
                           : errorMessage,
                     }
-                  : p
+                  : p,
               ),
             }));
 
             if (newRetryCount >= MAX_RETRY_COUNT) {
-              logger.warn('Pending expense permanently failed', {
-                category: 'offline-queue',
+              logger.warn("Pending expense permanently failed", {
+                category: "offline-queue",
                 localId: pending.localId,
                 retryCount: MAX_RETRY_COUNT,
               });
@@ -179,16 +179,16 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
 
       getFailedPendingExpenses: () => {
         return get().pendingExpenses.filter(
-          (p) => (p.retryCount ?? 0) >= MAX_RETRY_COUNT
+          (p) => (p.retryCount ?? 0) >= MAX_RETRY_COUNT,
         );
       },
     }),
     {
-      name: 'offline-queue-storage',
+      name: "offline-queue-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         pendingExpenses: state.pendingExpenses,
       }),
-    }
-  )
+    },
+  ),
 );

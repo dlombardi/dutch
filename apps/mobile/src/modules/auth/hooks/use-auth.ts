@@ -3,8 +3,8 @@
  * Convenient hook for accessing auth state and actions
  */
 
-import { useCallback } from 'react';
-import { useAuthStore } from '../store';
+import { useCallback } from "react";
+import { useAuthStore } from "../store";
 
 /**
  * Hook that provides authentication state and actions
@@ -12,17 +12,26 @@ import { useAuthStore } from '../store';
 export function useAuth() {
   const store = useAuthStore();
 
-  const login = useCallback(async (name: string) => {
-    await store.loginAsGuest(name);
-  }, [store]);
+  const login = useCallback(
+    async (name: string) => {
+      await store.loginAsGuest(name);
+    },
+    [store],
+  );
 
-  const sendMagicLink = useCallback(async (email: string) => {
-    return store.requestMagicLink(email);
-  }, [store]);
+  const sendMagicLink = useCallback(
+    async (email: string) => {
+      return store.requestMagicLink(email);
+    },
+    [store],
+  );
 
-  const verifyMagicLink = useCallback(async (token: string) => {
-    return store.verifyMagicLink(token);
-  }, [store]);
+  const verifyMagicLink = useCallback(
+    async (token: string) => {
+      return store.verifyMagicLink(token);
+    },
+    [store],
+  );
 
   const logout = useCallback(() => {
     store.logout();

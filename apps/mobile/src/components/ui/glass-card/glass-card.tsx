@@ -1,9 +1,9 @@
-import { Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { useColorScheme } from 'nativewind';
-import { View } from '../primitives';
-import { glassStyle, glassStyleSubtle } from '@/constants/theme';
-import type { GlassCardProps } from './glass-card.types';
+import { Platform } from "react-native";
+import { BlurView } from "expo-blur";
+import { useColorScheme } from "nativewind";
+import { View } from "../primitives";
+import { glassStyle, glassStyleSubtle } from "@/constants/theme";
+import type { GlassCardProps } from "./glass-card.types";
 
 /**
  * Glass Card component with blur effect.
@@ -12,16 +12,16 @@ import type { GlassCardProps } from './glass-card.types';
  */
 export function GlassCard({
   children,
-  className = '',
-  intensity = 'default',
+  className = "",
+  intensity = "default",
   style,
   ...props
 }: GlassCardProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   const glassStyles =
-    intensity === 'default'
+    intensity === "default"
       ? isDark
         ? glassStyle.dark
         : glassStyle.light
@@ -29,14 +29,14 @@ export function GlassCard({
         ? glassStyleSubtle.dark
         : glassStyleSubtle.light;
 
-  const blurIntensity = intensity === 'default' ? 40 : 20;
+  const blurIntensity = intensity === "default" ? 40 : 20;
 
   // Use BlurView on iOS for native blur effect
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === "ios") {
     return (
       <BlurView
         intensity={blurIntensity}
-        tint={isDark ? 'dark' : 'light'}
+        tint={isDark ? "dark" : "light"}
         className={`overflow-hidden rounded-2xl ${className}`}
         style={[
           {
@@ -47,7 +47,9 @@ export function GlassCard({
         ]}
         {...props}
       >
-        <View className={`p-4 ${isDark ? 'bg-white/[0.03]' : 'bg-black/[0.02]'}`}>
+        <View
+          className={`p-4 ${isDark ? "bg-white/[0.03]" : "bg-black/[0.02]"}`}
+        >
           {children}
         </View>
       </BlurView>

@@ -3,7 +3,7 @@
  * Handles all group-related API calls
  */
 
-import { api } from '@/lib/api-client';
+import { api } from "@/lib/api-client";
 import type {
   CreateGroupInput,
   Group,
@@ -11,17 +11,19 @@ import type {
   GroupBalancesApiResponse,
   GroupMembersApiResponse,
   JoinGroupApiResponse,
-} from '../types';
+} from "../types";
 
 /**
  * Create a new group
  */
-export async function createGroup(input: CreateGroupInput): Promise<GroupApiResponse> {
+export async function createGroup(
+  input: CreateGroupInput,
+): Promise<GroupApiResponse> {
   return api.createGroup(
     input.name,
     input.createdById,
     input.emoji,
-    input.defaultCurrency
+    input.defaultCurrency,
   );
 }
 
@@ -35,7 +37,9 @@ export async function getGroup(id: string): Promise<GroupApiResponse> {
 /**
  * Get a group by its invite code (for join preview)
  */
-export async function getGroupByInviteCode(inviteCode: string): Promise<GroupApiResponse> {
+export async function getGroupByInviteCode(
+  inviteCode: string,
+): Promise<GroupApiResponse> {
   return api.getGroupByInviteCode(inviteCode);
 }
 
@@ -44,7 +48,7 @@ export async function getGroupByInviteCode(inviteCode: string): Promise<GroupApi
  */
 export async function joinGroup(
   inviteCode: string,
-  userId: string
+  userId: string,
 ): Promise<JoinGroupApiResponse> {
   return api.joinGroup(inviteCode, userId);
 }
@@ -52,14 +56,18 @@ export async function joinGroup(
 /**
  * Get members for a group
  */
-export async function getGroupMembers(groupId: string): Promise<GroupMembersApiResponse> {
+export async function getGroupMembers(
+  groupId: string,
+): Promise<GroupMembersApiResponse> {
   return api.getGroupMembers(groupId);
 }
 
 /**
  * Get balances for a group
  */
-export async function getGroupBalances(groupId: string): Promise<GroupBalancesApiResponse> {
+export async function getGroupBalances(
+  groupId: string,
+): Promise<GroupBalancesApiResponse> {
   return api.getGroupBalances(groupId);
 }
 

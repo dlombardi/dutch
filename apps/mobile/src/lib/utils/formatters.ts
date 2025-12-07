@@ -2,9 +2,9 @@
  * Formatting utilities
  */
 
-import { getCurrency, getCurrencySymbol as getSymbol } from '@evn/shared';
+import { getCurrency, getCurrencySymbol as getSymbol } from "@evn/shared";
 
-export { getCurrencySymbol } from '@evn/shared';
+export { getCurrencySymbol } from "@evn/shared";
 
 /**
  * Format an amount with the appropriate decimal places for the currency.
@@ -20,7 +20,7 @@ export function formatAmount(amount: number, currencyCode: string): string {
  */
 export function formatAmountWithSymbol(
   amount: number,
-  currencyCode: string
+  currencyCode: string,
 ): string {
   const symbol = getSymbol(currencyCode);
   const formatted = formatAmount(amount, currencyCode);
@@ -33,7 +33,7 @@ export function formatAmountWithSymbol(
 export function formatBalance(amount: number, currencyCode: string): string {
   const symbol = getSymbol(currencyCode);
   const formatted = formatAmount(Math.abs(amount), currencyCode);
-  const sign = amount < 0 ? '-' : '';
+  const sign = amount < 0 ? "-" : "";
   return `${sign}${symbol}${formatted}`;
 }
 
@@ -43,9 +43,9 @@ export function formatBalance(amount: number, currencyCode: string): string {
 export function getUserDisplayName(
   userId: string,
   currentUserId: string | undefined,
-  memberName?: string | null
+  memberName?: string | null,
 ): string {
-  if (userId === currentUserId) return 'You';
+  if (userId === currentUserId) return "You";
   if (memberName) return memberName;
   return `User ${userId.slice(0, 8)}...`;
 }

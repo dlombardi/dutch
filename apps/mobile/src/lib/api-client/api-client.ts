@@ -3,12 +3,10 @@
  * Handles all HTTP requests to the backend
  */
 
-import type { ApiErrorResponse } from './api-client.types';
-import { ApiError, NetworkError, RequestTimeoutError } from './api-errors';
+import type { ApiErrorResponse } from "./api-client.types";
+import { ApiError, NetworkError, RequestTimeoutError } from "./api-errors";
 
-const API_BASE_URL = __DEV__
-  ? 'http://localhost:3001'
-  : 'https://api.evn.app';
+const API_BASE_URL = __DEV__ ? "http://localhost:3001" : "https://api.evn.app";
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
@@ -33,22 +31,22 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    timeoutMs: number = DEFAULT_TIMEOUT_MS
+    timeoutMs: number = DEFAULT_TIMEOUT_MS,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const accessToken = getAccessToken?.() ?? null;
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(options.headers as Record<string, string>),
     };
 
     if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+      headers["Authorization"] = `Bearer ${accessToken}`;
     }
 
     if (__DEV__) {
-      console.log(`[API] ${options.method || 'GET'} ${endpoint}`, {
+      console.log(`[API] ${options.method || "GET"} ${endpoint}`, {
         hasToken: !!accessToken,
         tokenPrefix: accessToken?.substring(0, 20),
       });
@@ -86,10 +84,10 @@ class ApiClient {
         throw error;
       }
 
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         const timeoutError = new RequestTimeoutError(url, timeoutMs);
         if (__DEV__) {
-          console.log('[API] Request timed out:', timeoutError.message);
+          console.log("[API] Request timed out:", timeoutError.message);
         }
         throw timeoutError;
       }
@@ -97,13 +95,13 @@ class ApiClient {
       if (error instanceof TypeError) {
         const networkError = new NetworkError(error);
         if (__DEV__) {
-          console.log('[API] Network error:', networkError.message);
+          console.log("[API] Network error:", networkError.message);
         }
         throw networkError;
       }
 
       if (__DEV__) {
-        console.log('[API] Request failed:', error);
+        console.log("[API] Request failed:", error);
       }
       throw error;
     }
@@ -111,8 +109,8 @@ class ApiClient {
 
   // Auth endpoints
   async requestMagicLink(email: string) {
-    return this.request<{ message: string }>('/auth/magic-link/request', {
-      method: 'POST',
+    return this.request<{ message: string }>("/auth/magic-link/request", {
+      method: "POST",
       body: JSON.stringify({ email }),
     });
   }
@@ -123,13 +121,13 @@ class ApiClient {
         id: string;
         email: string;
         name: string;
-        type: 'guest' | 'claimed' | 'full';
+        type: "guest" | "claimed" | "full";
         createdAt: string;
         updatedAt: string;
       };
       accessToken: string;
-    }>('/auth/magic-link/verify', {
-      method: 'POST',
+    }>("/auth/magic-link/verify", {
+      method: "POST",
       body: JSON.stringify({ token }),
     });
   }
@@ -139,8 +137,8 @@ class ApiClient {
       user: {
         id: string;
         name: string;
-        type: 'guest';
-        authProvider: 'guest';
+        type: "guest";
+        authProvider: "guest";
         deviceId: string;
         sessionCount: number;
         upgradePromptDismissedAt?: string;
@@ -149,22 +147,25 @@ class ApiClient {
       };
       accessToken: string;
       showUpgradePrompt: boolean;
-    }>('/auth/guest', {
-      method: 'POST',
+    }>("/auth/guest", {
+      method: "POST",
       body: JSON.stringify({ name, deviceId }),
     });
   }
 
   async dismissUpgradePrompt(deviceId: string) {
-    return this.request<{ success: boolean }>('/auth/guest/dismiss-upgrade-prompt', {
-      method: 'POST',
-      body: JSON.stringify({ deviceId }),
-    });
+    return this.request<{ success: boolean }>(
+      "/auth/guest/dismiss-upgrade-prompt",
+      {
+        method: "POST",
+        body: JSON.stringify({ deviceId }),
+      },
+    );
   }
 
   async claimGuestAccount(deviceId: string, email: string) {
-    return this.request<{ message: string }>('/auth/guest/claim', {
-      method: 'POST',
+    return this.request<{ message: string }>("/auth/guest/claim", {
+      method: "POST",
       body: JSON.stringify({ deviceId, email }),
     });
   }
@@ -174,7 +175,7 @@ class ApiClient {
     name: string,
     createdById: string,
     emoji?: string,
-    defaultCurrency?: string
+    defaultCurrency?: string,
   ) {
     return this.request<{
       group: {
@@ -187,8 +188,8 @@ class ApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>('/groups', {
-      method: 'POST',
+    }>("/groups", {
+      method: "POST",
       body: JSON.stringify({ name, createdById, emoji, defaultCurrency }),
     });
   }
@@ -205,7 +206,7 @@ class ApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>(`/groups/${id}`, { method: 'GET' });
+    }>(`/groups/${id}`, { method: "GET" });
   }
 
   async getGroupByInviteCode(inviteCode: string) {
@@ -220,7 +221,7 @@ class ApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>(`/groups/invite/${inviteCode}`, { method: 'GET' });
+    }>(`/groups/invite/${inviteCode}`, { method: "GET" });
   }
 
   async joinGroup(inviteCode: string, userId: string) {
@@ -237,11 +238,11 @@ class ApiClient {
       };
       membership: {
         userId: string;
-        role: 'admin' | 'member';
+        role: "admin" | "member";
         joinedAt: string;
       };
-    }>('/groups/join', {
-      method: 'POST',
+    }>("/groups/join", {
+      method: "POST",
       body: JSON.stringify({ inviteCode, userId }),
     });
   }
@@ -250,10 +251,10 @@ class ApiClient {
     return this.request<{
       members: {
         userId: string;
-        role: 'admin' | 'member';
+        role: "admin" | "member";
         joinedAt: string;
       }[];
-    }>(`/groups/${groupId}/members`, { method: 'GET' });
+    }>(`/groups/${groupId}/members`, { method: "GET" });
   }
 
   async getGroupBalances(groupId: string) {
@@ -265,7 +266,7 @@ class ApiClient {
         currency: string;
       }[];
       memberBalances: Record<string, number>;
-    }>(`/groups/${groupId}/balances`, { method: 'GET' });
+    }>(`/groups/${groupId}/balances`, { method: "GET" });
   }
 
   // Expenses endpoints
@@ -278,9 +279,9 @@ class ApiClient {
     currency?: string,
     date?: string,
     splitParticipants?: string[],
-    splitType?: 'equal' | 'exact',
+    splitType?: "equal" | "exact",
     splitAmounts?: Record<string, number>,
-    exchangeRate?: number
+    exchangeRate?: number,
   ) {
     return this.request<{
       expense: {
@@ -292,7 +293,7 @@ class ApiClient {
         amountInGroupCurrency: number;
         description: string;
         paidById: string;
-        splitType: 'equal' | 'exact';
+        splitType: "equal" | "exact";
         splitParticipants: string[];
         splitAmounts: Record<string, number>;
         date: string;
@@ -300,8 +301,8 @@ class ApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>('/expenses', {
-      method: 'POST',
+    }>("/expenses", {
+      method: "POST",
       body: JSON.stringify({
         groupId,
         amount,
@@ -337,7 +338,7 @@ class ApiClient {
         createdAt: string;
         updatedAt: string;
       };
-    }>(`/expenses/${id}`, { method: 'GET' });
+    }>(`/expenses/${id}`, { method: "GET" });
   }
 
   async getGroupExpenses(groupId: string) {
@@ -359,7 +360,7 @@ class ApiClient {
         createdAt: string;
         updatedAt: string;
       }[];
-    }>(`/groups/${groupId}/expenses`, { method: 'GET' });
+    }>(`/groups/${groupId}/expenses`, { method: "GET" });
   }
 
   async updateExpense(
@@ -370,10 +371,10 @@ class ApiClient {
       description?: string;
       paidById?: string;
       date?: string;
-      splitType?: 'equal' | 'exact';
+      splitType?: "equal" | "exact";
       splitParticipants?: string[];
       splitAmounts?: Record<string, number>;
-    }
+    },
   ) {
     return this.request<{
       expense: {
@@ -385,7 +386,7 @@ class ApiClient {
         amountInGroupCurrency: number;
         description: string;
         paidById: string;
-        splitType: 'equal' | 'exact';
+        splitType: "equal" | "exact";
         splitParticipants: string[];
         splitAmounts: Record<string, number>;
         date: string;
@@ -394,14 +395,14 @@ class ApiClient {
         updatedAt: string;
       };
     }>(`/expenses/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(updates),
     });
   }
 
   async deleteExpense(id: string) {
     return this.request<{ message: string }>(`/expenses/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
@@ -413,7 +414,7 @@ class ApiClient {
     amount: number,
     createdById: string,
     currency?: string,
-    method?: string
+    method?: string,
   ) {
     return this.request<{
       settlement: {
@@ -427,8 +428,8 @@ class ApiClient {
         createdById: string;
         createdAt: string;
       };
-    }>('/settlements', {
-      method: 'POST',
+    }>("/settlements", {
+      method: "POST",
       body: JSON.stringify({
         groupId,
         fromUserId,
@@ -454,7 +455,7 @@ class ApiClient {
         createdById: string;
         createdAt: string;
       }[];
-    }>(`/groups/${groupId}/settlements`, { method: 'GET' });
+    }>(`/groups/${groupId}/settlements`, { method: "GET" });
   }
 
   // Exchange rate endpoints
@@ -466,16 +467,16 @@ class ApiClient {
       timestamp: string;
     }>(
       `/exchange-rates?base=${encodeURIComponent(base)}&target=${encodeURIComponent(target)}`,
-      { method: 'GET' }
+      { method: "GET" },
     );
   }
 
-  async getExchangeRates(base: string = 'USD') {
+  async getExchangeRates(base: string = "USD") {
     return this.request<{
       base: string;
       rates: Record<string, number>;
       timestamp: string;
-    }>(`/exchange-rates?base=${encodeURIComponent(base)}`, { method: 'GET' });
+    }>(`/exchange-rates?base=${encodeURIComponent(base)}`, { method: "GET" });
   }
 }
 

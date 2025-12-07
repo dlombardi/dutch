@@ -61,9 +61,7 @@ export type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
   ],
 })
 export class DbModule implements OnModuleDestroy {
-  constructor(
-    @Inject(POSTGRES_CLIENT) private readonly client: Sql,
-  ) {}
+  constructor(@Inject(POSTGRES_CLIENT) private readonly client: Sql) {}
 
   async onModuleDestroy() {
     await this.client.end();

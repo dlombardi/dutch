@@ -1,10 +1,10 @@
-import { ActivityIndicator, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { useColorScheme } from 'nativewind';
-import { View, Text, Pressable } from '../primitives';
-import { glassStyle, shadows } from '@/constants/theme';
-import type { ButtonProps } from './button.types';
-import { buttonVariants, textVariants } from './button.styles';
+import { ActivityIndicator, Platform } from "react-native";
+import { BlurView } from "expo-blur";
+import { useColorScheme } from "nativewind";
+import { View, Text, Pressable } from "../primitives";
+import { glassStyle, shadows } from "@/constants/theme";
+import type { ButtonProps } from "./button.types";
+import { buttonVariants, textVariants } from "./button.styles";
 
 /**
  * Primary button with orange glow effect.
@@ -12,12 +12,12 @@ import { buttonVariants, textVariants } from './button.styles';
  */
 export function PrimaryButton({
   children,
-  size = 'lg',
+  size = "lg",
   isLoading = false,
   disabled = false,
   leftIcon,
   rightIcon,
-  className = '',
+  className = "",
   style,
   ...props
 }: ButtonProps) {
@@ -25,7 +25,7 @@ export function PrimaryButton({
 
   return (
     <Pressable
-      className={`bg-dutch-orange rounded-2xl ${buttonVariants({ size })} active:scale-[0.98] ${isDisabled ? 'opacity-50' : ''} ${className}`}
+      className={`bg-dutch-orange rounded-2xl ${buttonVariants({ size })} active:scale-[0.98] ${isDisabled ? "opacity-50" : ""} ${className}`}
       style={[shadows.orangeGlow, style]}
       disabled={isDisabled}
       {...props}
@@ -51,32 +51,32 @@ export function PrimaryButton({
  */
 export function SecondaryButton({
   children,
-  size = 'md',
+  size = "md",
   isLoading = false,
   disabled = false,
   leftIcon,
   rightIcon,
-  className = '',
+  className = "",
   style,
   ...props
 }: ButtonProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const glassStyles = isDark ? glassStyle.dark : glassStyle.light;
   const isDisabled = disabled || isLoading;
 
   // Use BlurView on iOS for native glass effect
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === "ios") {
     return (
       <Pressable
-        className={`rounded-xl overflow-hidden ${isDisabled ? 'opacity-50' : ''} active:opacity-80 ${className}`}
+        className={`rounded-xl overflow-hidden ${isDisabled ? "opacity-50" : ""} active:opacity-80 ${className}`}
         disabled={isDisabled}
         style={style}
         {...props}
       >
         <BlurView
           intensity={20}
-          tint={isDark ? 'dark' : 'light'}
+          tint={isDark ? "dark" : "light"}
           className={`items-center justify-center flex-row ${buttonVariants({ size })}`}
           style={{
             borderWidth: glassStyles.borderWidth,
@@ -103,7 +103,7 @@ export function SecondaryButton({
   // Fallback for Android - semi-transparent background
   return (
     <Pressable
-      className={`rounded-xl ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-80 ${className}`}
+      className={`rounded-xl ${buttonVariants({ size })} ${isDisabled ? "opacity-50" : ""} active:opacity-80 ${className}`}
       style={[glassStyles, { borderRadius: 12 }, style]}
       disabled={isDisabled}
       {...props}
@@ -129,12 +129,12 @@ export function SecondaryButton({
  */
 export function GhostButton({
   children,
-  size = 'md',
+  size = "md",
   isLoading = false,
   disabled = false,
   leftIcon,
   rightIcon,
-  className = '',
+  className = "",
   style,
   ...props
 }: ButtonProps) {
@@ -142,7 +142,7 @@ export function GhostButton({
 
   return (
     <Pressable
-      className={`rounded-xl ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-60 ${className}`}
+      className={`rounded-xl ${buttonVariants({ size })} ${isDisabled ? "opacity-50" : ""} active:opacity-60 ${className}`}
       style={style}
       disabled={isDisabled}
       {...props}
@@ -168,33 +168,33 @@ export function GhostButton({
  */
 export function DangerButton({
   children,
-  size = 'md',
+  size = "md",
   isLoading = false,
   disabled = false,
   leftIcon,
   rightIcon,
-  className = '',
+  className = "",
   style,
   ...props
 }: ButtonProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const isDisabled = disabled || isLoading;
 
   return (
     <Pressable
-      className={`rounded-xl border ${isDark ? 'border-dutch-red' : 'border-dutch-red-light'} ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-80 ${className}`}
+      className={`rounded-xl border ${isDark ? "border-dutch-red" : "border-dutch-red-light"} ${buttonVariants({ size })} ${isDisabled ? "opacity-50" : ""} active:opacity-80 ${className}`}
       style={style}
       disabled={isDisabled}
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={isDark ? '#FF453A' : '#FF3B30'} />
+        <ActivityIndicator color={isDark ? "#FF453A" : "#FF3B30"} />
       ) : (
         <>
           {leftIcon && <View className="mr-2">{leftIcon}</View>}
           <Text
-            className={`${isDark ? 'text-dutch-red' : 'text-dutch-red-light'} ${textVariants({ size })}`}
+            className={`${isDark ? "text-dutch-red" : "text-dutch-red-light"} ${textVariants({ size })}`}
           >
             {children}
           </Text>
@@ -211,12 +211,12 @@ export function DangerButton({
  */
 export function SuccessButton({
   children,
-  size = 'md',
+  size = "md",
   isLoading = false,
   disabled = false,
   leftIcon,
   rightIcon,
-  className = '',
+  className = "",
   style,
   ...props
 }: ButtonProps) {
@@ -224,7 +224,7 @@ export function SuccessButton({
 
   return (
     <Pressable
-      className={`bg-dutch-green rounded-xl ${buttonVariants({ size })} ${isDisabled ? 'opacity-50' : ''} active:opacity-90 ${className}`}
+      className={`bg-dutch-green rounded-xl ${buttonVariants({ size })} ${isDisabled ? "opacity-50" : ""} active:opacity-90 ${className}`}
       style={style}
       disabled={isDisabled}
       {...props}

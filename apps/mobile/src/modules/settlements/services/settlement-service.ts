@@ -3,18 +3,18 @@
  * Handles all settlement-related API calls
  */
 
-import { api } from '@/lib/api-client';
+import { api } from "@/lib/api-client";
 import type {
   CreateSettlementInput,
   SettlementApiResponse,
   SettlementsApiResponse,
-} from '../types';
+} from "../types";
 
 /**
  * Create a new settlement
  */
 export async function createSettlement(
-  input: CreateSettlementInput
+  input: CreateSettlementInput,
 ): Promise<SettlementApiResponse> {
   return api.createSettlement(
     input.groupId,
@@ -23,7 +23,7 @@ export async function createSettlement(
     input.amount,
     input.createdById,
     input.currency,
-    input.method
+    input.method,
   );
 }
 
@@ -31,7 +31,7 @@ export async function createSettlement(
  * Get all settlements for a group
  */
 export async function getGroupSettlements(
-  groupId: string
+  groupId: string,
 ): Promise<SettlementsApiResponse> {
   return api.getGroupSettlements(groupId);
 }

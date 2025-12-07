@@ -1,21 +1,21 @@
-import { ActivityIndicator } from 'react-native';
-import { useColorScheme } from 'nativewind';
-import { View, Text } from '../primitives';
-import type { LoadingSpinnerProps } from './loading-spinner.types';
+import { ActivityIndicator } from "react-native";
+import { useColorScheme } from "nativewind";
+import { View, Text } from "../primitives";
+import type { LoadingSpinnerProps } from "./loading-spinner.types";
 
 /**
  * Loading spinner component with optional message.
  * Can be displayed inline or as a full-screen overlay.
  */
 export function LoadingSpinner({
-  size = 'large',
+  size = "large",
   color,
   message,
   fullScreen = false,
 }: LoadingSpinnerProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const defaultColor = '#FF6B00'; // dutch-orange
+  const isDark = colorScheme === "dark";
+  const defaultColor = "#FF6B00"; // dutch-orange
 
   const content = (
     <>
@@ -27,7 +27,7 @@ export function LoadingSpinner({
       {message && (
         <Text
           className={`mt-3 text-sm text-center ${
-            isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'
+            isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
           }`}
         >
           {message}
@@ -40,7 +40,7 @@ export function LoadingSpinner({
     return (
       <View
         className={`flex-1 items-center justify-center ${
-          isDark ? 'bg-dark-bg' : 'bg-light-bg'
+          isDark ? "bg-dark-bg" : "bg-light-bg"
         }`}
       >
         {content}
@@ -48,9 +48,5 @@ export function LoadingSpinner({
     );
   }
 
-  return (
-    <View className="items-center justify-center p-4">
-      {content}
-    </View>
-  );
+  return <View className="items-center justify-center p-4">{content}</View>;
 }

@@ -3,19 +3,21 @@
  * Handles all expense-related API calls
  */
 
-import { api } from '@/lib/api-client';
+import { api } from "@/lib/api-client";
 import type {
   CreateExpenseInput,
   Expense,
   ExpenseApiResponse,
   ExpensesApiResponse,
   UpdateExpenseInput,
-} from '../types';
+} from "../types";
 
 /**
  * Create a new expense
  */
-export async function createExpense(input: CreateExpenseInput): Promise<ExpenseApiResponse> {
+export async function createExpense(
+  input: CreateExpenseInput,
+): Promise<ExpenseApiResponse> {
   return api.createExpense(
     input.groupId,
     input.amount,
@@ -27,7 +29,7 @@ export async function createExpense(input: CreateExpenseInput): Promise<ExpenseA
     input.splitParticipants,
     input.splitType,
     input.splitAmounts,
-    input.exchangeRate
+    input.exchangeRate,
   );
 }
 
@@ -41,7 +43,9 @@ export async function getExpense(id: string): Promise<ExpenseApiResponse> {
 /**
  * Get all expenses for a group
  */
-export async function getGroupExpenses(groupId: string): Promise<ExpensesApiResponse> {
+export async function getGroupExpenses(
+  groupId: string,
+): Promise<ExpensesApiResponse> {
   return api.getGroupExpenses(groupId) as Promise<ExpensesApiResponse>;
 }
 
@@ -50,7 +54,7 @@ export async function getGroupExpenses(groupId: string): Promise<ExpensesApiResp
  */
 export async function updateExpense(
   id: string,
-  updates: UpdateExpenseInput['updates']
+  updates: UpdateExpenseInput["updates"],
 ): Promise<ExpenseApiResponse> {
   return api.updateExpense(id, updates) as Promise<ExpenseApiResponse>;
 }

@@ -1,11 +1,14 @@
-import { waitFor as rtlWaitFor, type WaitForOptions } from '@testing-library/react-native';
+import {
+  waitFor as rtlWaitFor,
+  type WaitForOptions,
+} from "@testing-library/react-native";
 
 /**
  * Wrapper for waitFor with default options suitable for async operations
  */
 export async function waitForAsync<T>(
   callback: () => T | Promise<T>,
-  options?: WaitForOptions
+  options?: WaitForOptions,
 ): Promise<T> {
   return rtlWaitFor(callback, {
     timeout: 5000,

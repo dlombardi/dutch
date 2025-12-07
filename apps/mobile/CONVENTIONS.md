@@ -56,16 +56,16 @@ src/
 
 ## File Naming Conventions
 
-| File Type  | Pattern              | Example                    |
-|------------|----------------------|----------------------------|
-| Component  | `{name}.tsx`         | `expense-card.tsx`         |
-| Styles     | `{name}.styles.ts`   | `expense-card.styles.ts`   |
-| Types      | `{name}.types.ts`    | `expense-card.types.ts`    |
-| Tests      | `{name}.test.tsx`    | `expense-card.test.tsx`    |
-| Hook       | `use-{name}.ts`      | `use-expenses.ts`          |
-| Service    | `{name}-service.ts`  | `expense-service.ts`       |
-| Store      | `{name}-store.ts`    | `auth-store.ts`            |
-| Barrel     | `index.ts`           | `index.ts`                 |
+| File Type | Pattern             | Example                  |
+| --------- | ------------------- | ------------------------ |
+| Component | `{name}.tsx`        | `expense-card.tsx`       |
+| Styles    | `{name}.styles.ts`  | `expense-card.styles.ts` |
+| Types     | `{name}.types.ts`   | `expense-card.types.ts`  |
+| Tests     | `{name}.test.tsx`   | `expense-card.test.tsx`  |
+| Hook      | `use-{name}.ts`     | `use-expenses.ts`        |
+| Service   | `{name}-service.ts` | `expense-service.ts`     |
+| Store     | `{name}-store.ts`   | `auth-store.ts`          |
+| Barrel    | `index.ts`          | `index.ts`               |
 
 ## Import Aliases
 
@@ -73,12 +73,12 @@ Use the `@/` alias for imports from the `src/` directory:
 
 ```typescript
 // Good
-import { useAuth } from '@/modules/auth';
-import { PrimaryButton } from '@/components/ui';
-import { api } from '@/lib/api-client';
+import { useAuth } from "@/modules/auth";
+import { PrimaryButton } from "@/components/ui";
+import { api } from "@/lib/api-client";
 
 // Avoid
-import { useAuth } from '../../../modules/auth';
+import { useAuth } from "../../../modules/auth";
 ```
 
 ## Module Structure
@@ -139,13 +139,13 @@ Apply the "least privilege" principle for types:
 
 ### Hybrid Approach: React Query + Zustand
 
-| Data Type      | Tool         | Location                        |
-|----------------|--------------|----------------------------------|
-| Server state   | React Query  | `modules/{module}/hooks/`        |
-| Auth/Session   | Zustand      | `modules/auth/store/`            |
-| UI state       | Zustand      | `src/store/`                     |
-| Network status | Zustand      | `src/store/network-store.ts`     |
-| Offline queue  | Zustand      | `src/store/offline-queue-store.ts` |
+| Data Type      | Tool        | Location                           |
+| -------------- | ----------- | ---------------------------------- |
+| Server state   | React Query | `modules/{module}/hooks/`          |
+| Auth/Session   | Zustand     | `modules/auth/store/`              |
+| UI state       | Zustand     | `src/store/`                       |
+| Network status | Zustand     | `src/store/network-store.ts`       |
+| Offline queue  | Zustand     | `src/store/offline-queue-store.ts` |
 
 ### React Query Hooks Pattern
 
@@ -156,9 +156,9 @@ export function useGroupExpenses(groupId: string | undefined) {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
   return useQuery({
-    queryKey: queryKeys.expenses.byGroup(groupId ?? ''),
+    queryKey: queryKeys.expenses.byGroup(groupId ?? ""),
     queryFn: async () => {
-      if (!groupId) throw new Error('Group ID is required');
+      if (!groupId) throw new Error("Group ID is required");
       const response = await expenseService.getGroupExpenses(groupId);
       return validateExpenses(response.expenses);
     },
@@ -182,10 +182,11 @@ export const useAuthStore = create<AuthStore>()(
 
       // Actions
       setUser: (user) => set({ user, isAuthenticated: !!user }),
-      logout: () => set({ user: null, accessToken: null, isAuthenticated: false }),
+      logout: () =>
+        set({ user: null, accessToken: null, isAuthenticated: false }),
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
@@ -195,8 +196,8 @@ export const useAuthStore = create<AuthStore>()(
       onRehydrateStorage: () => (state) => {
         useAuthStore.getState().setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );
 ```
 
@@ -218,22 +219,22 @@ Use `class-variance-authority` (cva) for components with multiple variants:
 
 ```typescript
 // button.styles.ts
-import { cva, type VariantProps } from 'class-variance-authority';
+import { cva, type VariantProps } from "class-variance-authority";
 
 export const buttonVariants = cva(
-  'items-center justify-center flex-row rounded-xl',
+  "items-center justify-center flex-row rounded-xl",
   {
     variants: {
       size: {
-        sm: 'py-2 px-4',
-        md: 'py-3 px-4',
-        lg: 'py-4 px-6',
+        sm: "py-2 px-4",
+        md: "py-3 px-4",
+        lg: "py-4 px-6",
       },
     },
     defaultVariants: {
-      size: 'md',
+      size: "md",
     },
-  }
+  },
 );
 
 export type ButtonStyleVariants = VariantProps<typeof buttonVariants>;
@@ -255,10 +256,12 @@ Services handle all API communication and should be in `modules/{module}/service
 
 ```typescript
 // expense-service.ts
-import { api } from '@/lib/api-client';
-import type { CreateExpenseInput, ExpenseApiResponse } from '../types';
+import { api } from "@/lib/api-client";
+import type { CreateExpenseInput, ExpenseApiResponse } from "../types";
 
-export async function createExpense(input: CreateExpenseInput): Promise<ExpenseApiResponse> {
+export async function createExpense(
+  input: CreateExpenseInput,
+): Promise<ExpenseApiResponse> {
   return api.createExpense(
     input.groupId,
     input.amount,
@@ -312,8 +315,8 @@ describe('ExpenseCard', () => {
 Use fixtures from `src/test/mocks/fixtures/`:
 
 ```typescript
-import { mockExpense, mockExpenses } from '@/test/mocks/fixtures/expenses';
-import { mockUser, mockGuestUser } from '@/test/mocks/fixtures/users';
+import { mockExpense, mockExpenses } from "@/test/mocks/fixtures/expenses";
+import { mockUser, mockGuestUser } from "@/test/mocks/fixtures/users";
 ```
 
 ## Error Handling
@@ -358,9 +361,9 @@ Each directory should have an `index.ts` that exports its public API:
 
 ```typescript
 // modules/expenses/index.ts
-export * from './types';
-export * from './hooks';
-export * from './services';
+export * from "./types";
+export * from "./hooks";
+export * from "./services";
 // Don't export internal implementation details
 ```
 

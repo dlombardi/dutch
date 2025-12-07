@@ -3,11 +3,11 @@
  * React Query hooks for fetching expense data
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-client';
-import { useAuthStore } from '@/modules/auth';
-import { validateExpense, validateExpenses } from '@/lib/utils/validators';
-import { expenseService } from '../services';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-client";
+import { useAuthStore } from "@/modules/auth";
+import { validateExpense, validateExpenses } from "@/lib/utils/validators";
+import { expenseService } from "../services";
 
 /**
  * Query hook to fetch expenses for a specific group.
@@ -23,9 +23,9 @@ export function useGroupExpenses(groupId: string | undefined) {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
   return useQuery({
-    queryKey: queryKeys.expenses.byGroup(groupId ?? ''),
+    queryKey: queryKeys.expenses.byGroup(groupId ?? ""),
     queryFn: async () => {
-      if (!groupId) throw new Error('Group ID is required');
+      if (!groupId) throw new Error("Group ID is required");
       const response = await expenseService.getGroupExpenses(groupId);
       return validateExpenses(response.expenses);
     },
@@ -41,9 +41,9 @@ export function useExpense(expenseId: string | undefined) {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
   return useQuery({
-    queryKey: queryKeys.expenses.detail(expenseId ?? ''),
+    queryKey: queryKeys.expenses.detail(expenseId ?? ""),
     queryFn: async () => {
-      if (!expenseId) throw new Error('Expense ID is required');
+      if (!expenseId) throw new Error("Expense ID is required");
       const response = await expenseService.getExpense(expenseId);
       return validateExpense(response.expense);
     },

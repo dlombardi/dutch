@@ -3,11 +3,11 @@
  * React Query mutation hooks for group CRUD operations
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-client';
-import { groupService } from '../services';
-import { useGroupsStore } from '../store';
-import type { CreateGroupInput, Group, JoinGroupInput } from '../types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-client";
+import { groupService } from "../services";
+import { useGroupsStore } from "../store";
+import type { CreateGroupInput, Group, JoinGroupInput } from "../types";
 
 /**
  * Mutation hook for creating a group.
@@ -29,7 +29,7 @@ export function useCreateGroup() {
     onSuccess: (newGroup) => {
       // Update React Query cache
       queryClient.setQueryData<Group[]>(queryKeys.groups.list(), (old) =>
-        old ? [...old, newGroup] : [newGroup]
+        old ? [...old, newGroup] : [newGroup],
       );
       queryClient.setQueryData(queryKeys.groups.detail(newGroup.id), newGroup);
 
@@ -52,7 +52,10 @@ export function useJoinGroup() {
 
   return useMutation({
     mutationFn: async (input: JoinGroupInput) => {
-      const response = await groupService.joinGroup(input.inviteCode, input.userId);
+      const response = await groupService.joinGroup(
+        input.inviteCode,
+        input.userId,
+      );
       return response.group as Group;
     },
 
@@ -65,7 +68,10 @@ export function useJoinGroup() {
         }
         return [...old, joinedGroup];
       });
-      queryClient.setQueryData(queryKeys.groups.detail(joinedGroup.id), joinedGroup);
+      queryClient.setQueryData(
+        queryKeys.groups.detail(joinedGroup.id),
+        joinedGroup,
+      );
 
       // Invalidate the invite code query (it's been used)
       queryClient.removeQueries({

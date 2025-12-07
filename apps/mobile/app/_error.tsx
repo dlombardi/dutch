@@ -1,8 +1,20 @@
-import { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ErrorBoundaryProps, useRouter } from 'expo-router';
-import { borderRadius, colors, fontSize, fontWeight, spacing } from '@/lib/theme';
-import { logger } from '@/lib/utils/logger';
+import { useEffect } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ErrorBoundaryProps, useRouter } from "expo-router";
+import {
+  borderRadius,
+  colors,
+  fontSize,
+  fontWeight,
+  spacing,
+} from "@/lib/theme";
+import { logger } from "@/lib/utils/logger";
 
 export default function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const router = useRouter();
@@ -10,13 +22,13 @@ export default function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => {
     // Log error for debugging and error tracking
     logger.captureException(error, {
-      source: 'ErrorBoundary',
-      route: 'unknown', // Could be enhanced with route info
+      source: "ErrorBoundary",
+      route: "unknown", // Could be enhanced with route info
     });
   }, [error]);
 
   const handleGoHome = () => {
-    router.replace('/');
+    router.replace("/");
   };
 
   return (
@@ -66,17 +78,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.DEFAULT,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing[6],
   },
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
-    alignItems: 'center',
+    alignItems: "center",
   },
   emoji: {
-    fontSize: fontSize['5xl'],
+    fontSize: fontSize["5xl"],
     fontWeight: fontWeight.bold,
     color: colors.error.DEFAULT,
     marginBottom: spacing[4],
@@ -84,26 +96,26 @@ const styles = StyleSheet.create({
     height: 80,
     backgroundColor: colors.error[50],
     borderRadius: borderRadius.full,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 80,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   title: {
-    fontSize: fontSize['2xl'],
+    fontSize: fontSize["2xl"],
     fontWeight: fontWeight.bold,
     color: colors.text.primary,
     marginBottom: spacing[2],
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: fontSize.base,
     color: colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing[8],
     lineHeight: 24,
   },
   buttonContainer: {
-    width: '100%',
+    width: "100%",
     gap: spacing[3],
   },
   primaryButton: {
@@ -111,7 +123,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3.5],
     paddingHorizontal: spacing[6],
     borderRadius: borderRadius.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   primaryButtonText: {
     color: colors.text.inverse,
@@ -123,7 +135,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3.5],
     paddingHorizontal: spacing[6],
     borderRadius: borderRadius.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
   secondaryButtonText: {
     color: colors.neutral[700],
@@ -135,7 +147,7 @@ const styles = StyleSheet.create({
     padding: spacing[4],
     backgroundColor: colors.error[50],
     borderRadius: borderRadius.lg,
-    width: '100%',
+    width: "100%",
     maxHeight: 200,
   },
   errorTitle: {
@@ -147,12 +159,12 @@ const styles = StyleSheet.create({
   errorMessage: {
     fontSize: fontSize.xs,
     color: colors.error[700],
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     marginBottom: spacing[2],
   },
   errorStack: {
     fontSize: 10,
     color: colors.error[900],
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
 });

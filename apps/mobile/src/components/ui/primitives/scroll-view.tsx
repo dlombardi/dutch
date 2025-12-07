@@ -1,5 +1,5 @@
-import { ScrollView as RNScrollView } from 'react-native';
-import type { StyledScrollViewProps } from './types';
+import { ScrollView as RNScrollView } from "react-native";
+import type { StyledScrollViewProps } from "./types";
 
 /**
  * Styled ScrollView component with NativeWind className support.
@@ -9,8 +9,8 @@ import type { StyledScrollViewProps } from './types';
  * - Horizontal list: horizontal showsHorizontalScrollIndicator={false}
  */
 export function ScrollView({
-  className = '',
-  contentContainerClassName = '',
+  className = "",
+  contentContainerClassName = "",
   ...props
 }: StyledScrollViewProps) {
   return (

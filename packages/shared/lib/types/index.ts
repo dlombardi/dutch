@@ -1,24 +1,24 @@
 // Shared TypeScript types for Evn
 
-export type UserType = 'guest' | 'claimed' | 'full';
+export type UserType = "guest" | "claimed" | "full";
 
-export type SplitType = 'equal' | 'exact' | 'percentage' | 'shares';
+export type SplitType = "equal" | "exact" | "percentage" | "shares";
 
 export type ExpenseCategory =
-  | 'food'
-  | 'transport'
-  | 'accommodation'
-  | 'activity'
-  | 'shopping'
-  | 'other';
+  | "food"
+  | "transport"
+  | "accommodation"
+  | "activity"
+  | "shopping"
+  | "other";
 
 export type SettlementMethod =
-  | 'cash'
-  | 'venmo'
-  | 'paypal'
-  | 'zelle'
-  | 'bank_transfer'
-  | 'other';
+  | "cash"
+  | "venmo"
+  | "paypal"
+  | "zelle"
+  | "bank_transfer"
+  | "other";
 
 export interface User {
   id: string;
@@ -46,7 +46,7 @@ export interface GroupMember {
   id: string;
   userId: string;
   groupId: string;
-  role: 'owner' | 'member';
+  role: "owner" | "member";
   joinedAt: string;
   user?: User;
 }

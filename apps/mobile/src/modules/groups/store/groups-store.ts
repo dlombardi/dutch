@@ -7,10 +7,10 @@
  * the group list to AsyncStorage for offline access.
  */
 
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Group, GroupsStore } from '../types';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Group, GroupsStore } from "../types";
 
 export const useGroupsStore = create<GroupsStore>()(
   persist(
@@ -37,7 +37,7 @@ export const useGroupsStore = create<GroupsStore>()(
       updateGroup: (groupId: string, updates: Partial<Group>) => {
         set((state) => ({
           groups: state.groups.map((g) =>
-            g.id === groupId ? { ...g, ...updates } : g
+            g.id === groupId ? { ...g, ...updates } : g,
           ),
         }));
       },
@@ -47,11 +47,11 @@ export const useGroupsStore = create<GroupsStore>()(
       },
     }),
     {
-      name: 'groups-storage',
+      name: "groups-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         groups: state.groups,
       }),
-    }
-  )
+    },
+  ),
 );

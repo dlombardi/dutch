@@ -1,7 +1,7 @@
-import { useColorScheme } from 'nativewind';
-import { View, Text } from '../primitives';
-import { PrimaryButton } from '../button';
-import type { EmptyStateProps } from './empty-state.types';
+import { useColorScheme } from "nativewind";
+import { View, Text } from "../primitives";
+import { PrimaryButton } from "../button";
+import type { EmptyStateProps } from "./empty-state.types";
 
 /**
  * Empty state component for displaying when there's no content.
@@ -12,10 +12,10 @@ export function EmptyState({
   message,
   actionLabel,
   onAction,
-  icon = '📋',
+  icon = "📋",
 }: EmptyStateProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <View className="flex-1 items-center justify-center p-6">
@@ -24,7 +24,7 @@ export function EmptyState({
       </View>
       <Text
         className={`text-lg font-semibold text-center mb-2 ${
-          isDark ? 'text-white' : 'text-black'
+          isDark ? "text-white" : "text-black"
         }`}
       >
         {title}
@@ -32,7 +32,7 @@ export function EmptyState({
       {message && (
         <Text
           className={`text-sm text-center leading-5 ${
-            isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'
+            isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
           }`}
         >
           {message}

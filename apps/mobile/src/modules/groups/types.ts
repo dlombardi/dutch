@@ -14,7 +14,7 @@ export interface Group {
   updatedAt: string;
 }
 
-export type MemberRole = 'admin' | 'member';
+export type MemberRole = "admin" | "member";
 
 export interface GroupMember {
   userId: string;

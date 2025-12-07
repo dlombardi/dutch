@@ -136,28 +136,28 @@ maestro test --no-ansi .maestro/flows/
 
 Tests are tagged for easy filtering:
 
-| Tag | Description |
-|-----|-------------|
-| `auth` | Authentication flows |
-| `guest` | Guest user flows |
-| `magic-link` | Magic link authentication |
-| `logout` | Logout flows |
-| `groups` | Group management |
-| `create` | Creation flows |
-| `join` | Join flows |
-| `invite` | Invite/share flows |
-| `expenses` | Expense management |
-| `edit` | Edit flows |
-| `delete` | Delete flows |
-| `split` | Expense splitting |
-| `currency` | Multi-currency |
-| `balances` | Balance calculations |
-| `settlements` | Settlement recording |
-| `sync` | Real-time sync |
-| `websocket` | WebSocket connection |
-| `offline` | Offline functionality |
-| `persistence` | Data persistence |
-| `queue` | Offline queue |
+| Tag           | Description               |
+| ------------- | ------------------------- |
+| `auth`        | Authentication flows      |
+| `guest`       | Guest user flows          |
+| `magic-link`  | Magic link authentication |
+| `logout`      | Logout flows              |
+| `groups`      | Group management          |
+| `create`      | Creation flows            |
+| `join`        | Join flows                |
+| `invite`      | Invite/share flows        |
+| `expenses`    | Expense management        |
+| `edit`        | Edit flows                |
+| `delete`      | Delete flows              |
+| `split`       | Expense splitting         |
+| `currency`    | Multi-currency            |
+| `balances`    | Balance calculations      |
+| `settlements` | Settlement recording      |
+| `sync`        | Real-time sync            |
+| `websocket`   | WebSocket connection      |
+| `offline`     | Offline functionality     |
+| `persistence` | Data persistence          |
+| `queue`       | Offline queue             |
 
 ## Environment Variables
 
@@ -190,7 +190,7 @@ appId: com.evn.mobile
 ---
 # Test steps
 - launchApp:
-    clearState: true  # Start fresh
+    clearState: true # Start fresh
 
 - assertVisible: "Expected text"
 
@@ -230,7 +230,7 @@ Increase timeouts in wait commands:
 ```yaml
 - extendedWaitUntil:
     visible: "Element"
-    timeout: 15000  # 15 seconds
+    timeout: 15000 # 15 seconds
 ```
 
 ### Element Not Found
@@ -281,7 +281,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install

@@ -1,4 +1,4 @@
-export type SpinnerSize = 'small' | 'large';
+export type SpinnerSize = "small" | "large";
 
 export interface LoadingSpinnerProps {
   size?: SpinnerSize;

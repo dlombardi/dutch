@@ -10,7 +10,7 @@ export const VALIDATION = {
   MIN_GROUP_NAME_LENGTH: 1,
   MAX_GROUP_NAME_LENGTH: 100,
   INVITE_CODE_LENGTH: 6,
-  INVITE_CODE_CHARS: 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', // Avoid confusing chars (0, O, 1, I)
+  INVITE_CODE_CHARS: "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", // Avoid confusing chars (0, O, 1, I)
 } as const;
 
 export const SYNC = {
@@ -20,8 +20,8 @@ export const SYNC = {
 } as const;
 
 export const UI = {
-  DEFAULT_EMOJI: '👥',
-  DEFAULT_CURRENCY: 'USD',
+  DEFAULT_EMOJI: "👥",
+  DEFAULT_CURRENCY: "USD",
   ANIMATION_DURATION_MS: 200,
 } as const;
 

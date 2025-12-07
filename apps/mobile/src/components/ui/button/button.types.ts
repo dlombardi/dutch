@@ -1,9 +1,9 @@
-import type { TouchableOpacityProps } from 'react-native';
+import type { TouchableOpacityProps } from "react-native";
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps extends Omit<TouchableOpacityProps, 'children'> {
+export interface ButtonProps extends Omit<TouchableOpacityProps, "children"> {
   children: React.ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;

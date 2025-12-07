@@ -5,6 +5,6 @@ export {
   useGroupByInviteCode,
   useGroupData,
   usePrefetchGroupData,
-} from './use-group';
+} from "./use-group";
 
-export { useCreateGroup, useJoinGroup } from './use-group-mutations';
+export { useCreateGroup, useJoinGroup } from "./use-group-mutations";

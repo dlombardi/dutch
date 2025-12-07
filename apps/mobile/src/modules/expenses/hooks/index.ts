@@ -3,10 +3,10 @@ export {
   useExpense,
   usePrefetchGroupExpenses,
   usePrefetchExpense,
-} from './use-expenses';
+} from "./use-expenses";
 
 export {
   useCreateExpense,
   useUpdateExpense,
   useDeleteExpense,
-} from './use-expense-mutations';
+} from "./use-expense-mutations";

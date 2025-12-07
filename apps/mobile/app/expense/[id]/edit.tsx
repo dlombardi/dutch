@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -6,32 +6,29 @@ import {
   Modal,
   Platform,
   ScrollView,
-} from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useColorScheme } from 'nativewind';
-import { useAuthStore } from '@/modules/auth';
-import { LoadingSpinner } from '@/components/ui';
-import { View, Text, Pressable, TextInput } from '@/components/ui/primitives';
-import { colors } from '@/constants/theme';
+} from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "nativewind";
+import { useAuthStore } from "@/modules/auth";
+import { LoadingSpinner } from "@/components/ui";
+import { View, Text, Pressable, TextInput } from "@/components/ui/primitives";
+import { colors } from "@/constants/theme";
 
 // React Query hooks
-import { useExpense, useUpdateExpense } from '@/modules/expenses';
-import { useGroup, useGroupMembers } from '@/modules/groups';
+import { useExpense, useUpdateExpense } from "@/modules/expenses";
+import { useGroup, useGroupMembers } from "@/modules/groups";
 
 export default function EditExpenseScreen() {
   const { id: expenseId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const themeColors = isDark ? colors.dark : colors.light;
 
   // React Query hooks - automatic caching and deduplication
-  const {
-    data: expense,
-    isLoading: isFetchingExpense,
-  } = useExpense(expenseId);
+  const { data: expense, isLoading: isFetchingExpense } = useExpense(expenseId);
 
   // Fetch group and members once we have the expense
   const { data: group } = useGroup(expense?.groupId);
@@ -40,8 +37,8 @@ export default function EditExpenseScreen() {
   // Update mutation
   const updateExpenseMutation = useUpdateExpense();
 
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [paidById, setPaidById] = useState<string | null>(null);
   const [showPayerPicker, setShowPayerPicker] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -81,7 +78,7 @@ export default function EditExpenseScreen() {
         onSuccess: () => {
           router.back();
         },
-      }
+      },
     );
   }, [expenseId, paidById, amount, description, updateExpenseMutation, router]);
 
@@ -92,17 +89,17 @@ export default function EditExpenseScreen() {
 
   const getPayerDisplayName = useCallback(
     (payerId: string | null) => {
-      if (!payerId) return 'Select payer';
-      if (payerId === user?.id) return 'You';
+      if (!payerId) return "Select payer";
+      if (payerId === user?.id) return "You";
       const member = members.find((m) => m.userId === payerId);
       if (member) {
         return member.userId === user?.id
-          ? 'You'
+          ? "You"
           : `User ${member.userId.slice(0, 8)}...`;
       }
-      return 'Unknown';
+      return "Unknown";
     },
-    [user, members]
+    [user, members],
   );
 
   const handleCancel = useCallback(() => {
@@ -114,37 +111,47 @@ export default function EditExpenseScreen() {
   const updateError = updateExpenseMutation.error?.message ?? null;
 
   const isValid =
-    amount.trim() !== '' &&
+    amount.trim() !== "" &&
     !isNaN(parseFloat(amount)) &&
     parseFloat(amount) > 0 &&
-    description.trim() !== '';
+    description.trim() !== "";
 
   // Get currency symbol
   const getCurrencySymbol = () => {
-    const currency = group?.defaultCurrency || 'USD';
+    const currency = group?.defaultCurrency || "USD";
     switch (currency) {
-      case 'USD': return '$';
-      case 'EUR': return '€';
-      case 'GBP': return '£';
-      case 'JPY': return '¥';
-      default: return currency;
+      case "USD":
+        return "$";
+      case "EUR":
+        return "€";
+      case "GBP":
+        return "£";
+      case "JPY":
+        return "¥";
+      default:
+        return currency;
     }
   };
 
   if (!expense && isFetchingExpense) {
     return (
-      <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
-        <Stack.Screen options={{ title: 'Edit Expense' }} />
+      <SafeAreaView
+        className={`flex-1 ${isDark ? "bg-dark-bg" : "bg-light-bg"}`}
+      >
+        <Stack.Screen options={{ title: "Edit Expense" }} />
         <LoadingSpinner fullScreen />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`} edges={['bottom']}>
+    <SafeAreaView
+      className={`flex-1 ${isDark ? "bg-dark-bg" : "bg-light-bg"}`}
+      edges={["bottom"]}
+    >
       <Stack.Screen
         options={{
-          title: 'Edit Expense',
+          title: "Edit Expense",
           headerStyle: { backgroundColor: themeColors.bgElevated },
           headerTintColor: themeColors.textPrimary,
           headerLeft: () => (
@@ -162,7 +169,7 @@ export default function EditExpenseScreen() {
                 <ActivityIndicator size="small" color={themeColors.orange} />
               ) : (
                 <Text
-                  className={`text-base font-semibold ${isValid ? 'text-dutch-orange' : isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}
+                  className={`text-base font-semibold ${isValid ? "text-dutch-orange" : isDark ? "text-dark-text-tertiary" : "text-light-text-tertiary"}`}
                 >
                   Save
                 </Text>
@@ -174,18 +181,22 @@ export default function EditExpenseScreen() {
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView className="flex-1">
           {updateError && (
-            <View className={`mx-4 mt-4 p-3 rounded-lg ${isDark ? 'bg-dutch-red/15' : 'bg-dutch-red/10'}`}>
+            <View
+              className={`mx-4 mt-4 p-3 rounded-lg ${isDark ? "bg-dutch-red/15" : "bg-dutch-red/10"}`}
+            >
               <Text className="text-dutch-red text-sm">{updateError}</Text>
             </View>
           )}
 
           {/* Amount Input */}
           <View className="flex-row items-center justify-center py-10 px-4">
-            <Text className={`text-5xl font-light mr-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+            <Text
+              className={`text-5xl font-light mr-2 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+            >
               {getCurrencySymbol()}
             </Text>
             <TextInput
@@ -198,8 +209,12 @@ export default function EditExpenseScreen() {
           </View>
 
           {/* Description Input */}
-          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          <View
+            className={`px-4 py-3 border-b ${isDark ? "border-dark-border" : "border-light-border"}`}
+          >
+            <Text
+              className={`text-sm mb-2 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+            >
               Description
             </Text>
             <TextInput
@@ -211,28 +226,44 @@ export default function EditExpenseScreen() {
           </View>
 
           {/* Paid By Selector */}
-          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          <View
+            className={`px-4 py-3 border-b ${isDark ? "border-dark-border" : "border-light-border"}`}
+          >
+            <Text
+              className={`text-sm mb-2 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+            >
               Paid by
             </Text>
             <Pressable
               className="flex-row items-center justify-between py-2 active:opacity-70"
               onPress={() => setShowPayerPicker(true)}
             >
-              <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
+              <Text
+                className={`text-base ${isDark ? "text-white" : "text-black"}`}
+              >
                 {getPayerDisplayName(paidById)}
               </Text>
-              <Text className={`text-xl ${isDark ? 'text-dark-text-tertiary' : 'text-light-text-tertiary'}`}>›</Text>
+              <Text
+                className={`text-xl ${isDark ? "text-dark-text-tertiary" : "text-light-text-tertiary"}`}
+              >
+                ›
+              </Text>
             </Pressable>
           </View>
 
           {/* Split (simplified - always equal) */}
-          <View className={`px-4 py-3 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-            <Text className={`text-sm mb-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+          <View
+            className={`px-4 py-3 border-b ${isDark ? "border-dark-border" : "border-light-border"}`}
+          >
+            <Text
+              className={`text-sm mb-2 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+            >
               Split
             </Text>
             <View className="py-2">
-              <Text className={`text-base ${isDark ? 'text-white' : 'text-black'}`}>
+              <Text
+                className={`text-base ${isDark ? "text-white" : "text-black"}`}
+              >
                 Split equally among all members
               </Text>
             </View>
@@ -247,13 +278,24 @@ export default function EditExpenseScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowPayerPicker(false)}
       >
-        <SafeAreaView className={`flex-1 ${isDark ? 'bg-dark-bg' : 'bg-light-bg'}`}>
-          <View className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? 'border-dark-border' : 'border-light-border'}`}>
-            <Text className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-black'}`}>
+        <SafeAreaView
+          className={`flex-1 ${isDark ? "bg-dark-bg" : "bg-light-bg"}`}
+        >
+          <View
+            className={`flex-row items-center justify-between px-4 py-4 border-b ${isDark ? "border-dark-border" : "border-light-border"}`}
+          >
+            <Text
+              className={`text-lg font-semibold ${isDark ? "text-white" : "text-black"}`}
+            >
               Who paid?
             </Text>
-            <Pressable onPress={() => setShowPayerPicker(false)} className="active:opacity-70">
-              <Text className="text-dutch-orange text-base font-semibold">Done</Text>
+            <Pressable
+              onPress={() => setShowPayerPicker(false)}
+              className="active:opacity-70"
+            >
+              <Text className="text-dutch-orange text-base font-semibold">
+                Done
+              </Text>
             </Pressable>
           </View>
           <FlatList
@@ -261,7 +303,7 @@ export default function EditExpenseScreen() {
             keyExtractor={(item) => item.userId}
             renderItem={({ item }) => (
               <Pressable
-                className={`flex-row items-center p-4 border-b active:opacity-70 ${isDark ? 'border-dark-border' : 'border-light-border'}`}
+                className={`flex-row items-center p-4 border-b active:opacity-70 ${isDark ? "border-dark-border" : "border-light-border"}`}
                 onPress={() => handleSelectPayer(item.userId)}
               >
                 <View className="w-10 h-10 rounded-full bg-dutch-orange justify-center items-center mr-3">
@@ -269,19 +311,25 @@ export default function EditExpenseScreen() {
                     {item.userId.substring(0, 2).toUpperCase()}
                   </Text>
                 </View>
-                <Text className={`flex-1 text-base ${isDark ? 'text-white' : 'text-black'}`}>
+                <Text
+                  className={`flex-1 text-base ${isDark ? "text-white" : "text-black"}`}
+                >
                   {item.userId === user?.id
-                    ? 'You'
+                    ? "You"
                     : `User ${item.userId.slice(0, 8)}...`}
                 </Text>
                 {paidById === item.userId && (
-                  <Text className="text-lg text-dutch-orange font-semibold">✓</Text>
+                  <Text className="text-lg text-dutch-orange font-semibold">
+                    ✓
+                  </Text>
                 )}
               </Pressable>
             )}
             ListEmptyComponent={
               <View className="p-8 items-center">
-                <Text className={`text-base ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+                <Text
+                  className={`text-base ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+                >
                   No members found
                 </Text>
               </View>

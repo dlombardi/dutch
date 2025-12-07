@@ -121,13 +121,9 @@ describe('SyncGateway', () => {
       clientSocket = await connectClient();
 
       const response = await new Promise<any>((resolve) => {
-        clientSocket.emit(
-          'joinGroup',
-          { groupId },
-          (response: any) => {
-            resolve(response);
-          },
-        );
+        clientSocket.emit('joinGroup', { groupId }, (response: any) => {
+          resolve(response);
+        });
       });
 
       expect(response.success).toBe(true);
@@ -155,13 +151,9 @@ describe('SyncGateway', () => {
 
       // Then leave
       const response = await new Promise<any>((resolve) => {
-        clientSocket.emit(
-          'leaveGroup',
-          { groupId },
-          (response: any) => {
-            resolve(response);
-          },
-        );
+        clientSocket.emit('leaveGroup', { groupId }, (response: any) => {
+          resolve(response);
+        });
       });
 
       expect(response.success).toBe(true);
@@ -244,13 +236,9 @@ describe('SyncGateway', () => {
 
       // Both join the same group
       await new Promise<void>((resolve) => {
-        clientSocket.emit(
-          'joinGroup',
-          { groupId },
-          () => {
-            resolve();
-          },
-        );
+        clientSocket.emit('joinGroup', { groupId }, () => {
+          resolve();
+        });
       });
 
       await new Promise<void>((resolve) => {

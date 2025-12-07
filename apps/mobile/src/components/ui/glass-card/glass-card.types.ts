@@ -1,6 +1,6 @@
-import type { ViewProps } from 'react-native';
+import type { ViewProps } from "react-native";
 
-export type GlassIntensity = 'default' | 'subtle';
+export type GlassIntensity = "default" | "subtle";
 
 export interface GlassCardProps extends ViewProps {
   children: React.ReactNode;

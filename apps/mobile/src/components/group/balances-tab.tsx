@@ -1,8 +1,8 @@
-import { ScrollView } from 'react-native';
-import { useColorScheme } from 'nativewind';
-import { View, Text, Pressable } from '@/components/ui/primitives';
-import { formatAmount, getCurrencySymbol } from '@/lib/utils/formatters';
-import type { Balance, BalancesData } from '@/modules/groups';
+import { ScrollView } from "react-native";
+import { useColorScheme } from "nativewind";
+import { View, Text, Pressable } from "@/components/ui/primitives";
+import { formatAmount, getCurrencySymbol } from "@/lib/utils/formatters";
+import type { Balance, BalancesData } from "@/modules/groups";
 
 interface BalancesTabProps {
   balances: BalancesData | undefined;
@@ -10,9 +10,13 @@ interface BalancesTabProps {
   onSettleUp: (balance: Balance) => void;
 }
 
-export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTabProps) {
+export function BalancesTab({
+  balances,
+  getDisplayName,
+  onSettleUp,
+}: BalancesTabProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   if (!balances || balances.balances.length === 0) {
     return (
@@ -20,10 +24,14 @@ export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTa
         <View className="w-16 h-16 rounded-2xl items-center justify-center bg-dutch-green/10 border border-dutch-green/20 mb-4">
           <Text className="text-3xl">✨</Text>
         </View>
-        <Text className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>
+        <Text
+          className={`text-lg font-semibold mb-2 ${isDark ? "text-white" : "text-black"}`}
+        >
           All settled up!
         </Text>
-        <Text className={`text-sm text-center ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+        <Text
+          className={`text-sm text-center ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+        >
           No outstanding balances in this group
         </Text>
       </View>
@@ -32,16 +40,18 @@ export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTa
 
   return (
     <ScrollView className="flex-1">
-      <Text className={`text-xs font-semibold uppercase tracking-wider p-4 pb-2 ${
-        isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'
-      }`}>
+      <Text
+        className={`text-xs font-semibold uppercase tracking-wider p-4 pb-2 ${
+          isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
+        }`}
+      >
         Who pays whom
       </Text>
       {balances.balances.map((balance, index) => (
         <View
           key={`${balance.from}-${balance.to}-${index}`}
           className={`flex-row justify-between items-center p-4 border-b ${
-            isDark ? 'border-dark-border' : 'border-light-border'
+            isDark ? "border-dark-border" : "border-light-border"
           }`}
         >
           <View className="flex-row items-center flex-1">
@@ -51,19 +61,27 @@ export function BalancesTab({ balances, getDisplayName, onSettleUp }: BalancesTa
               </Text>
             </View>
             <View className="flex-row items-center flex-wrap flex-1">
-              <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+              <Text
+                className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}
+              >
                 {getDisplayName(balance.from)}
               </Text>
-              <Text className={`text-sm mx-1 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
+              <Text
+                className={`text-sm mx-1 ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}`}
+              >
                 owes
               </Text>
-              <Text className={`text-sm font-medium ${isDark ? 'text-white' : 'text-black'}`}>
+              <Text
+                className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}
+              >
                 {getDisplayName(balance.to)}
               </Text>
             </View>
           </View>
           <View className="items-end">
-            <Text className={`text-base font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>
+            <Text
+              className={`text-base font-semibold mb-1 ${isDark ? "text-white" : "text-black"}`}
+            >
               {getCurrencySymbol(balance.currency)}
               {formatAmount(balance.amount, balance.currency)}
             </Text>

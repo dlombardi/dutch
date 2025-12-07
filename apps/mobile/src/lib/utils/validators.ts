@@ -2,24 +2,24 @@
  * Runtime validators for API responses
  */
 
-import type { Expense } from '@/modules/expenses/types';
+import type { Expense } from "@/modules/expenses/types";
 import type {
   Group,
   GroupBalancesData,
   GroupMember,
   GroupBalance,
-} from '@/modules/groups/types';
+} from "@/modules/groups/types";
 
 function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === "object" && value !== null;
 }
 
 function isString(value: unknown): value is string {
-  return typeof value === 'string';
+  return typeof value === "string";
 }
 
 function isNumber(value: unknown): value is number {
-  return typeof value === 'number' && !isNaN(value);
+  return typeof value === "number" && !isNaN(value);
 }
 
 function isArray(value: unknown): value is unknown[] {
@@ -47,7 +47,7 @@ export function isExpense(value: unknown): value is Expense {
 
 export function validateExpenses(data: unknown): Expense[] {
   if (!isArray(data)) {
-    console.warn('[Validator] Expected array of expenses, got:', typeof data);
+    console.warn("[Validator] Expected array of expenses, got:", typeof data);
     return [];
   }
 
@@ -56,7 +56,7 @@ export function validateExpenses(data: unknown): Expense[] {
     if (isExpense(item)) {
       valid.push(item);
     } else {
-      console.warn('[Validator] Invalid expense in array:', item);
+      console.warn("[Validator] Invalid expense in array:", item);
     }
   }
 
@@ -65,8 +65,8 @@ export function validateExpenses(data: unknown): Expense[] {
 
 export function validateExpense(data: unknown): Expense {
   if (!isExpense(data)) {
-    console.error('[Validator] Invalid expense:', data);
-    throw new Error('Invalid expense data received from API');
+    console.error("[Validator] Invalid expense:", data);
+    throw new Error("Invalid expense data received from API");
   }
   return data;
 }
@@ -87,8 +87,8 @@ export function isGroup(value: unknown): value is Group {
 
 export function validateGroup(data: unknown): Group {
   if (!isGroup(data)) {
-    console.error('[Validator] Invalid group:', data);
-    throw new Error('Invalid group data received from API');
+    console.error("[Validator] Invalid group:", data);
+    throw new Error("Invalid group data received from API");
   }
   return data;
 }
@@ -97,15 +97,13 @@ export function isGroupMember(value: unknown): value is GroupMember {
   if (!isObject(value)) return false;
 
   return (
-    isString(value.userId) &&
-    isString(value.role) &&
-    isString(value.joinedAt)
+    isString(value.userId) && isString(value.role) && isString(value.joinedAt)
   );
 }
 
 export function validateGroupMembers(data: unknown): GroupMember[] {
   if (!isArray(data)) {
-    console.warn('[Validator] Expected array of members, got:', typeof data);
+    console.warn("[Validator] Expected array of members, got:", typeof data);
     return [];
   }
 
@@ -114,7 +112,7 @@ export function validateGroupMembers(data: unknown): GroupMember[] {
     if (isGroupMember(item)) {
       valid.push(item);
     } else {
-      console.warn('[Validator] Invalid member in array:', item);
+      console.warn("[Validator] Invalid member in array:", item);
     }
   }
 
@@ -151,8 +149,8 @@ export function isBalancesData(value: unknown): value is GroupBalancesData {
 
 export function validateBalancesData(data: unknown): GroupBalancesData {
   if (!isBalancesData(data)) {
-    console.error('[Validator] Invalid balances data:', data);
-    throw new Error('Invalid balances data received from API');
+    console.error("[Validator] Invalid balances data:", data);
+    throw new Error("Invalid balances data received from API");
   }
   return data;
 }

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useAuthStore } from '@/modules/auth';
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router, useLocalSearchParams } from "expo-router";
+import { useAuthStore } from "@/modules/auth";
 
 export default function VerifyMagicLinkScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -18,7 +18,7 @@ export default function VerifyMagicLinkScreen() {
 
       if (success) {
         // Navigate to the main app after successful verification
-        router.replace('/(tabs)');
+        router.replace("/(tabs)");
       }
     }
 
@@ -45,7 +45,7 @@ export default function VerifyMagicLinkScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <Text
             style={styles.linkText}
-            onPress={() => router.replace('/(auth)/sign-in')}
+            onPress={() => router.replace("/(auth)/sign-in")}
           >
             Request a new magic link
           </Text>
@@ -65,7 +65,7 @@ export default function VerifyMagicLinkScreen() {
           </Text>
           <Text
             style={styles.linkText}
-            onPress={() => router.replace('/(auth)/sign-in')}
+            onPress={() => router.replace("/(auth)/sign-in")}
           >
             Go to sign in
           </Text>
@@ -87,48 +87,48 @@ export default function VerifyMagicLinkScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   errorIcon: {
     fontSize: 48,
-    fontWeight: 'bold',
-    color: '#ff3b30',
+    fontWeight: "bold",
+    color: "#ff3b30",
     marginBottom: 16,
     width: 80,
     height: 80,
     lineHeight: 80,
-    textAlign: 'center',
+    textAlign: "center",
     borderRadius: 40,
     borderWidth: 3,
-    borderColor: '#ff3b30',
-    overflow: 'hidden',
+    borderColor: "#ff3b30",
+    overflow: "hidden",
   },
   errorTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
-    color: '#333',
+    color: "#333",
   },
   errorText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 24,
   },
   linkText: {
     fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: "#007AFF",
+    fontWeight: "600",
   },
 });

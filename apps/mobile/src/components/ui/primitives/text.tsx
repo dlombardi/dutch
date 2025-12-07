@@ -1,6 +1,6 @@
-import { Text as RNText } from 'react-native';
-import { useColorScheme } from 'nativewind';
-import type { StyledTextProps } from './types';
+import { Text as RNText } from "react-native";
+import { useColorScheme } from "nativewind";
+import type { StyledTextProps } from "./types";
 
 /**
  * Styled Text component with NativeWind className support.
@@ -12,20 +12,20 @@ import type { StyledTextProps } from './types';
  * - Caption: text-sm text-dark-text-secondary / text-light-text-secondary
  * - Label: text-xs font-semibold uppercase tracking-wider
  */
-export function Text({ className = '', ...props }: StyledTextProps) {
+export function Text({ className = "", ...props }: StyledTextProps) {
   return <RNText className={className} {...props} />;
 }
 
 /**
  * Heading text preset - large bold text
  */
-export function Heading({ className = '', ...props }: StyledTextProps) {
+export function Heading({ className = "", ...props }: StyledTextProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <RNText
-      className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'} ${className}`}
+      className={`text-2xl font-bold ${isDark ? "text-white" : "text-black"} ${className}`}
       {...props}
     />
   );
@@ -34,13 +34,13 @@ export function Heading({ className = '', ...props }: StyledTextProps) {
 /**
  * Body text preset - standard readable text
  */
-export function Body({ className = '', ...props }: StyledTextProps) {
+export function Body({ className = "", ...props }: StyledTextProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <RNText
-      className={`text-base ${isDark ? 'text-white' : 'text-black'} ${className}`}
+      className={`text-base ${isDark ? "text-white" : "text-black"} ${className}`}
       {...props}
     />
   );
@@ -49,13 +49,13 @@ export function Body({ className = '', ...props }: StyledTextProps) {
 /**
  * Caption text preset - smaller secondary text
  */
-export function Caption({ className = '', ...props }: StyledTextProps) {
+export function Caption({ className = "", ...props }: StyledTextProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <RNText
-      className={`text-sm ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'} ${className}`}
+      className={`text-sm ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"} ${className}`}
       {...props}
     />
   );
@@ -64,13 +64,13 @@ export function Caption({ className = '', ...props }: StyledTextProps) {
 /**
  * Label text preset - uppercase small text for sections
  */
-export function Label({ className = '', ...props }: StyledTextProps) {
+export function Label({ className = "", ...props }: StyledTextProps) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <RNText
-      className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'} ${className}`}
+      className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-dark-text-secondary" : "text-light-text-secondary"} ${className}`}
       {...props}
     />
   );

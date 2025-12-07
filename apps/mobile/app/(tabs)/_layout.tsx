@@ -1,31 +1,31 @@
-import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { useColorScheme } from 'nativewind';
-import { View, Text } from '@/components/ui/primitives';
-import { colors, glassStyle } from '@/constants/theme';
+import { Tabs } from "expo-router";
+import { Platform } from "react-native";
+import { BlurView } from "expo-blur";
+import { useColorScheme } from "nativewind";
+import { View, Text } from "@/components/ui/primitives";
+import { colors, glassStyle } from "@/constants/theme";
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <View
       className={`w-7 h-7 rounded-full items-center justify-center ${
         focused
-          ? 'bg-dutch-orange'
+          ? "bg-dutch-orange"
           : isDark
-            ? 'bg-dark-card'
-            : 'bg-light-border'
+            ? "bg-dark-card"
+            : "bg-light-border"
       }`}
     >
       <Text
         className={`text-sm font-semibold ${
           focused
-            ? 'text-white'
+            ? "text-white"
             : isDark
-              ? 'text-dark-text-secondary'
-              : 'text-light-text-secondary'
+              ? "text-dark-text-secondary"
+              : "text-light-text-secondary"
         }`}
       >
         {label}
@@ -36,7 +36,7 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 
 export default function TabLayout() {
   const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
   const themeColors = isDark ? colors.dark : colors.light;
   const glass = isDark ? glassStyle.dark : glassStyle.light;
 
@@ -50,25 +50,26 @@ export default function TabLayout() {
         headerShadowVisible: false,
         tabBarActiveTintColor: colors.dark.orange,
         tabBarInactiveTintColor: themeColors.textTertiary,
-        tabBarStyle: Platform.OS === 'ios'
-          ? {
-              position: 'absolute',
-              backgroundColor: glass.backgroundColor,
-              borderTopWidth: glass.borderWidth,
-              borderTopColor: glass.borderColor,
-            }
-          : {
-              backgroundColor: themeColors.bgElevated,
-              borderTopWidth: 1,
-              borderTopColor: themeColors.border,
-            },
+        tabBarStyle:
+          Platform.OS === "ios"
+            ? {
+                position: "absolute",
+                backgroundColor: glass.backgroundColor,
+                borderTopWidth: glass.borderWidth,
+                borderTopColor: glass.borderColor,
+              }
+            : {
+                backgroundColor: themeColors.bgElevated,
+                borderTopWidth: 1,
+                borderTopColor: themeColors.border,
+              },
         tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
+          Platform.OS === "ios" ? (
             <BlurView
               intensity={40}
-              tint={isDark ? 'dark' : 'light'}
+              tint={isDark ? "dark" : "light"}
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 0,
                 left: 0,
                 right: 0,
@@ -81,24 +82,24 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Groups',
-          headerTitle: 'Groups',
+          title: "Groups",
+          headerTitle: "Groups",
           tabBarIcon: ({ focused }) => <TabIcon label="G" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'Activity',
-          headerTitle: 'Activity',
+          title: "Activity",
+          headerTitle: "Activity",
           tabBarIcon: ({ focused }) => <TabIcon label="A" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          headerTitle: 'Settings',
+          title: "Settings",
+          headerTitle: "Settings",
           tabBarIcon: ({ focused }) => <TabIcon label="S" focused={focused} />,
         }}
       />

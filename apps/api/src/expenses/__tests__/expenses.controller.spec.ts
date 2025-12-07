@@ -335,7 +335,9 @@ describe('ExpensesController (integration)', () => {
     });
 
     it('should return 404 for non-existent expense', async () => {
-      await request(httpServer).get(`/expenses/${NON_EXISTENT_UUID}`).expect(404);
+      await request(httpServer)
+        .get(`/expenses/${NON_EXISTENT_UUID}`)
+        .expect(404);
     });
   });
 
@@ -650,7 +652,9 @@ describe('ExpensesController (integration)', () => {
     });
 
     it('should return 404 for non-existent expense', async () => {
-      await request(httpServer).delete(`/expenses/${NON_EXISTENT_UUID}`).expect(404);
+      await request(httpServer)
+        .delete(`/expenses/${NON_EXISTENT_UUID}`)
+        .expect(404);
     });
 
     it('should remove expense from group expenses list', async () => {
@@ -840,7 +844,9 @@ describe('ExpensesController (integration)', () => {
           splitAmounts: Record<string, number>;
         };
       };
-      expect(body.expense.splitParticipants).toEqual(expect.arrayContaining([testUserId, testUser2Id]));
+      expect(body.expense.splitParticipants).toEqual(
+        expect.arrayContaining([testUserId, testUser2Id]),
+      );
       expect(body.expense.splitAmounts[testUserId]).toBe(45);
       expect(body.expense.splitAmounts[testUser2Id]).toBe(45);
     });

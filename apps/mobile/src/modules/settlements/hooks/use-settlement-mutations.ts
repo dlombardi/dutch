@@ -3,10 +3,10 @@
  * React Query mutation hooks for settlement operations
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-client';
-import { settlementService } from '../services';
-import type { CreateSettlementInput, Settlement } from '../types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-client";
+import { settlementService } from "../services";
+import type { CreateSettlementInput, Settlement } from "../types";
 
 /**
  * Mutation hook for creating a settlement with optimistic updates.
@@ -34,7 +34,7 @@ export function useCreateSettlement() {
 
       // Snapshot the previous value
       const previousSettlements = queryClient.getQueryData<Settlement[]>(
-        queryKeys.settlements.byGroup(newSettlement.groupId)
+        queryKeys.settlements.byGroup(newSettlement.groupId),
       );
 
       // Create an optimistic settlement
@@ -44,8 +44,8 @@ export function useCreateSettlement() {
         fromUserId: newSettlement.fromUserId,
         toUserId: newSettlement.toUserId,
         amount: newSettlement.amount,
-        currency: newSettlement.currency || 'USD',
-        method: newSettlement.method || 'cash',
+        currency: newSettlement.currency || "USD",
+        method: newSettlement.method || "cash",
         createdById: newSettlement.createdById,
         createdAt: new Date().toISOString(),
       };
@@ -53,7 +53,8 @@ export function useCreateSettlement() {
       // Optimistically update the cache
       queryClient.setQueryData<Settlement[]>(
         queryKeys.settlements.byGroup(newSettlement.groupId),
-        (old) => (old ? [...old, optimisticSettlement] : [optimisticSettlement])
+        (old) =>
+          old ? [...old, optimisticSettlement] : [optimisticSettlement],
       );
 
       // Return context with snapshot for rollback
@@ -65,7 +66,7 @@ export function useCreateSettlement() {
       if (context?.previousSettlements) {
         queryClient.setQueryData(
           queryKeys.settlements.byGroup(newSettlement.groupId),
-          context.previousSettlements
+          context.previousSettlements,
         );
       }
     },
@@ -76,9 +77,9 @@ export function useCreateSettlement() {
       queryClient.setQueryData<Settlement[]>(
         queryKeys.settlements.byGroup(input.groupId),
         (old) =>
-          old?.map((s) => (s.id === context?.optimisticId ? settlement : s)) || [
-            settlement,
-          ]
+          old?.map((s) =>
+            s.id === context?.optimisticId ? settlement : s,
+          ) || [settlement],
       );
 
       // Invalidate balances since they've changed

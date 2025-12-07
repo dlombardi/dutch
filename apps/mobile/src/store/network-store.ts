@@ -3,9 +3,9 @@
  * Zustand store for tracking network connectivity
  */
 
-import { create } from 'zustand';
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { logger } from '@/lib/utils/logger';
+import { create } from "zustand";
+import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
+import { logger } from "@/lib/utils/logger";
 
 interface NetworkState {
   isConnected: boolean;
@@ -16,7 +16,10 @@ interface NetworkState {
   initialize: () => () => void;
   setNetworkState: (
     state: NetInfoState,
-    previousState: { isConnected: boolean; isInternetReachable: boolean | null }
+    previousState: {
+      isConnected: boolean;
+      isInternetReachable: boolean | null;
+    },
   ) => void;
 }
 
@@ -57,12 +60,16 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 
   initialize: () => {
     NetInfo.fetch().then((state) => {
-      get().setNetworkState(state, { isConnected: true, isInternetReachable: null });
+      get().setNetworkState(state, {
+        isConnected: true,
+        isInternetReachable: null,
+      });
       set({ isInitialized: true });
     });
 
     const unsubscribe = NetInfo.addEventListener((state) => {
-      const { isConnected: wasConnected, isInternetReachable: wasReachable } = get();
+      const { isConnected: wasConnected, isInternetReachable: wasReachable } =
+        get();
       get().setNetworkState(state, {
         isConnected: wasConnected,
         isInternetReachable: wasReachable,
@@ -85,7 +92,9 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
     });
 
     if (isNowOnline && wasOffline && onOnlineCallback) {
-      logger.info('Device came online, triggering sync', { category: 'network' });
+      logger.info("Device came online, triggering sync", {
+        category: "network",
+      });
       onOnlineCallback();
     }
   },

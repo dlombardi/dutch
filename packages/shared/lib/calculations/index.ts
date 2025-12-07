@@ -1,7 +1,7 @@
 // Expense splitting and debt simplification calculations
 
-import type { ExpenseSplit, Balance, SimplifiedDebt } from '../types';
-import { PRECISION, UI } from '../constants';
+import type { ExpenseSplit, Balance, SimplifiedDebt } from "../types";
+import { PRECISION, UI } from "../constants";
 
 /**
  * Calculate equal split amounts for an expense
@@ -15,7 +15,9 @@ export function calculateEqualSplit(
   if (numParticipants === 0) return [];
 
   const baseAmount = Math.floor((totalAmount * 100) / numParticipants) / 100;
-  const remainder = Math.round((totalAmount - baseAmount * numParticipants) * 100);
+  const remainder = Math.round(
+    (totalAmount - baseAmount * numParticipants) * 100,
+  );
 
   return participantIds.map((userId, index) => ({
     userId,
@@ -104,8 +106,7 @@ export function calculateBalances(
 
     // Each split reduces that person's balance
     expense.splits.forEach((split) => {
-      balanceMap[split.userId] =
-        (balanceMap[split.userId] || 0) - split.amount;
+      balanceMap[split.userId] = (balanceMap[split.userId] || 0) - split.amount;
     });
   });
 
@@ -121,7 +122,7 @@ export function calculateBalances(
 
   return Object.entries(balanceMap).map(([userId, amount]) => ({
     userId,
-    userName: userNames[userId] || 'Unknown',
+    userName: userNames[userId] || "Unknown",
     amount: Math.round(amount * 100) / 100,
     currency: defaultCurrency,
   }));
@@ -166,9 +167,9 @@ export function simplifyDebts(
     if (amount > PRECISION.BALANCE_THRESHOLD) {
       simplifiedDebts.push({
         fromUserId: debtor.userId,
-        fromUserName: userNames[debtor.userId] || 'Unknown',
+        fromUserName: userNames[debtor.userId] || "Unknown",
         toUserId: creditor.userId,
-        toUserName: userNames[creditor.userId] || 'Unknown',
+        toUserName: userNames[creditor.userId] || "Unknown",
         amount: Math.round(amount * 100) / 100,
         currency,
       });
